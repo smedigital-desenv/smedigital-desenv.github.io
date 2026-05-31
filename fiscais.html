@@ -169,48 +169,73 @@
       .catch(function(){ document.getElementById("listaFiscais").innerHTML = '<div class="estado">Erro ao carregar.</div>'; });
   }
 
+  var _listaFiscais = [];
+
   function renderizarLista(lista) {
+    _listaFiscais = lista;
     var emailLogado = localStorage.getItem("fiscal_email") || "";
     var html = "";
-    lista.forEach(function(f) {
+
+    lista.forEach(function(f, idx) {
       var isGerente = f.perfil === "gerente";
       var ehEuMesmo = f.email === emailLogado;
-      html +=
-        '<div class="fiscal-row">'+
-          '<div class="fiscal-info">'+
-            '<div class="fiscal-nome">'+(f.nome||"Sem nome")+(ehEuMesmo?' <span style="font-size:10px;color:var(--muted)">(voce)</span>':'')+'</div>'+
-            '<div class="fiscal-email">'+f.email+'</div>'+
-          '</div>'+
-          '<select class="select-perfil" onchange="alterarPerfil(''+f.email+'',this.value)"'+(ehEuMesmo?' disabled title="Nao e possivel alterar seu proprio perfil"':'')+'>'+
-            '<option value="fiscal"'+(isGerente?'':' selected')+'>Fiscal</option>'+
-            '<option value="gerente"'+(isGerente?' selected':'')+'>Gerente</option>'+
-          '</select>'+
-          '<div class="fiscal-acoes">'+
-            '<button class="btn-sm btn-remover"'+(ehEuMesmo?' disabled title="Nao e possivel remover seu proprio usuario"':'')+' onclick="'+( ehEuMesmo ? '' : 'pedirRemocao(''+f.email+'',''+(f.nome||f.email)+'')')+'">'+'Remover</button>'+
-          '</div>'+
-        '</div>';
+      var nome      = f.nome || "Sem nome";
+
+      html += '<div class="fiscal-row">';
+      html +=   '<div class="fiscal-info">';
+      html +=     '<div class="fiscal-nome">' + nome;
+      if (ehEuMesmo) html += ' <span style="font-size:10px;color:var(--muted)">(voce)</span>';
+      html +=     '</div>';
+      html +=     '<div class="fiscal-email">' + f.email + '</div>';
+      html +=   '</div>';
+
+      html += '<select class="select-perfil" data-idx="' + idx + '" onchange="alterarPerfilIdx(this)"';
+      if (ehEuMesmo) html += ' disabled';
+      html += '>';
+      html += '<option value="fiscal"'  + (isGerente ? '' : ' selected') + '>Fiscal</option>';
+      html += '<option value="gerente"' + (isGerente ? ' selected' : '') + '>Gerente</option>';
+      html += '</select>';
+
+      html += '<div class="fiscal-acoes">';
+      html += '<button class="btn-sm btn-remover" data-idx="' + idx + '" onclick="pedirRemocaoIdx(this)"';
+      if (ehEuMesmo) html += ' disabled';
+      html += '>Remover</button>';
+      html += '</div>';
+      html += '</div>';
     });
+
     document.getElementById("listaFiscais").innerHTML = html;
   }
 
-  function alterarPerfil(email, novoPerfil) {
-    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(email), {
+  function alterarPerfilIdx(select) {
+    var idx       = parseInt(select.getAttribute("data-idx"));
+    var fiscal    = _listaFiscais[idx];
+    var novoPerfil = select.value;
+    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(fiscal.email), {
       method: "PATCH",
       headers: h(),
       body: JSON.stringify({ perfil: novoPerfil })
     })
     .then(function(r) {
       if (r.status === 200 || r.status === 204) {
-        mostrarMsg("Perfil de " + email + " alterado para " + novoPerfil + ".");
+        mostrarMsg("Perfil de " + fiscal.email + " alterado para " + novoPerfil + ".");
       } else {
-        return r.json().then(function(d){ throw new Error(d.message||"Erro ao alterar"); });
+        return r.json().then(function(d){ throw new Error(d.message || "Erro ao alterar"); });
       }
     })
     .catch(function(err) {
       mostrarMsg("Erro: " + err.message, true);
-      carregarFiscais(); // reverte visualmente
+      carregarFiscais();
     });
   }
+
+  function pedirRemocaoIdx(btn) {
+    var idx    = parseInt(btn.getAttribute("data-idx"));
+    var fiscal = _listaFiscais[idx];
+    pedirRemocao(fiscal.email, fiscal.nome || fiscal.email);
+  }
+
+
 
 
   function adicionar() {
