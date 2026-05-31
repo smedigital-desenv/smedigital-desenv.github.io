@@ -142,9 +142,39 @@
     document.getElementById("fEmail").textContent    = d.email;
     document.getElementById("fPalestra").textContent = d.palestraNome || d.palestra_id || "-";
     if (doCache) document.getElementById("tagCache").style.display="inline";
-    // Salva palestraId para usar no registro de presença
     palestraIdGlobal = d.palestraId || d.palestra_id || "";
-    document.getElementById("btnValidar").disabled = false;
+
+    // Verifica se presença já foi registrada antes de habilitar o botão
+    verificarPresencaExistente();
+  }
+
+  function verificarPresencaExistente() {
+    fetch(SUPA_URL + "/presencas?token=eq." + encodeURIComponent(tokenGlobal) + "&select=token,data_hora,validado_por&limit=1", { headers: supaHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.length > 0) {
+          // Já registrado: mostra resultado e bloqueia botão
+          var p     = data[0];
+          var btn   = document.getElementById("btnValidar");
+          var btnNovo = document.getElementById("btnNovo");
+          var res   = document.getElementById("resultado");
+          var dt    = p.data_hora ? new Date(p.data_hora).toLocaleString("pt-BR") : "";
+          res.className = "resultado erro";
+          res.innerHTML = "Presenca ja registrada anteriormente." +
+            (dt ? "<br><small>Em: " + dt + "</small>" : "") +
+            (p.validado_por ? "<br><small>Por: " + p.validado_por + "</small>" : "");
+          btn.disabled    = true;
+          btn.textContent = "Ja Registrado";
+          btnNovo.style.display = "flex";
+        } else {
+          // Ainda não registrado: habilita botão
+          document.getElementById("btnValidar").disabled = false;
+        }
+      })
+      .catch(function() {
+        // Se falhar a verificação, habilita o botão mesmo assim
+        document.getElementById("btnValidar").disabled = false;
+      });
   }
 
   // palestraId preenchido ao carregar o participante
