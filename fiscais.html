@@ -47,6 +47,11 @@
     .badge-fiscal{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.2);}
     .fiscal-acoes{display:flex;gap:6px;flex-shrink:0;}
     .btn-sm{padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;}
+    .select-perfil{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;}
+    .select-perfil{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;}
+    .select-perfil:focus{border-color:var(--accent);}
+    .select-perfil:disabled{opacity:.5;cursor:not-allowed;}
+    .select-perfil:focus{border-color:var(--accent);}
     .btn-editar{background:var(--surface2);color:var(--text);}
     .btn-editar:hover{background:var(--border);}
     .btn-remover{background:rgba(239,68,68,.1);color:#fca5a5;}
@@ -165,25 +170,48 @@
   }
 
   function renderizarLista(lista) {
+    var emailLogado = localStorage.getItem("fiscal_email") || "";
     var html = "";
     lista.forEach(function(f) {
       var isGerente = f.perfil === "gerente";
+      var ehEuMesmo = f.email === emailLogado;
       html +=
         '<div class="fiscal-row">'+
           '<div class="fiscal-info">'+
-            '<div class="fiscal-nome">'+(f.nome||"Sem nome")+'</div>'+
+            '<div class="fiscal-nome">'+(f.nome||"Sem nome")+(ehEuMesmo?' <span style="font-size:10px;color:var(--muted)">(voce)</span>':'')+'</div>'+
             '<div class="fiscal-email">'+f.email+'</div>'+
           '</div>'+
-          '<span class="badge-perfil '+(isGerente?"badge-gerente":"badge-fiscal")+'">'+
-            (isGerente?"Gerente":"Fiscal")+
-          '</span>'+
+          '<select class="select-perfil" onchange="alterarPerfil(''+f.email+'',this.value)"'+(ehEuMesmo?' disabled title="Nao e possivel alterar seu proprio perfil"':'')+'>'+
+            '<option value="fiscal"'+(isGerente?'':' selected')+'>Fiscal</option>'+
+            '<option value="gerente"'+(isGerente?' selected':'')+'>Gerente</option>'+
+          '</select>'+
           '<div class="fiscal-acoes">'+
-            '<button class="btn-sm btn-remover" onclick="pedirRemocao(\''+f.email+'\',\''+(f.nome||f.email)+'\')">Remover</button>'+
+            '<button class="btn-sm btn-remover"'+(ehEuMesmo?' disabled title="Nao e possivel remover seu proprio usuario"':'')+' onclick="'+( ehEuMesmo ? '' : 'pedirRemocao(''+f.email+'',''+(f.nome||f.email)+'')')+'">'+'Remover</button>'+
           '</div>'+
         '</div>';
     });
     document.getElementById("listaFiscais").innerHTML = html;
   }
+
+  function alterarPerfil(email, novoPerfil) {
+    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(email), {
+      method: "PATCH",
+      headers: h(),
+      body: JSON.stringify({ perfil: novoPerfil })
+    })
+    .then(function(r) {
+      if (r.status === 200 || r.status === 204) {
+        mostrarMsg("Perfil de " + email + " alterado para " + novoPerfil + ".");
+      } else {
+        return r.json().then(function(d){ throw new Error(d.message||"Erro ao alterar"); });
+      }
+    })
+    .catch(function(err) {
+      mostrarMsg("Erro: " + err.message, true);
+      carregarFiscais(); // reverte visualmente
+    });
+  }
+
 
   function adicionar() {
     var nome   = document.getElementById("addNome").value.trim();
