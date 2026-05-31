@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validar Presenca</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--text:#e8eaf0;--muted:#6b7280;--radius:14px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%);pointer-events:none;}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;min-height:56px;}
+    .topbar-title{font-size:15px;font-weight:600;flex:1;}
+    .topbar-fiscal{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+    .content{flex:1;padding:16px;display:flex;flex-direction:column;gap:10px;max-width:520px;width:100%;margin:0 auto;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;animation:fadeUp .2s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .tag-cache{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:1px 7px;font-size:10px;letter-spacing:.5px;}
+    .field{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);}
+    .field:last-child{border-bottom:none;padding-bottom:0;}
+    .field-label{font-size:13px;color:var(--muted);flex-shrink:0;min-width:64px;}
+    .field-value{font-size:14px;color:var(--text);text-align:right;word-break:break-word;font-weight:500;}
+    .badge-fiscal{background:rgba(79,142,247,.15);color:#93c5fd;border:1px solid rgba(79,142,247,.25);border-radius:6px;padding:2px 8px;font-size:12px;}
+    .btn{width:100%;padding:17px;border:none;border-radius:12px;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .15s,transform .1s;letter-spacing:.2px;}
+    .btn:active{transform:scale(.97);}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 20px rgba(79,142,247,.35);}
+    .btn-novo{background:var(--surface);color:var(--text);border:1px solid var(--border);display:none;align-items:center;justify-content:center;gap:10px;text-decoration:none;}
+    .btn-novo svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .resultado{border-radius:var(--radius);padding:20px;font-size:15px;font-weight:600;text-align:center;line-height:1.6;display:none;animation:fadeUp .2s ease both;}
+    .resultado.sucesso{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.25);display:block;}
+    .resultado.erro{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.25);display:block;}
+    .resultado.info{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.25);display:block;font-weight:400;font-size:14px;}
+    .nome-destaque{font-size:22px;margin-top:10px;color:#fff;font-weight:600;}
+    .resultado small{font-size:12px;font-weight:400;opacity:.8;}
+    .spacer{height:24px;flex-shrink:0;}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="flex:1">
+      <div class="topbar-title">Validar Presenca</div>
+      <div class="topbar-fiscal" id="topFiscal"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="card">
+      <div class="card-title">Participante <span class="tag-cache" id="tagCache" style="display:none">cache</span></div>
+      <div class="field"><span class="field-label">Nome</span>     <span class="field-value" id="fNome">-</span></div>
+      <div class="field"><span class="field-label">E-mail</span>   <span class="field-value" id="fEmail">-</span></div>
+      <div class="field"><span class="field-label">Palestra</span> <span class="field-value" id="fPalestra">-</span></div>
+      <div class="field"><span class="field-label">Token</span>    <span class="field-value" id="fToken">-</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Fiscal</div>
+      <div class="field"><span class="field-label">Logado como</span><span class="field-value" id="fFiscal">-</span></div>
+    </div>
+    <div class="resultado" id="resultado"></div>
+    <button class="btn btn-primary" id="btnValidar" onclick="validar()" disabled>Validar Presenca</button>
+    <a href="index.html" class="btn btn-novo" id="btnNovo">
+      <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Escanear proximo QR Code
+    </a>
+    <div class="spacer"></div>
+  </div>
+
+<script>
+  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
+  var KEY_EMAIL    = "fiscal_email";
+  var KEY_CACHE    = "participantes_cache";
+  var KEY_CACHE_DT = "participantes_cache_data";
+
+  var params      = new URLSearchParams(window.location.search);
+  var tokenGlobal = (params.get("t") || "").toUpperCase();
+  var emailFiscal = localStorage.getItem(KEY_EMAIL) || "";
+
+  function supaHeaders() {
+    return { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json", "Prefer": "return=representation" };
+  }
+
+  function dataHoje() { return new Date().toISOString().slice(0,10); }
+  function cacheValido() { return localStorage.getItem(KEY_CACHE_DT)===dataHoje() && localStorage.getItem(KEY_CACHE); }
+  function buscarNoCache(token) {
+    try {
+      var lista = JSON.parse(localStorage.getItem(KEY_CACHE)||"[]");
+      for (var i=0;i<lista.length;i++) { if (lista[i].token===token) return lista[i]; }
+    } catch(e){}
+    return null;
+  }
+  function salvarCache(lista) { localStorage.setItem(KEY_CACHE,JSON.stringify(lista)); localStorage.setItem(KEY_CACHE_DT,dataHoje()); }
+
+  window.onload = function() {
+    if (!emailFiscal) { window.location.href="index.html"; return; }
+    document.getElementById("topFiscal").textContent = emailFiscal;
+    document.getElementById("fFiscal").innerHTML = '<span class="badge-fiscal">'+emailFiscal+'</span>';
+    document.getElementById("fToken").textContent = tokenGlobal || "-";
+
+    if (!tokenGlobal) {
+      mostrarResultado({ sucesso:false, mensagem:"Token nao informado." });
+      document.getElementById("btnNovo").style.display="flex";
+      return;
+    }
+
+    // Busca no cache primeiro
+    var dadosCache = buscarNoCache(tokenGlobal);
+    if (dadosCache) { preencherParticipante(dadosCache, true); return; }
+
+    // Busca direto no Supabase
+    buscarOnline();
+  };
+
+  function buscarOnline() {
+    fetch(SUPA_URL + "/participantes?token=eq." + encodeURIComponent(tokenGlobal) + "&select=token,nome,email,palestra_id,palestras(nome)&limit=1", { headers: supaHeaders() })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) {
+          mostrarResultado({ sucesso:false, mensagem:"Token invalido ou participante nao encontrado." });
+          document.getElementById("btnNovo").style.display="flex";
+          return;
+        }
+        var p = data[0];
+        preencherParticipante({
+          token:        p.token,
+          nome:         p.nome,
+          email:        p.email,
+          palestra_id:  p.palestra_id,
+          palestraNome: p.palestras ? p.palestras.nome : "-"
+        }, false);
+      })
+      .catch(function(){
+        mostrarResultado({ sucesso:false, mensagem:"Erro ao buscar participante." });
+        document.getElementById("btnNovo").style.display="flex";
+      });
+  }
+
+  function preencherParticipante(d, doCache) {
+    document.getElementById("fNome").textContent     = d.nome;
+    document.getElementById("fEmail").textContent    = d.email;
+    document.getElementById("fPalestra").textContent = d.palestraNome || d.palestra_id || "-";
+    if (doCache) document.getElementById("tagCache").style.display="inline";
+    // Salva palestraId para usar no registro de presença
+    palestraIdGlobal = d.palestraId || d.palestra_id || "";
+    document.getElementById("btnValidar").disabled = false;
+  }
+
+  // palestraId preenchido ao carregar o participante
+  var palestraIdGlobal = "";
+
+  function validar() {
+    var btn = document.getElementById("btnValidar");
+    var res = document.getElementById("resultado");
+    btn.disabled=true; btn.textContent="Registrando...";
+    res.className="resultado info"; res.innerHTML="Registrando presenca...";
+
+    fetch(SUPA_URL + "/presencas", {
+      method: "POST",
+      headers: supaHeaders(),
+      body: JSON.stringify({
+        token:        tokenGlobal,
+        palestra_id:  palestraIdGlobal || null,
+        data_hora:    new Date().toISOString(),
+        validado_por: emailFiscal
+      })
+    })
+    .then(function(r) {
+      if (r.status === 201) return r.json().then(function(d){ return { sucesso:true, data:d }; });
+      if (r.status === 409) return { sucesso:false, jaRegistrado:true, mensagem:"Presenca ja registrada." };
+      return r.json().then(function(d){ return { sucesso:false, mensagem: d.message || d.details || "Erro ao registrar." }; });
+    })
+    .then(function(data) { mostrarResultado(data); })
+    .catch(function(){
+      res.className="resultado erro"; res.innerHTML="Erro de comunicacao. Tente novamente.";
+      btn.disabled=false; btn.textContent="Validar Presenca";
+    });
+  }
+
+  function mostrarResultado(data) {
+    var res     = document.getElementById("resultado");
+    var btn     = document.getElementById("btnValidar");
+    var btnNovo = document.getElementById("btnNovo");
+
+    if (data.sucesso) {
+      res.className="resultado sucesso";
+      res.innerHTML="Presenca registrada!<div class='nome-destaque'>"+document.getElementById("fNome").textContent+"</div>";
+      btn.disabled=true; btn.textContent="Presenca Registrada";
+      btnNovo.style.display="flex";
+    } else if (data.jaRegistrado) {
+      res.className="resultado erro";
+      res.innerHTML="Presenca ja registrada anteriormente.";
+      btn.disabled=true; btn.textContent="Ja Registrado";
+      btnNovo.style.display="flex";
+    } else {
+      res.className="resultado erro";
+      res.innerHTML=data.mensagem||"Erro desconhecido.";
+      btnNovo.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Tentar novamente';
+      btnNovo.style.display="flex";
+      btn.disabled=false; btn.textContent="Validar Presenca";
+    }
+  }
+</script>
+</body>
+</html>

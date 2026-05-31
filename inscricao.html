@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Inscricao</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--warning:#f59e0b;--text:#e8eaf0;--muted:#6b7280;--radius:14px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(124,58,237,.06) 0%,transparent 70%);pointer-events:none;}
+    .container{width:100%;max-width:440px;}
+    .logo{text-align:center;margin-bottom:28px;}
+    .logo-icon{width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 8px 24px rgba(79,142,247,.25);}
+    .logo-icon svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .logo h1{font-size:20px;font-weight:600;}
+    .logo p{font-size:13px;color:var(--muted);margin-top:4px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:12px;animation:fadeUp .25s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:16px;}
+    .field-group{margin-bottom:14px;}
+    label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+    input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.15);}
+    .btn{width:100%;padding:15px;border:none;border-radius:11px;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .15s,transform .1s;}
+    .btn:active{transform:scale(.97);}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 20px rgba(79,142,247,.3);}
+    .btn-ghost{background:var(--surface);color:var(--muted);border:1px solid var(--border);margin-top:10px;font-size:14px;}
+    .msg{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.5;display:none;}
+    .msg.erro{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.2);display:block;}
+    .msg.info{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.2);display:block;}
+    #tela-confirmacao{display:none;}
+    .field-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);}
+    .field-row:last-child{border-bottom:none;padding-bottom:0;}
+    .field-row:first-child{padding-top:0;}
+    .field-label{font-size:13px;color:var(--muted);flex-shrink:0;min-width:64px;}
+    .field-value{font-size:14px;color:var(--text);text-align:right;word-break:break-word;font-weight:500;}
+    .qr-wrap{text-align:center;padding:8px 0 4px;}
+    .qr-wrap img{width:220px;height:220px;border-radius:12px;border:1px solid var(--border);background:#fff;padding:8px;}
+    .qr-pending{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;}
+    .qr-pending svg{width:40px;height:40px;stroke:var(--warning);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin-bottom:10px;}
+    .qr-pending p{font-size:14px;color:var(--warning);font-weight:500;margin-bottom:6px;}
+    .qr-pending small{font-size:12px;color:var(--muted);}
+    .btn-download{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:10px;margin-top:14px;background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.25);text-decoration:none;font-size:14px;font-weight:600;transition:background .2s;}
+    .btn-download:hover{background:rgba(34,197,94,.2);}
+    .btn-download svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 17h.01M17 14h.01M17 17h.01M20 14h.01M20 17h.01M20 20h.01M17 20h.01M14 20h.01"/></svg>
+    </div>
+    <h1>Minha Inscricao</h1>
+    <p>Consulte sua inscricao e QR Code</p>
+  </div>
+
+  <div id="tela-form">
+    <div class="card">
+      <div class="card-title">Identificacao</div>
+      <div class="field-group">
+        <label for="inputEmail">E-mail</label>
+        <input type="email" id="inputEmail" placeholder="seu@email.com" autocomplete="email"/>
+      </div>
+      <div class="field-group">
+        <label for="inputCPF">CPF</label>
+        <input type="text" id="inputCPF" placeholder="000.000.000-00" maxlength="14" autocomplete="off"/>
+      </div>
+      <button class="btn btn-primary" id="btnBuscar" onclick="buscar()">Consultar inscricao</button>
+      <div class="msg" id="msgForm"></div>
+    </div>
+  </div>
+
+  <div id="tela-confirmacao">
+    <div class="card">
+      <div class="card-title">Sua inscricao</div>
+      <div class="field-row"><span class="field-label">Nome</span>     <span class="field-value" id="cNome"></span></div>
+      <div class="field-row"><span class="field-label">E-mail</span>   <span class="field-value" id="cEmail"></span></div>
+      <div class="field-row"><span class="field-label">Palestra</span> <span class="field-value" id="cPalestra"></span></div>
+      <div class="field-row"><span class="field-label">Token</span>    <span class="field-value" id="cToken" style="font-family:'DM Mono',monospace;font-size:13px;"></span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">QR Code de acesso</div>
+      <div id="qrDisponivel" style="display:none">
+        <div class="qr-wrap"><img id="qrImg" src="" alt="QR Code"/></div>
+        <a id="btnDownload" href="#" class="btn-download" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Baixar QR Code
+        </a>
+      </div>
+      <div id="qrPendente" style="display:none" class="qr-pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <p>QR Code em preparacao</p>
+        <small>Seu QR Code estara disponivel em ate 1 hora.<br>Volte aqui para baixa-lo.</small>
+      </div>
+    </div>
+    <button class="btn btn-ghost" onclick="voltar()">Consultar outro e-mail</button>
+  </div>
+</div>
+
+<script>
+  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
+
+  function supaHeaders() {
+    return { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY };
+  }
+
+  document.getElementById("inputCPF").addEventListener("input", function() {
+    var v = this.value.replace(/\D/g,"").substring(0,11);
+    if (v.length>9)      v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,"$1.$2.$3-$4");
+    else if (v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,"$1.$2.$3");
+    else if (v.length>3) v=v.replace(/(\d{3})(\d{0,3})/,"$1.$2");
+    this.value=v;
+  });
+
+  function buscar() {
+    var email = document.getElementById("inputEmail").value.trim().toLowerCase();
+    var cpf   = document.getElementById("inputCPF").value.replace(/\D/g,"");
+    var msg   = document.getElementById("msgForm");
+    var btn   = document.getElementById("btnBuscar");
+
+    if (!email) { msg.className="msg erro"; msg.innerHTML="Informe seu e-mail."; return; }
+    if (cpf.length!==11) { msg.className="msg erro"; msg.innerHTML="Informe um CPF valido."; return; }
+
+    btn.disabled=true; btn.textContent="Consultando...";
+    msg.className="msg info"; msg.innerHTML="Buscando sua inscricao...";
+
+    fetch(
+      SUPA_URL + "/participantes?email=eq." + encodeURIComponent(email) +
+      "&cpf=eq." + encodeURIComponent(cpf) +
+      "&select=token,nome,email,qr_url,palestras(nome)&limit=1",
+      { headers: supaHeaders() }
+    )
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      btn.disabled=false; btn.textContent="Consultar inscricao";
+      if (!data || data.length===0) {
+        msg.className="msg erro"; msg.innerHTML="Inscricao nao encontrada. Verifique o e-mail e CPF informados.";
+        return;
+      }
+      msg.className="msg";
+      mostrarConfirmacao(data[0]);
+    })
+    .catch(function(){
+      btn.disabled=false; btn.textContent="Consultar inscricao";
+      msg.className="msg erro"; msg.innerHTML="Erro de comunicacao. Tente novamente.";
+    });
+  }
+
+  function mostrarConfirmacao(p) {
+    document.getElementById("cNome").textContent     = p.nome;
+    document.getElementById("cEmail").textContent    = p.email;
+    document.getElementById("cPalestra").textContent = p.palestras ? p.palestras.nome : "-";
+    document.getElementById("cToken").textContent    = p.token;
+
+    if (p.qr_url) {
+      // Extrai fileId da URL do verQR
+      var fidMatch = p.qr_url.match(/fid=([^&]+)/);
+      if (fidMatch) {
+        var fileId = decodeURIComponent(fidMatch[1]);
+        document.getElementById("qrImg").src        = "https://lh3.googleusercontent.com/d/" + fileId;
+        document.getElementById("btnDownload").href = "https://drive.google.com/uc?export=download&id=" + fileId;
+        document.getElementById("qrDisponivel").style.display = "block";
+        document.getElementById("qrPendente").style.display   = "none";
+      } else {
+        document.getElementById("qrDisponivel").style.display = "none";
+        document.getElementById("qrPendente").style.display   = "block";
+      }
+    } else {
+      document.getElementById("qrDisponivel").style.display = "none";
+      document.getElementById("qrPendente").style.display   = "block";
+    }
+
+    document.getElementById("tela-form").style.display        = "none";
+    document.getElementById("tela-confirmacao").style.display = "block";
+  }
+
+  function voltar() {
+    document.getElementById("tela-confirmacao").style.display = "none";
+    document.getElementById("tela-form").style.display        = "block";
+    document.getElementById("inputEmail").value = "";
+    document.getElementById("inputCPF").value   = "";
+    document.getElementById("msgForm").className = "msg";
+  }
+
+  document.getElementById("inputEmail").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("inputCPF").focus(); });
+  document.getElementById("inputCPF").addEventListener("keydown",   function(e){ if(e.key==="Enter") buscar(); });
+</script>
+</body>
+</html>
