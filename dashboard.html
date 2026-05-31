@@ -6,34 +6,29 @@
   <title>Dashboard - Presencas</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;
-      --accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;
-      --text:#e8eaf0;--muted:#6b7280;--radius:14px;
-    }
+    :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--text:#e8eaf0;--muted:#6b7280;--radius:14px;}
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
     body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 10% 10%,rgba(79,142,247,.06) 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 90% 90%,rgba(124,58,237,.06) 0%,transparent 60%);pointer-events:none;}
 
     /* TOPBAR */
     .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
-    .btn-back{display:none;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 8px;border-radius:8px;font-family:'DM Sans',sans-serif;transition:color .2s;}
-    .btn-back:hover{color:var(--text);}
-    .btn-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
     .topbar-center{flex:1;}
     .topbar-center h1{font-size:17px;font-weight:700;}
     .topbar-center p{font-size:12px;color:var(--muted);margin-top:2px;}
-    .btn-refresh{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s;font-family:'DM Sans',sans-serif;}
-    .btn-refresh:hover{background:var(--surface2);}
-    .btn-refresh svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .btn-refresh.loading svg{animation:spin 1s linear infinite;}
+    .topbar-actions{display:flex;gap:8px;}
+    .btn-icon{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+    .btn-icon:hover{background:var(--surface2);}
+    .btn-icon svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .btn-icon.loading svg{animation:spin 1s linear infinite;}
+    .btn-icon.ativo{border-color:var(--danger);color:var(--danger);background:rgba(239,68,68,.08);}
     @keyframes spin{to{transform:rotate(360deg);}}
 
-    /* CONTEÚDO */
+    /* CONTENT */
     .content{max-width:960px;margin:0 auto;padding:20px;}
 
     /* RESUMO */
-    .resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+    .resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
     .resumo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
     .resumo-card .label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
     .resumo-card .valor{font-size:28px;font-weight:700;line-height:1;}
@@ -67,174 +62,240 @@
     .n-ausentes{color:var(--danger);}
     .palestra-card .hint{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;}
 
-    /* TELA DETALHE */
-    #tela-detalhe{display:none;}
-    .detalhe-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
-
-    /* FILTROS */
-    .filtros{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
-    .filtro-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
-    .filtro-btn.ativo{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1);}
-
-    /* BUSCA */
-    .busca-wrap{margin-bottom:12px;}
-    .busca-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s;}
-    .busca-input:focus{border-color:var(--accent);}
-
-    /* LISTA PARTICIPANTES */
-    .participantes-lista{display:flex;flex-direction:column;gap:6px;}
-    .participante-row{
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:12px;padding:12px 16px;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      transition:border-color .2s;
-    }
-    .participante-row.presente{border-left:3px solid var(--success);}
-    .participante-row.ausente{border-left:3px solid var(--border);}
-    .participante-info{flex:1;min-width:0;}
-    .participante-nome{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .participante-email{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .participante-meta{font-size:11px;color:var(--success);margin-top:3px;}
-
-    .btn-validar-inline{
-      flex-shrink:0;
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      color:#fff;border:none;border-radius:8px;
-      padding:8px 14px;font-size:13px;font-weight:600;
-      cursor:pointer;font-family:'DM Sans',sans-serif;
-      transition:opacity .2s,transform .1s;white-space:nowrap;
-    }
-    .btn-validar-inline:active{transform:scale(.96);}
-    .btn-validar-inline:disabled{opacity:.4;cursor:not-allowed;}
-    .tag-presente{flex-shrink:0;background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;}
-
     /* ESTADO */
     .estado{text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;}
     .estado svg{width:36px;height:36px;stroke:var(--muted);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 10px;display:block;}
     .atualizado{font-size:11px;color:var(--muted);text-align:right;margin-top:14px;}
 
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+    .modal-overlay.aberto{display:flex;}
+    @media(min-width:600px){.modal-overlay{align-items:center;}}
+
+    .modal{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:20px 20px 0 0;
+      width:100%;max-width:640px;
+      max-height:90vh;display:flex;flex-direction:column;
+      animation:slideUp .25s ease both;
+    }
+    @media(min-width:600px){.modal{border-radius:20px;max-height:85vh;}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+
+    .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;flex-shrink:0;}
+    .modal-header-info{flex:1;min-width:0;}
+    .modal-titulo{font-size:16px;font-weight:700;}
+    .modal-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+    .btn-fechar{flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .2s;}
+    .btn-fechar:hover{color:var(--text);}
+    .btn-fechar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+    .modal-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .mini-card{background:var(--bg);border-radius:10px;padding:10px 12px;text-align:center;}
+    .mini-card .mn{font-size:22px;font-weight:700;}
+    .mini-card .ml{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.6px;}
+
+    .modal-filtros{display:flex;gap:6px;padding:12px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
+    .filtro-btn{background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 12px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .filtro-btn.ativo{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1);}
+
+    .modal-busca{padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .busca-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s;}
+    .busca-input:focus{border-color:var(--accent);}
+
+    .modal-lista{overflow-y:auto;flex:1;padding:10px 20px 20px;}
+
+    /* ROWS */
+    .participante-row{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;transition:border-color .2s;}
+    .participante-row.presente{border-left:3px solid var(--success);}
+    .participante-row.ausente{border-left:3px solid var(--border);}
+    .participante-info{flex:1;min-width:0;}
+    .participante-nome{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .participante-email{font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .participante-meta{font-size:11px;color:var(--success);margin-top:2px;}
+    .btn-validar-inline{flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s,transform .1s;white-space:nowrap;}
+    .btn-validar-inline:active{transform:scale(.96);}
+    .btn-validar-inline:disabled{opacity:.4;cursor:not-allowed;}
+    .tag-presente{flex-shrink:0;background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;}
+
+    /* ── TELA GERENCIAL ── */
+    #tela-gerencial{display:none;}
+    .gerencial-busca{margin-bottom:12px;}
+    .presenca-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+    .presenca-info{flex:1;min-width:0;}
+    .presenca-nome{font-size:14px;font-weight:600;}
+    .presenca-detalhe{font-size:12px;color:var(--muted);margin-top:2px;}
+    .presenca-data{font-size:11px;color:var(--success);margin-top:2px;}
+    .btn-excluir{flex-shrink:0;background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;white-space:nowrap;}
+    .btn-excluir:hover{background:rgba(239,68,68,.2);}
+    .btn-excluir:disabled{opacity:.4;cursor:not-allowed;}
+
+    /* CONFIRM MODAL */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+    .confirm-overlay.aberto{display:flex;}
+    .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:360px;width:100%;animation:slideUp .2s ease both;}
+    .confirm-titulo{font-size:16px;font-weight:700;margin-bottom:8px;}
+    .confirm-msg{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+    .confirm-acoes{display:flex;gap:8px;}
+    .btn-cancelar{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .btn-confirmar-excluir{flex:1;background:var(--danger);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;}
+    .btn-confirmar-excluir:hover{opacity:.85;}
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     .fadeUp{animation:fadeUp .2s ease both;}
-
-    @media(max-width:480px){
-      .content{padding:12px;}
-      .resumo-card .valor{font-size:22px;}
-      .num-item .n{font-size:16px;}
-    }
+    @media(max-width:480px){.content{padding:12px;}.resumo-card .valor{font-size:22px;}.num-item .n{font-size:16px;}}
   </style>
 </head>
 <body>
 
-  <div class="topbar">
-    <button class="btn-back" id="btnBack" onclick="voltarDashboard()">
-      <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      Voltar
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-center">
+    <h1 id="topTitle">Dashboard de Presencas</h1>
+    <p id="topSub">Carregando...</p>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-icon" id="btnGerencial" onclick="toggleGerencial()">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Gerenciar
     </button>
-    <div class="topbar-center">
-      <h1 id="topTitle">Dashboard de Presencas</h1>
-      <p id="topSub">Carregando...</p>
-    </div>
-    <button class="btn-refresh" id="btnRefresh" onclick="recarregar()">
+    <button class="btn-icon" id="btnRefresh" onclick="recarregar()">
       <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       Atualizar
     </button>
   </div>
+</div>
 
-  <div class="content">
+<div class="content">
 
-    <!-- TELA 1: dashboard geral -->
-    <div id="tela-dashboard">
-      <div class="resumo">
-        <div class="resumo-card"><div class="label">Inscritos</div><div class="valor cor-total"    id="rTotal">-</div></div>
-        <div class="resumo-card"><div class="label">Presentes</div><div class="valor cor-presente" id="rPresentes">-</div></div>
-        <div class="resumo-card"><div class="label">Ausentes</div><div class="valor cor-ausente"   id="rAusentes">-</div></div>
-        <div class="resumo-card"><div class="label">Taxa geral</div><div class="valor cor-taxa"    id="rTaxa">-</div></div>
-      </div>
-      <div class="secao-titulo">Por palestra — clique para ver os participantes</div>
-      <div class="palestras-grid" id="palestrasGrid">
-        <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
-      </div>
-      <div class="atualizado" id="atualizado"></div>
+  <!-- TELA DASHBOARD -->
+  <div id="tela-dashboard">
+    <div class="resumo">
+      <div class="resumo-card"><div class="label">Inscritos</div> <div class="valor cor-total"    id="rTotal">-</div></div>
+      <div class="resumo-card"><div class="label">Presentes</div><div class="valor cor-presente" id="rPresentes">-</div></div>
+      <div class="resumo-card"><div class="label">Ausentes</div> <div class="valor cor-ausente"  id="rAusentes">-</div></div>
+      <div class="resumo-card"><div class="label">Taxa geral</div><div class="valor cor-taxa"    id="rTaxa">-</div></div>
     </div>
-
-    <!-- TELA 2: detalhe palestra -->
-    <div id="tela-detalhe">
-      <div class="detalhe-resumo">
-        <div class="resumo-card"><div class="label">Inscritos</div> <div class="valor cor-total"    id="dTotal">-</div></div>
-        <div class="resumo-card"><div class="label">Presentes</div> <div class="valor cor-presente" id="dPresentes">-</div></div>
-        <div class="resumo-card"><div class="label">Ausentes</div>  <div class="valor cor-ausente"  id="dAusentes">-</div></div>
-      </div>
-
-      <div class="filtros">
-        <button class="filtro-btn ativo" id="fTodos"    onclick="filtrar('todos')">Todos</button>
-        <button class="filtro-btn"       id="fPresentes" onclick="filtrar('presentes')">Presentes</button>
-        <button class="filtro-btn"       id="fAusentes"  onclick="filtrar('ausentes')">Ausentes</button>
-      </div>
-
-      <div class="busca-wrap">
-        <input class="busca-input" id="buscaInput" type="text" placeholder="Buscar por nome ou e-mail..." oninput="renderizarLista()"/>
-      </div>
-
-      <div class="participantes-lista" id="participantesLista"></div>
+    <div class="secao-titulo">Por palestra — clique para ver os participantes</div>
+    <div class="palestras-grid" id="palestrasGrid">
+      <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
     </div>
-
+    <div class="atualizado" id="atualizado"></div>
   </div>
 
+  <!-- TELA GERENCIAL -->
+  <div id="tela-gerencial">
+    <div class="secao-titulo">Gerenciar presenças registradas</div>
+    <div class="gerencial-busca">
+      <input class="busca-input" id="gerencialBusca" type="text" placeholder="Buscar por nome, e-mail ou token..." oninput="renderizarGerencial()"/>
+    </div>
+    <div id="gerencialLista">
+      <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL DETALHE PALESTRA -->
+<div class="modal-overlay" id="modalOverlay" onclick="fecharModalSeFora(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-titulo" id="modalTitulo">-</div>
+        <div class="modal-sub" id="modalSub">-</div>
+      </div>
+      <button class="btn-fechar" onclick="fecharModal()">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-resumo">
+      <div class="mini-card"><div class="mn cor-total"    id="mTotal">-</div><div class="ml">Inscritos</div></div>
+      <div class="mini-card"><div class="mn cor-presente" id="mPresentes">-</div><div class="ml">Presentes</div></div>
+      <div class="mini-card"><div class="mn cor-ausente"  id="mAusentes">-</div><div class="ml">Ausentes</div></div>
+    </div>
+    <div class="modal-filtros">
+      <button class="filtro-btn ativo" id="fTodos"     onclick="filtrar('todos')">Todos</button>
+      <button class="filtro-btn"       id="fPresentes" onclick="filtrar('presentes')">Presentes</button>
+      <button class="filtro-btn"       id="fAusentes"  onclick="filtrar('ausentes')">Ausentes</button>
+    </div>
+    <div class="modal-busca">
+      <input class="busca-input" id="buscaInput" type="text" placeholder="Buscar por nome ou e-mail..." oninput="renderizarLista()"/>
+    </div>
+    <div class="modal-lista" id="participantesLista"></div>
+  </div>
+</div>
+
+<!-- CONFIRM EXCLUIR -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-titulo">Excluir presenca?</div>
+    <div class="confirm-msg" id="confirmMsg">Esta acao nao pode ser desfeita.</div>
+    <div class="confirm-acoes">
+      <button class="btn-cancelar" onclick="fecharConfirm()">Cancelar</button>
+      <button class="btn-confirmar-excluir" id="btnConfirmarExcluir" onclick="confirmarExclusao()">Excluir</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  var SUPA_URL    = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
-  var SUPA_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
-  var KEY_EMAIL   = "fiscal_email";
+  var SUPA_URL  = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
+  var KEY_EMAIL = "fiscal_email";
 
-  function h() { return { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json", "Prefer": "return=representation" }; }
+  function h(extra) {
+    var base = { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json", "Prefer": "return=representation" };
+    if (extra) Object.assign(base, extra);
+    return base;
+  }
 
-  // estado global
-  var dadosPalestras    = [];
+  var dadosPalestras     = [];
   var dadosParticipantes = [];
-  var dadosPresencas    = [];
-  var palestraAtual     = null;
-  var filtroAtual       = "todos";
-  var emailFiscal       = localStorage.getItem(KEY_EMAIL) || "";
+  var dadosPresencas     = [];
+  var palestraAtual      = null;
+  var filtroAtual        = "todos";
+  var emailFiscal        = localStorage.getItem(KEY_EMAIL) || "";
+  var telaAtual          = "dashboard"; // "dashboard" | "gerencial"
+  var tokenParaExcluir   = null;
 
-  // ── CARREGAR DADOS ────────────────────────────────────────
+  // ── CARREGAR ────────────────────────────────────────────────
   function carregar() {
     document.getElementById("btnRefresh").classList.add("loading");
     return Promise.all([
       fetch(SUPA_URL + "/palestras?select=id,nome,carga_horaria&order=nome", { headers: h() }).then(function(r){ return r.json(); }),
       fetch(SUPA_URL + "/participantes?select=token,nome,email,palestra_id", { headers: h() }).then(function(r){ return r.json(); }),
       fetch(SUPA_URL + "/presencas?select=token,palestra_id,data_hora,validado_por", { headers: h() }).then(function(r){ return r.json(); })
-    ])
-    .then(function(res) {
+    ]).then(function(res) {
       document.getElementById("btnRefresh").classList.remove("loading");
-      dadosPalestras     = res[0];
-      dadosParticipantes = res[1];
-      dadosPresencas     = res[2];
+      dadosPalestras     = Array.isArray(res[0]) ? res[0] : [];
+      dadosParticipantes = Array.isArray(res[1]) ? res[1] : [];
+      dadosPresencas     = Array.isArray(res[2]) ? res[2] : [];
       return true;
-    })
-    .catch(function() {
+    }).catch(function() {
       document.getElementById("btnRefresh").classList.remove("loading");
       return false;
     });
   }
 
   function recarregar() {
-    if (palestraAtual) {
-      carregar().then(function(ok){ if (ok) abrirPalestra(palestraAtual); });
-    } else {
-      carregar().then(function(ok){ if (ok) renderizarDashboard(); });
-    }
+    carregar().then(function(ok) {
+      if (!ok) return;
+      if (telaAtual === "gerencial") renderizarGerencial();
+      else renderizarDashboard();
+      if (palestraAtual) renderizarLista();
+    });
   }
 
-  // ── DASHBOARD GERAL ───────────────────────────────────────
+  // ── DASHBOARD ───────────────────────────────────────────────
   function renderizarDashboard() {
-    var tokensPresentes = {};
-    dadosPresencas.forEach(function(p){ tokensPresentes[p.token] = p; });
+    var tP = {};
+    dadosPresencas.forEach(function(p){ tP[p.token] = p; });
 
     var mapIns = {}, mapPres = {};
     dadosPalestras.forEach(function(pal){ mapIns[pal.id]=0; mapPres[pal.id]=0; });
     dadosParticipantes.forEach(function(p){
       if (mapIns[p.palestra_id] !== undefined) {
         mapIns[p.palestra_id]++;
-        if (tokensPresentes[p.token]) mapPres[p.palestra_id]++;
+        if (tP[p.token]) mapPres[p.palestra_id]++;
       }
     });
 
@@ -258,11 +319,8 @@
     dados.forEach(function(d, idx){
       var tc = d.taxa>=75?"taxa-alta":d.taxa>=40?"taxa-media":"taxa-baixa";
       html +=
-        '<div class="palestra-card fadeUp" style="animation-delay:'+(idx*.04)+'s" onclick="abrirPalestra(\''+d.pal.id+'\')">' +
-          '<div class="palestra-header">' +
-            '<div><div class="palestra-nome">'+d.pal.nome+'</div>'+(d.pal.carga_horaria?'<div class="palestra-carga">'+d.pal.carga_horaria+'</div>':'')+'</div>'+
-            '<span class="taxa-badge '+tc+'">'+d.taxa+'%</span>'+
-          '</div>'+
+        '<div class="palestra-card fadeUp" style="animation-delay:'+(idx*.04)+'s" onclick="abrirModal(\''+d.pal.id+'\')">' +
+          '<div class="palestra-header"><div><div class="palestra-nome">'+d.pal.nome+'</div>'+(d.pal.carga_horaria?'<div class="palestra-carga">'+d.pal.carga_horaria+'</div>':'')+'</div><span class="taxa-badge '+tc+'">'+d.taxa+'%</span></div>'+
           '<div class="barra-bg"><div class="barra-fill" style="width:'+d.taxa+'%"></div></div>'+
           '<div class="palestra-nums">'+
             '<div class="num-item"><div class="n n-inscritos">'+d.ins+'</div><div class="l">Inscritos</div></div>'+
@@ -276,62 +334,59 @@
     document.getElementById("palestrasGrid").innerHTML = html;
   }
 
-  // ── DETALHE PALESTRA ──────────────────────────────────────
-  function abrirPalestra(palestraId) {
+  // ── MODAL ───────────────────────────────────────────────────
+  function abrirModal(palestraId) {
     palestraAtual = palestraId;
     filtroAtual   = "todos";
     document.getElementById("buscaInput").value = "";
-
-    var pal = dadosPalestras.find(function(p){ return p.id === palestraId; });
-    document.getElementById("topTitle").textContent = pal ? pal.nome : "Palestra";
-    document.getElementById("btnBack").style.display = "flex";
-    document.getElementById("tela-dashboard").style.display = "none";
-    document.getElementById("tela-detalhe").style.display   = "block";
-
-    // atualiza filtros visuais
-    ["fTodos","fPresentes","fAusentes"].forEach(function(id){
-      document.getElementById(id).classList.remove("ativo");
-    });
+    ["fTodos","fPresentes","fAusentes"].forEach(function(id){ document.getElementById(id).classList.remove("ativo"); });
     document.getElementById("fTodos").classList.add("ativo");
 
+    var pal = dadosPalestras.find(function(p){ return p.id === palestraId; });
+    document.getElementById("modalTitulo").textContent = pal ? pal.nome : "Palestra";
+    document.getElementById("modalOverlay").classList.add("aberto");
+    document.body.style.overflow = "hidden";
     renderizarLista();
+  }
+
+  function fecharModal() {
+    palestraAtual = null;
+    document.getElementById("modalOverlay").classList.remove("aberto");
+    document.body.style.overflow = "";
+  }
+
+  function fecharModalSeFora(e) {
+    if (e.target === document.getElementById("modalOverlay")) fecharModal();
   }
 
   function filtrar(tipo) {
     filtroAtual = tipo;
-    ["fTodos","fPresentes","fAusentes"].forEach(function(id){
-      document.getElementById(id).classList.remove("ativo");
-    });
+    ["fTodos","fPresentes","fAusentes"].forEach(function(id){ document.getElementById(id).classList.remove("ativo"); });
     document.getElementById(tipo==="todos"?"fTodos":tipo==="presentes"?"fPresentes":"fAusentes").classList.add("ativo");
     renderizarLista();
   }
 
   function renderizarLista() {
-    var tokensPresentes = {};
-    dadosPresencas.forEach(function(p){ tokensPresentes[p.token] = p; });
+    var tP = {};
+    dadosPresencas.forEach(function(p){ tP[p.token] = p; });
 
     var participantes = dadosParticipantes.filter(function(p){ return p.palestra_id === palestraAtual; });
     var busca = document.getElementById("buscaInput").value.trim().toLowerCase();
 
     var ins  = participantes.length;
-    var pres = participantes.filter(function(p){ return tokensPresentes[p.token]; }).length;
-    document.getElementById("dTotal").textContent    = ins;
-    document.getElementById("dPresentes").textContent = pres;
-    document.getElementById("dAusentes").textContent  = ins - pres;
-    document.getElementById("topSub").textContent     = ins + " inscrito(s)";
+    var pres = participantes.filter(function(p){ return tP[p.token]; }).length;
+    document.getElementById("mTotal").textContent    = ins;
+    document.getElementById("mPresentes").textContent = pres;
+    document.getElementById("mAusentes").textContent  = ins - pres;
+    document.getElementById("modalSub").textContent   = ins + " inscrito(s) · " + pres + " presente(s)";
 
-    // filtra
     var lista = participantes.filter(function(p){
-      if (filtroAtual === "presentes" && !tokensPresentes[p.token]) return false;
-      if (filtroAtual === "ausentes"  &&  tokensPresentes[p.token]) return false;
-      if (busca && p.nome.toLowerCase().indexOf(busca) === -1 && p.email.toLowerCase().indexOf(busca) === -1) return false;
+      if (filtroAtual === "presentes" && !tP[p.token]) return false;
+      if (filtroAtual === "ausentes"  &&  tP[p.token]) return false;
+      if (busca && p.nome.toLowerCase().indexOf(busca)===-1 && p.email.toLowerCase().indexOf(busca)===-1) return false;
       return true;
-    });
-
-    // ordena: ausentes primeiro, depois por nome
-    lista.sort(function(a, b){
-      var aP = tokensPresentes[a.token] ? 1 : 0;
-      var bP = tokensPresentes[b.token] ? 1 : 0;
+    }).sort(function(a,b){
+      var aP = tP[a.token]?1:0, bP = tP[b.token]?1:0;
       if (aP !== bP) return aP - bP;
       return a.nome.localeCompare(b.nome);
     });
@@ -344,103 +399,166 @@
 
     var html = "";
     lista.forEach(function(p) {
-      var pres   = tokensPresentes[p.token];
-      var classe = pres ? "presente" : "ausente";
-      var dt     = pres && pres.data_hora ? new Date(pres.data_hora).toLocaleString("pt-BR") : "";
-      var por    = pres && pres.validado_por ? pres.validado_por : "";
-
+      var pr  = tP[p.token];
+      var dt  = pr && pr.data_hora ? new Date(pr.data_hora).toLocaleString("pt-BR") : "";
+      var por = pr && pr.validado_por ? pr.validado_por : "";
       html +=
-        '<div class="participante-row '+classe+'" id="row-'+p.token+'">' +
-          '<div class="participante-info">' +
-            '<div class="participante-nome">'+p.nome+'</div>' +
-            '<div class="participante-email">'+p.email+'</div>' +
-            (pres ? '<div class="participante-meta">'+dt+(por?" · "+por:"")+'</div>' : '') +
-          '</div>';
-
-      if (pres) {
-        html += '<span class="tag-presente">Presente</span>';
-      } else {
-        html += '<button class="btn-validar-inline" id="btn-'+p.token+'" onclick="validarInline(\''+p.token+'\',\''+p.palestra_id+'\')">Validar</button>';
-      }
-
-      html += '</div>';
+        '<div class="participante-row '+(pr?"presente":"ausente")+'" id="row-'+p.token+'">'+
+          '<div class="participante-info">'+
+            '<div class="participante-nome">'+p.nome+'</div>'+
+            '<div class="participante-email">'+p.email+'</div>'+
+            (pr?'<div class="participante-meta">'+dt+(por?" · "+por:"")+'</div>':'')+
+          '</div>'+
+          (pr
+            ? '<span class="tag-presente">Presente</span>'
+            : '<button class="btn-validar-inline" id="btn-'+p.token+'" onclick="validarInline(\''+p.token+'\',\''+p.palestra_id+'\')">Validar</button>'
+          )+
+        '</div>';
     });
-
     document.getElementById("participantesLista").innerHTML = html;
   }
 
-  // ── VALIDAR INLINE ────────────────────────────────────────
+  // ── VALIDAR INLINE ──────────────────────────────────────────
   function validarInline(token, palestraId) {
-    if (!emailFiscal) {
-      alert("Voce nao esta logado como fiscal. Acesse a pagina de validacao primeiro.");
-      return;
-    }
-
+    if (!emailFiscal) { alert("Voce nao esta logado como fiscal."); return; }
     var btn = document.getElementById("btn-"+token);
-    btn.disabled = true;
-    btn.textContent = "...";
+    btn.disabled = true; btn.textContent = "...";
 
     fetch(SUPA_URL + "/presencas", {
-      method: "POST",
-      headers: h(),
-      body: JSON.stringify({
-        token:        token,
-        palestra_id:  palestraId,
-        data_hora:    new Date().toISOString(),
-        validado_por: emailFiscal
-      })
+      method: "POST", headers: h(),
+      body: JSON.stringify({ token: token, palestra_id: palestraId, data_hora: new Date().toISOString(), validado_por: emailFiscal })
     })
-    .then(function(r) {
+    .then(function(r){
       if (r.status === 201) return r.json();
       if (r.status === 409) throw new Error("ja_registrado");
-      return r.json().then(function(d){ throw new Error(d.message || "Erro"); });
+      return r.json().then(function(d){ throw new Error(d.message||"Erro"); });
     })
-    .then(function(data) {
-      // Atualiza estado local
-      dadosPresencas.push({
-        token:        token,
-        palestra_id:  palestraId,
-        data_hora:    new Date().toISOString(),
-        validado_por: emailFiscal
-      });
-      // Atualiza a linha sem recarregar tudo
-      var row = document.getElementById("row-"+token);
-      if (row) {
-        row.classList.remove("ausente");
-        row.classList.add("presente");
-        btn.outerHTML = '<span class="tag-presente">Presente</span>';
-        // Atualiza contadores
-        var ins  = dadosParticipantes.filter(function(p){ return p.palestra_id === palestraAtual; }).length;
-        var pres = dadosPresencas.filter(function(p){ return p.palestra_id === palestraAtual; }).length;
-        document.getElementById("dPresentes").textContent = pres;
-        document.getElementById("dAusentes").textContent  = ins - pres;
-      }
+    .then(function() {
+      dadosPresencas.push({ token: token, palestra_id: palestraId, data_hora: new Date().toISOString(), validado_por: emailFiscal });
+      renderizarLista();
+      renderizarDashboard();
     })
     .catch(function(err) {
-      if (err.message === "ja_registrado") {
-        dadosPresencas.push({ token: token, palestra_id: palestraId, data_hora: new Date().toISOString(), validado_por: "" });
-        renderizarLista();
-      } else {
-        btn.disabled = false;
-        btn.textContent = "Validar";
-        alert("Erro ao registrar: " + err.message);
-      }
+      if (err.message === "ja_registrado") { renderizarLista(); }
+      else { btn.disabled=false; btn.textContent="Validar"; alert("Erro: "+err.message); }
     });
   }
 
-  // ── VOLTAR ────────────────────────────────────────────────
-  function voltarDashboard() {
-    palestraAtual = null;
-    document.getElementById("btnBack").style.display       = "none";
-    document.getElementById("topTitle").textContent        = "Dashboard de Presencas";
-    document.getElementById("tela-detalhe").style.display  = "none";
-    document.getElementById("tela-dashboard").style.display= "block";
-    renderizarDashboard();
+  // ── GERENCIAL ───────────────────────────────────────────────
+  function toggleGerencial() {
+    if (telaAtual === "gerencial") {
+      telaAtual = "dashboard";
+      document.getElementById("tela-dashboard").style.display  = "block";
+      document.getElementById("tela-gerencial").style.display  = "none";
+      document.getElementById("topTitle").textContent          = "Dashboard de Presencas";
+      document.getElementById("btnGerencial").classList.remove("ativo");
+    } else {
+      telaAtual = "gerencial";
+      document.getElementById("tela-dashboard").style.display  = "none";
+      document.getElementById("tela-gerencial").style.display  = "block";
+      document.getElementById("topTitle").textContent          = "Gerenciar Presencas";
+      document.getElementById("btnGerencial").classList.add("ativo");
+      document.getElementById("gerencialBusca").value = "";
+      renderizarGerencial();
+    }
   }
 
-  // ── INIT ─────────────────────────────────────────────────
+  function renderizarGerencial() {
+    var busca = document.getElementById("gerencialBusca").value.trim().toLowerCase();
+
+    // Monta mapa token -> participante
+    var mapPart = {};
+    dadosParticipantes.forEach(function(p){ mapPart[p.token] = p; });
+    var mapPal  = {};
+    dadosPalestras.forEach(function(p){ mapPal[p.id] = p; });
+
+    var lista = dadosPresencas.filter(function(pr) {
+      if (!busca) return true;
+      var part = mapPart[pr.token];
+      if (!part) return pr.token.toLowerCase().indexOf(busca) !== -1;
+      return part.nome.toLowerCase().indexOf(busca) !== -1 ||
+             part.email.toLowerCase().indexOf(busca) !== -1 ||
+             pr.token.toLowerCase().indexOf(busca) !== -1;
+    }).sort(function(a, b) {
+      var nA = mapPart[a.token] ? mapPart[a.token].nome : a.token;
+      var nB = mapPart[b.token] ? mapPart[b.token].nome : b.token;
+      return nA.localeCompare(nB);
+    });
+
+    document.getElementById("topSub").textContent = lista.length + " presenca(s) registrada(s)";
+
+    if (lista.length === 0) {
+      document.getElementById("gerencialLista").innerHTML =
+        '<div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Nenhuma presenca encontrada.</div>';
+      return;
+    }
+
+    var html = "";
+    lista.forEach(function(pr) {
+      var part = mapPart[pr.token];
+      var pal  = mapPal[pr.palestra_id];
+      var dt   = pr.data_hora ? new Date(pr.data_hora).toLocaleString("pt-BR") : "-";
+      html +=
+        '<div class="presenca-row" id="prow-'+pr.token+'">'+
+          '<div class="presenca-info">'+
+            '<div class="presenca-nome">'+(part?part.nome:pr.token)+'</div>'+
+            '<div class="presenca-detalhe">'+(part?part.email:"")+(pal?" · "+pal.nome:"")+'</div>'+
+            '<div class="presenca-data">'+dt+(pr.validado_por?" · "+pr.validado_por:"")+'</div>'+
+          '</div>'+
+          '<button class="btn-excluir" id="excl-'+pr.token+'" onclick="pedirExclusao(\''+pr.token+'\','+(part?'\''+part.nome+'\'':'\''+pr.token+'\'')+')">' +
+            'Excluir'+
+          '</button>'+
+        '</div>';
+    });
+    document.getElementById("gerencialLista").innerHTML = html;
+  }
+
+  // ── EXCLUSÃO ────────────────────────────────────────────────
+  function pedirExclusao(token, nome) {
+    tokenParaExcluir = token;
+    document.getElementById("confirmMsg").textContent =
+      "Deseja excluir a presenca de \"" + nome + "\"? Esta acao nao pode ser desfeita.";
+    document.getElementById("confirmOverlay").classList.add("aberto");
+  }
+
+  function fecharConfirm() {
+    tokenParaExcluir = null;
+    document.getElementById("confirmOverlay").classList.remove("aberto");
+  }
+
+  function confirmarExclusao() {
+    if (!tokenParaExcluir) return;
+    var token = tokenParaExcluir;
+    var btn   = document.getElementById("btnConfirmarExcluir");
+    btn.disabled = true; btn.textContent = "Excluindo...";
+
+    // RLS precisa de policy de DELETE para anon
+    fetch(SUPA_URL + "/presencas?token=eq." + encodeURIComponent(token), {
+      method: "DELETE",
+      headers: { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY }
+    })
+    .then(function(r) {
+      if (r.status === 204 || r.status === 200) {
+        // Remove do estado local
+        dadosPresencas = dadosPresencas.filter(function(p){ return p.token !== token; });
+        fecharConfirm();
+        renderizarGerencial();
+        renderizarDashboard();
+      } else {
+        return r.text().then(function(t){ throw new Error(t); });
+      }
+    })
+    .catch(function(err) {
+      alert("Erro ao excluir: " + err.message);
+    })
+    .finally(function() {
+      btn.disabled = false; btn.textContent = "Excluir";
+    });
+  }
+
+  // ── INIT ────────────────────────────────────────────────────
   carregar().then(function(ok){ if (ok) renderizarDashboard(); });
-  setInterval(function(){ if (!palestraAtual) recarregar(); }, 60000);
+  setInterval(function(){ if (telaAtual==="dashboard" && !palestraAtual) recarregar(); }, 60000);
 </script>
 </body>
 </html>
