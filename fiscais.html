@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciar Fiscais</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--text:#e8eaf0;--muted:#6b7280;--radius:14px;--menu-h:60px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:var(--menu-h);}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%);pointer-events:none;}
+
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
+    .topbar h1{font-size:17px;font-weight:700;flex:1;}
+
+    /* CONTENT */
+    .content{max-width:640px;margin:0 auto;padding:20px;}
+
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;}
+    .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:16px;}
+
+    /* FORM ADICIONAR */
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+    @media(max-width:480px){.form-row{grid-template-columns:1fr;}}
+    label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+    input,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;}
+    input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12);}
+    select option{background:var(--surface);}
+
+    .btn{padding:11px 18px;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .2s,transform .1s;display:inline-flex;align-items:center;gap:6px;}
+    .btn:active{transform:scale(.97);}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+    .btn-full{width:100%;justify-content:center;padding:13px;}
+
+    /* LISTA FISCAIS */
+    .fiscal-row{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:border-color .2s;}
+    .fiscal-row:last-child{margin-bottom:0;}
+    .fiscal-info{flex:1;min-width:0;}
+    .fiscal-nome{font-size:14px;font-weight:600;}
+    .fiscal-email{font-size:12px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+    .badge-perfil{flex-shrink:0;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;}
+    .badge-gerente{background:rgba(124,58,237,.15);color:#c4b5fd;border:1px solid rgba(124,58,237,.25);}
+    .badge-fiscal{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.2);}
+    .fiscal-acoes{display:flex;gap:6px;flex-shrink:0;}
+    .btn-sm{padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;}
+    .btn-editar{background:var(--surface2);color:var(--text);}
+    .btn-editar:hover{background:var(--border);}
+    .btn-remover{background:rgba(239,68,68,.1);color:#fca5a5;}
+    .btn-remover:hover{background:rgba(239,68,68,.2);}
+
+    /* ESTADO */
+    .estado{text-align:center;padding:32px;color:var(--muted);font-size:14px;}
+
+    /* MSG */
+    .msg{padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
+    .msg.sucesso{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);display:block;}
+    .msg.erro{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.2);display:block;}
+
+    /* CONFIRM */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+    .confirm-overlay.aberto{display:flex;}
+    .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:360px;width:100%;}
+    .confirm-titulo{font-size:16px;font-weight:700;margin-bottom:8px;}
+    .confirm-msg{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+    .confirm-acoes{display:flex;gap:8px;}
+    .btn-cancelar{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .btn-confirmar{flex:1;background:var(--danger);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Gerenciar Fiscais</h1>
+</div>
+
+<div class="content">
+
+  <div class="msg" id="msg"></div>
+
+  <!-- ADICIONAR -->
+  <div class="card">
+    <div class="card-title">Adicionar fiscal</div>
+    <div class="form-row">
+      <div>
+        <label for="addNome">Nome</label>
+        <input type="text" id="addNome" placeholder="Nome completo"/>
+      </div>
+      <div>
+        <label for="addEmail">E-mail</label>
+        <input type="email" id="addEmail" placeholder="email@exemplo.com"/>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label for="addPerfil">Perfil</label>
+      <select id="addPerfil">
+        <option value="fiscal">Fiscal</option>
+        <option value="gerente">Gerente</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" id="btnAdicionar" onclick="adicionar()">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14M5 12h14"/></svg>
+      Adicionar
+    </button>
+  </div>
+
+  <!-- LISTA -->
+  <div class="card">
+    <div class="card-title">Fiscais cadastrados</div>
+    <div id="listaFiscais">
+      <div class="estado">Carregando...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONFIRM REMOVER -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-titulo">Remover fiscal?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-acoes">
+      <button class="btn-cancelar" onclick="fecharConfirm()">Cancelar</button>
+      <button class="btn-confirmar" onclick="confirmarRemocao()">Remover</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENU GLOBAL -->
+<script src="menu.js"></script>
+
+<script>
+  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
+  var KEY_EMAIL  = "fiscal_email";
+  var KEY_PERFIL = "fiscal_perfil";
+
+  function h() { return {"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"return=representation"}; }
+
+  var emailParaRemover = null;
+
+  window.onload = function() {
+    // Só gerente acessa
+    if (localStorage.getItem(KEY_PERFIL) !== "gerente") {
+      window.location.href = "index.html";
+      return;
+    }
+    carregarFiscais();
+  };
+
+  function carregarFiscais() {
+    fetch(SUPA_URL + "/validadores?select=email,nome,perfil&order=perfil.asc,nome.asc", { headers: h() })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) {
+          document.getElementById("listaFiscais").innerHTML = '<div class="estado">Nenhum fiscal cadastrado.</div>';
+          return;
+        }
+        renderizarLista(data);
+      })
+      .catch(function(){ document.getElementById("listaFiscais").innerHTML = '<div class="estado">Erro ao carregar.</div>'; });
+  }
+
+  function renderizarLista(lista) {
+    var html = "";
+    lista.forEach(function(f) {
+      var isGerente = f.perfil === "gerente";
+      html +=
+        '<div class="fiscal-row">'+
+          '<div class="fiscal-info">'+
+            '<div class="fiscal-nome">'+(f.nome||"Sem nome")+'</div>'+
+            '<div class="fiscal-email">'+f.email+'</div>'+
+          '</div>'+
+          '<span class="badge-perfil '+(isGerente?"badge-gerente":"badge-fiscal")+'">'+
+            (isGerente?"Gerente":"Fiscal")+
+          '</span>'+
+          '<div class="fiscal-acoes">'+
+            '<button class="btn-sm btn-remover" onclick="pedirRemocao(\''+f.email+'\',\''+(f.nome||f.email)+'\')">Remover</button>'+
+          '</div>'+
+        '</div>';
+    });
+    document.getElementById("listaFiscais").innerHTML = html;
+  }
+
+  function adicionar() {
+    var nome   = document.getElementById("addNome").value.trim();
+    var email  = document.getElementById("addEmail").value.trim().toLowerCase();
+    var perfil = document.getElementById("addPerfil").value;
+    var btn    = document.getElementById("btnAdicionar");
+
+    if (!email) { mostrarMsg("Informe o e-mail.", true); return; }
+
+    btn.disabled = true;
+
+    fetch(SUPA_URL + "/validadores", {
+      method: "POST",
+      headers: h(),
+      body: JSON.stringify({ email: email, nome: nome, perfil: perfil })
+    })
+    .then(function(r) {
+      if (r.status === 201) return r.json();
+      if (r.status === 409) throw new Error("E-mail ja cadastrado.");
+      return r.json().then(function(d){ throw new Error(d.message||"Erro"); });
+    })
+    .then(function() {
+      document.getElementById("addNome").value  = "";
+      document.getElementById("addEmail").value = "";
+      mostrarMsg("Fiscal adicionado com sucesso!");
+      carregarFiscais();
+    })
+    .catch(function(err){ mostrarMsg(err.message, true); })
+    .finally(function(){ btn.disabled = false; });
+  }
+
+  function pedirRemocao(email, nome) {
+    emailParaRemover = email;
+    document.getElementById("confirmMsg").textContent = "Deseja remover " + nome + " (" + email + ")?";
+    document.getElementById("confirmOverlay").classList.add("aberto");
+  }
+
+  function fecharConfirm() {
+    emailParaRemover = null;
+    document.getElementById("confirmOverlay").classList.remove("aberto");
+  }
+
+  function confirmarRemocao() {
+    if (!emailParaRemover) return;
+    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(emailParaRemover), {
+      method: "DELETE",
+      headers: { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY }
+    })
+    .then(function(r) {
+      if (r.status === 204 || r.status === 200) {
+        mostrarMsg("Fiscal removido.");
+        fecharConfirm();
+        carregarFiscais();
+      } else {
+        throw new Error("Erro ao remover.");
+      }
+    })
+    .catch(function(err){ mostrarMsg(err.message, true); fecharConfirm(); });
+  }
+
+  function mostrarMsg(texto, erro) {
+    var el = document.getElementById("msg");
+    el.textContent = texto;
+    el.className   = "msg " + (erro ? "erro" : "sucesso");
+    setTimeout(function(){ el.className = "msg"; }, 4000);
+  }
+
+  document.getElementById("addEmail").addEventListener("keydown", function(e){ if(e.key==="Enter") adicionar(); });
+</script>
+
+</body>
+</html>
