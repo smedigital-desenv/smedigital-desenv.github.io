@@ -162,6 +162,9 @@
     .grupo-corpo.aberto{display:block;}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .btn-excluir-inline{flex-shrink:0;background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;margin-left:4px;}
+    .btn-excluir-inline:hover{background:rgba(239,68,68,.22);}
+    .acoes-presente{display:flex;align-items:center;gap:4px;}
     .fadeUp{animation:fadeUp .2s ease both;}
     @media(max-width:480px){.content{padding:12px;}.resumo-card .valor{font-size:22px;}.num-item .n{font-size:16px;}}
   </style>
@@ -472,15 +475,13 @@
   function toggleGerencial() {
     if (telaAtual === "gerencial") {
       telaAtual = "dashboard";
-      document.getElementById("tela-dashboard").style.display  = "block";
-      document.getElementById("tela-gerencial").style.display  = "none";
-      document.getElementById("topTitle").textContent          = "Dashboard de Presencas";
+      document.getElementById("tela-dashboard").style.display = "block";
+      document.getElementById("tela-gerencial").style.display = "none";
       document.getElementById("btnGerencial").classList.remove("ativo");
     } else {
       telaAtual = "gerencial";
-      document.getElementById("tela-dashboard").style.display  = "none";
-      document.getElementById("tela-gerencial").style.display  = "block";
-      document.getElementById("topTitle").textContent          = "Gerenciar Presencas";
+      document.getElementById("tela-dashboard").style.display = "none";
+      document.getElementById("tela-gerencial").style.display = "block";
       document.getElementById("btnGerencial").classList.add("ativo");
       document.getElementById("gerencialBusca").value = "";
       renderizarGerencial();
@@ -599,6 +600,15 @@
     document.getElementById("confirmOverlay").classList.remove("aberto");
   }
 
+  function pedirExclusaoInline(btn) {
+    var token = btn.getAttribute("data-token");
+    var nome  = btn.getAttribute("data-nome");
+    tokenParaExcluir = token;
+    document.getElementById("confirmMsg").textContent =
+      "Excluir a presenca de " + nome + "? Esta acao nao pode ser desfeita.";
+    document.getElementById("confirmOverlay").classList.add("aberto");
+  }
+
   function confirmarExclusao() {
     if (!tokenParaExcluir) return;
     var token = tokenParaExcluir;
@@ -615,8 +625,10 @@
         // Remove do estado local
         dadosPresencas = dadosPresencas.filter(function(p){ return p.token !== token; });
         fecharConfirm();
-        renderizarGerencial();
         renderizarDashboard();
+        if (telaAtual === "gerencial") renderizarGerencial();
+        // Atualiza o modal se estiver aberto
+        if (palestraAtual) renderizarLista();
       } else {
         return r.text().then(function(t){ throw new Error(t); });
       }
