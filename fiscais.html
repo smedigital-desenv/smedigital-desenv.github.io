@@ -6,23 +6,19 @@
   <title>Gerenciar Fiscais</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--text:#e8eaf0;--muted:#6b7280;--radius:14px;--menu-h:60px;}
+    :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--danger:#ef4444;--text:#e8eaf0;--muted:#6b7280;--radius:14px;--menu-h:60px;}
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:var(--menu-h);}
     body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%);pointer-events:none;}
 
-    /* TOPBAR */
-    .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
-    .topbar h1{font-size:17px;font-weight:700;flex:1;}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;}
+    .topbar h1{font-size:17px;font-weight:700;}
 
-    /* CONTENT */
     .content{max-width:640px;margin:0 auto;padding:20px;}
 
-    /* CARD */
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;}
     .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:16px;}
 
-    /* FORM ADICIONAR */
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
     @media(max-width:480px){.form-row{grid-template-columns:1fr;}}
     label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
@@ -36,8 +32,8 @@
     .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
     .btn-full{width:100%;justify-content:center;padding:13px;}
 
-    /* LISTA FISCAIS */
-    .fiscal-row{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:border-color .2s;}
+    /* LISTA */
+    .fiscal-row{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
     .fiscal-row:last-child{margin-bottom:0;}
     .fiscal-info{flex:1;min-width:0;}
     .fiscal-nome{font-size:14px;font-weight:600;}
@@ -46,26 +42,38 @@
     .badge-gerente{background:rgba(124,58,237,.15);color:#c4b5fd;border:1px solid rgba(124,58,237,.25);}
     .badge-fiscal{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.2);}
     .fiscal-acoes{display:flex;gap:6px;flex-shrink:0;}
-    .btn-sm{padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;}
-    .select-perfil{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;}
-    .select-perfil{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;cursor:pointer;}
-    .select-perfil:focus{border-color:var(--accent);}
-    .select-perfil:disabled{opacity:.5;cursor:not-allowed;}
-    .select-perfil:focus{border-color:var(--accent);}
+    .btn-sm{padding:7px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;display:inline-flex;align-items:center;gap:5px;}
+    .btn-sm svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .btn-sm:disabled{opacity:.4;cursor:not-allowed;}
     .btn-editar{background:var(--surface2);color:var(--text);}
     .btn-editar:hover{background:var(--border);}
     .btn-remover{background:rgba(239,68,68,.1);color:#fca5a5;}
     .btn-remover:hover{background:rgba(239,68,68,.2);}
 
-    /* ESTADO */
     .estado{text-align:center;padding:32px;color:var(--muted);font-size:14px;}
 
-    /* MSG */
     .msg{padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
     .msg.sucesso{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);display:block;}
     .msg.erro{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.2);display:block;}
 
-    /* CONFIRM */
+    /* MODAL EDITAR */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:150;display:none;align-items:flex-end;justify-content:center;}
+    .modal-overlay.aberto{display:flex;}
+    @media(min-width:520px){.modal-overlay{align-items:center;}}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px;animation:slideUp .25s ease both;}
+    @media(min-width:520px){.modal{border-radius:var(--radius);}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .modal-titulo{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+    .btn-fechar{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+    .btn-fechar svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .modal-field{margin-bottom:14px;}
+    .modal-field:last-of-type{margin-bottom:0;}
+    .modal-acoes{display:flex;gap:8px;margin-top:20px;}
+    .btn-modal-cancelar{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .btn-modal-salvar{flex:2;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;}
+    .btn-modal-salvar:disabled{opacity:.4;cursor:not-allowed;}
+
+    /* CONFIRM REMOVER */
     .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
     .confirm-overlay.aberto{display:flex;}
     .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:360px;width:100%;}
@@ -83,7 +91,6 @@
 </div>
 
 <div class="content">
-
   <div class="msg" id="msg"></div>
 
   <!-- ADICIONAR -->
@@ -115,11 +122,39 @@
   <!-- LISTA -->
   <div class="card">
     <div class="card-title">Fiscais cadastrados</div>
-    <div id="listaFiscais">
-      <div class="estado">Carregando...</div>
+    <div id="listaFiscais"><div class="estado">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modalOverlay" onclick="fecharModalSeFora(event)">
+  <div class="modal">
+    <div class="modal-titulo">
+      Editar fiscal
+      <button class="btn-fechar" onclick="fecharModal()">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-field">
+      <label for="editNome">Nome</label>
+      <input type="text" id="editNome" placeholder="Nome completo"/>
+    </div>
+    <div class="modal-field">
+      <label for="editEmail">E-mail</label>
+      <input type="email" id="editEmail" placeholder="email@exemplo.com"/>
+    </div>
+    <div class="modal-field">
+      <label for="editPerfil">Perfil</label>
+      <select id="editPerfil">
+        <option value="fiscal">Fiscal</option>
+        <option value="gerente">Gerente</option>
+      </select>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-modal-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-modal-salvar" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar alterações</button>
     </div>
   </div>
-
 </div>
 
 <!-- CONFIRM REMOVER -->
@@ -134,21 +169,20 @@
   </div>
 </div>
 
-<!-- MENU GLOBAL -->
 <script src="menu.js"></script>
 
 <script>
-  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
-  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
-  var KEY_EMAIL  = "fiscal_email";
+  var SUPA_URL   = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
   var KEY_PERFIL = "fiscal_perfil";
 
   function h() { return {"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"return=representation"}; }
 
-  var emailParaRemover = null;
+  var _lista           = [];
+  var _emailEditando   = null;
+  var _emailRemovendo  = null;
 
   window.onload = function() {
-    // Só gerente acessa
     if (localStorage.getItem(KEY_PERFIL) !== "gerente") {
       window.location.href = "index.html";
       return;
@@ -156,6 +190,7 @@
     carregarFiscais();
   };
 
+  // ── CARREGAR ────────────────────────────────────────────────
   function carregarFiscais() {
     fetch(SUPA_URL + "/validadores?select=email,nome,perfil&order=perfil.asc,nome.asc", { headers: h() })
       .then(function(r){ return r.json(); })
@@ -164,81 +199,120 @@
           document.getElementById("listaFiscais").innerHTML = '<div class="estado">Nenhum fiscal cadastrado.</div>';
           return;
         }
-        renderizarLista(data);
+        _lista = data;
+        renderizarLista();
       })
-      .catch(function(){ document.getElementById("listaFiscais").innerHTML = '<div class="estado">Erro ao carregar.</div>'; });
+      .catch(function(){
+        document.getElementById("listaFiscais").innerHTML = '<div class="estado">Erro ao carregar.</div>';
+      });
   }
 
-  var _listaFiscais = [];
-
-  function renderizarLista(lista) {
-    _listaFiscais = lista;
+  // ── RENDERIZAR ──────────────────────────────────────────────
+  function renderizarLista() {
     var emailLogado = localStorage.getItem("fiscal_email") || "";
     var html = "";
 
-    lista.forEach(function(f, idx) {
+    _lista.forEach(function(f, idx) {
       var isGerente = f.perfil === "gerente";
       var ehEuMesmo = f.email === emailLogado;
       var nome      = f.nome || "Sem nome";
 
-      html += '<div class="fiscal-row">';
-      html +=   '<div class="fiscal-info">';
-      html +=     '<div class="fiscal-nome">' + nome;
-      if (ehEuMesmo) html += ' <span style="font-size:10px;color:var(--muted)">(voce)</span>';
-      html +=     '</div>';
-      html +=     '<div class="fiscal-email">' + f.email + '</div>';
-      html +=   '</div>';
+      html += "<div class=\"fiscal-row\">";
+      html +=   "<div class=\"fiscal-info\">";
+      html +=     "<div class=\"fiscal-nome\">" + nome;
+      if (ehEuMesmo) html += " <span style=\"font-size:10px;color:var(--muted)\">(voce)</span>";
+      html +=     "</div>";
+      html +=     "<div class=\"fiscal-email\">" + f.email + "</div>";
+      html +=   "</div>";
 
-      var selDisabled = ehEuMesmo ? " disabled" : "";
-      var selFiscal   = isGerente ? "" : " selected";
-      var selGerente  = isGerente ? " selected" : "";
-      html += "<select class=\"select-perfil\" data-idx=\"" + idx + "\" onchange=\"alterarPerfilIdx(this)\"" + selDisabled + ">";
-      html += "<option value=\"fiscal\"" + selFiscal + ">Fiscal</option>";
-      html += "<option value=\"gerente\"" + selGerente + ">Gerente</option>";
-      html += "</select>";
+      // Badge de perfil
+      var badgeClass = isGerente ? "badge-gerente" : "badge-fiscal";
+      var badgeLabel = isGerente ? "Gerente" : "Fiscal";
+      html += "<span class=\"badge-perfil " + badgeClass + "\">" + badgeLabel + "</span>";
 
-      html += '<div class="fiscal-acoes">';
-      html += '<button class="btn-sm btn-remover" data-idx="' + idx + '" onclick="pedirRemocaoIdx(this)"';
-      if (ehEuMesmo) html += ' disabled';
-      html += '>Remover</button>';
-      html += '</div>';
-      html += '</div>';
+      html += "<div class=\"fiscal-acoes\">";
+
+      // Botão editar
+      html += "<button class=\"btn-sm btn-editar\" data-idx=\"" + idx + "\" onclick=\"abrirModal(this)\">";
+      html += "<svg viewBox=\"0 0 24 24\"><path d=\"M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg>";
+      html += "Editar</button>";
+
+      // Botão remover
+      html += "<button class=\"btn-sm btn-remover\" data-idx=\"" + idx + "\" onclick=\"pedirRemocaoIdx(this)\"";
+      if (ehEuMesmo) html += " disabled";
+      html += ">Remover</button>";
+
+      html += "</div>";
+      html += "</div>";
     });
 
     document.getElementById("listaFiscais").innerHTML = html;
   }
 
-  function alterarPerfilIdx(select) {
-    var idx       = parseInt(select.getAttribute("data-idx"));
-    var fiscal    = _listaFiscais[idx];
-    var novoPerfil = select.value;
-    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(fiscal.email), {
+  // ── MODAL EDITAR ────────────────────────────────────────────
+  function abrirModal(btn) {
+    var idx    = parseInt(btn.getAttribute("data-idx"));
+    var fiscal = _lista[idx];
+    _emailEditando = fiscal.email;
+
+    document.getElementById("editNome").value  = fiscal.nome   || "";
+    document.getElementById("editEmail").value = fiscal.email  || "";
+    document.getElementById("editPerfil").value= fiscal.perfil || "fiscal";
+
+    // Bloqueia alteração de perfil/email do próprio usuário logado
+    var ehEuMesmo = fiscal.email === (localStorage.getItem("fiscal_email") || "");
+    document.getElementById("editPerfil").disabled = ehEuMesmo;
+
+    document.getElementById("modalOverlay").classList.add("aberto");
+    document.body.style.overflow = "hidden";
+    document.getElementById("editNome").focus();
+  }
+
+  function fecharModal() {
+    _emailEditando = null;
+    document.getElementById("modalOverlay").classList.remove("aberto");
+    document.body.style.overflow = "";
+  }
+
+  function fecharModalSeFora(e) {
+    if (e.target === document.getElementById("modalOverlay")) fecharModal();
+  }
+
+  function salvarEdicao() {
+    if (!_emailEditando) return;
+
+    var novoNome   = document.getElementById("editNome").value.trim();
+    var novoEmail  = document.getElementById("editEmail").value.trim().toLowerCase();
+    var novoPerfil = document.getElementById("editPerfil").value;
+    var btn        = document.getElementById("btnSalvarEdicao");
+
+    if (!novoEmail) { mostrarMsg("Informe o e-mail.", true); return; }
+
+    btn.disabled    = true;
+    btn.textContent = "Salvando...";
+
+    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(_emailEditando), {
       method: "PATCH",
       headers: h(),
-      body: JSON.stringify({ perfil: novoPerfil })
+      body: JSON.stringify({ nome: novoNome, email: novoEmail, perfil: novoPerfil })
     })
     .then(function(r) {
       if (r.status === 200 || r.status === 204) {
-        mostrarMsg("Perfil de " + fiscal.email + " alterado para " + novoPerfil + ".");
+        mostrarMsg("Fiscal atualizado com sucesso!");
+        fecharModal();
+        carregarFiscais();
       } else {
-        return r.json().then(function(d){ throw new Error(d.message || "Erro ao alterar"); });
+        return r.json().then(function(d){ throw new Error(d.message || "Erro ao salvar"); });
       }
     })
-    .catch(function(err) {
-      mostrarMsg("Erro: " + err.message, true);
-      carregarFiscais();
+    .catch(function(err){ mostrarMsg("Erro: " + err.message, true); })
+    .finally(function(){
+      btn.disabled    = false;
+      btn.textContent = "Salvar alteracoes";
     });
   }
 
-  function pedirRemocaoIdx(btn) {
-    var idx    = parseInt(btn.getAttribute("data-idx"));
-    var fiscal = _listaFiscais[idx];
-    pedirRemocao(fiscal.email, fiscal.nome || fiscal.email);
-  }
-
-
-
-
+  // ── ADICIONAR ───────────────────────────────────────────────
   function adicionar() {
     var nome   = document.getElementById("addNome").value.trim();
     var email  = document.getElementById("addEmail").value.trim().toLowerCase();
@@ -246,7 +320,6 @@
     var btn    = document.getElementById("btnAdicionar");
 
     if (!email) { mostrarMsg("Informe o e-mail.", true); return; }
-
     btn.disabled = true;
 
     fetch(SUPA_URL + "/validadores", {
@@ -257,7 +330,7 @@
     .then(function(r) {
       if (r.status === 201) return r.json();
       if (r.status === 409) throw new Error("E-mail ja cadastrado.");
-      return r.json().then(function(d){ throw new Error(d.message||"Erro"); });
+      return r.json().then(function(d){ throw new Error(d.message || "Erro"); });
     })
     .then(function() {
       document.getElementById("addNome").value  = "";
@@ -269,20 +342,24 @@
     .finally(function(){ btn.disabled = false; });
   }
 
-  function pedirRemocao(email, nome) {
-    emailParaRemover = email;
-    document.getElementById("confirmMsg").textContent = "Deseja remover " + nome + " (" + email + ")?";
+  // ── REMOVER ─────────────────────────────────────────────────
+  function pedirRemocaoIdx(btn) {
+    var idx    = parseInt(btn.getAttribute("data-idx"));
+    var fiscal = _lista[idx];
+    _emailRemovendo = fiscal.email;
+    document.getElementById("confirmMsg").textContent =
+      "Deseja remover " + (fiscal.nome || fiscal.email) + "?";
     document.getElementById("confirmOverlay").classList.add("aberto");
   }
 
   function fecharConfirm() {
-    emailParaRemover = null;
+    _emailRemovendo = null;
     document.getElementById("confirmOverlay").classList.remove("aberto");
   }
 
   function confirmarRemocao() {
-    if (!emailParaRemover) return;
-    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(emailParaRemover), {
+    if (!_emailRemovendo) return;
+    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(_emailRemovendo), {
       method: "DELETE",
       headers: { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY }
     })
@@ -298,6 +375,7 @@
     .catch(function(err){ mostrarMsg(err.message, true); fecharConfirm(); });
   }
 
+  // ── UTILS ────────────────────────────────────────────────────
   function mostrarMsg(texto, erro) {
     var el = document.getElementById("msg");
     el.textContent = texto;
@@ -306,6 +384,8 @@
   }
 
   document.getElementById("addEmail").addEventListener("keydown", function(e){ if(e.key==="Enter") adicionar(); });
+  document.getElementById("editNome").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("editEmail").focus(); });
+  document.getElementById("editEmail").addEventListener("keydown", function(e){ if(e.key==="Enter") salvarEdicao(); });
 </script>
 
 </body>
