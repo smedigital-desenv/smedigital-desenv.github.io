@@ -129,11 +129,15 @@
     .catch(function(){ if (callback) callback(false, null); });
   };
 
-  // Renderiza ao carregar
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderMenu);
-  } else {
-    renderMenu();
+  // Renderiza assim que o body estiver disponível
+  // Como o script é carregado logo após <body>, pode precisar aguardar
+  function tentarRenderMenu() {
+    if (document.body) {
+      renderMenu();
+    } else {
+      document.addEventListener("DOMContentLoaded", renderMenu);
+    }
   }
+  tentarRenderMenu();
 
 })();
