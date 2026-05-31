@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurar E-mail</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#212536;--border:#2a2d3a;--accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--text:#e8eaf0;--muted:#6b7280;--radius:14px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%);pointer-events:none;}
+
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
+    .topbar h1{font-size:17px;font-weight:700;flex:1;}
+    .btn-salvar{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;}
+    .btn-salvar:hover{opacity:.9;}
+    .btn-salvar:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-salvar svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px;margin:0 auto;padding:20px;}
+    @media(max-width:700px){.layout{grid-template-columns:1fr;}}
+
+    .painel{display:flex;flex-direction:column;gap:12px;}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+    .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:16px;}
+
+    .field{margin-bottom:14px;}
+    .field:last-child{margin-bottom:0;}
+    label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+    .hint{font-size:11px;color:var(--muted);margin-top:5px;}
+    .hint code{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);}
+
+    input[type="text"],input[type="color"],textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical;}
+    input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12);}
+    textarea{min-height:90px;line-height:1.5;}
+
+    .cor-wrap{display:flex;align-items:center;gap:10px;}
+    input[type="color"]{width:44px;height:44px;padding:4px;border-radius:10px;cursor:pointer;flex-shrink:0;}
+    .cor-hex{flex:1;}
+
+    /* PREVIEW */
+    .preview-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;}
+    .preview-wrap{background:#f4f4f4;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+    .preview-email{font-family:Arial,sans-serif;max-width:100%;background:#f4f4f4;padding:24px;}
+    .preview-inner{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+    .preview-header{padding:28px 32px;text-align:center;}
+    .preview-header h2{color:#fff;font-size:20px;margin:0;}
+    .preview-body{padding:28px 32px;}
+    .preview-body p{color:#333;font-size:15px;line-height:1.7;margin:0 0 16px;}
+    .preview-body p:last-child{margin:0;}
+    .preview-footer{padding:16px 32px;background:#f9f9f9;border-top:1px solid #eee;text-align:center;}
+    .preview-footer p{color:#888;font-size:13px;margin:0;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;display:none;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+    .toast.erro{background:var(--danger, #ef4444);}
+    .toast.visivel{display:block;animation:fadeUp .2s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Configurar E-mail de Confirmacao</h1>
+  <button class="btn-salvar" id="btnSalvar" onclick="salvar()">
+    <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+    Salvar
+  </button>
+</div>
+
+<div class="layout">
+
+  <!-- PAINEL ESQUERDO: configurações -->
+  <div class="painel">
+
+    <div class="card">
+      <div class="card-title">Identidade</div>
+
+      <div class="field">
+        <label for="nomeEvento">Nome do evento</label>
+        <input type="text" id="nomeEvento" placeholder="Ex: Semana Pedagogica 2025"/>
+      </div>
+
+      <div class="field">
+        <label>Cor principal</label>
+        <div class="cor-wrap">
+          <input type="color" id="corPicker" value="#1976d2" oninput="sincronizarCor('picker')"/>
+          <input type="text"  id="corHex"    value="#1976d2" class="cor-hex" placeholder="#1976d2" oninput="sincronizarCor('hex')"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Conteudo do e-mail</div>
+
+      <div class="field">
+        <label for="saudacao">Saudação</label>
+        <input type="text" id="saudacao" placeholder="Olá, {nome}!"/>
+        <div class="hint">Use <code>{nome}</code> para o nome do participante</div>
+      </div>
+
+      <div class="field">
+        <label for="mensagem">Mensagem principal</label>
+        <textarea id="mensagem" rows="4" placeholder="Sua presença na palestra {palestra} foi confirmada."></textarea>
+        <div class="hint">Variáveis: <code>{nome}</code> <code>{palestra}</code> <code>{token}</code></div>
+      </div>
+
+      <div class="field">
+        <label for="rodape">Rodapé</label>
+        <input type="text" id="rodape" placeholder="Obrigado pela participação!"/>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAINEL DIREITO: preview -->
+  <div class="painel">
+    <div class="card">
+      <div class="card-title">Preview — como o participante verá</div>
+      <div class="preview-wrap">
+        <div class="preview-email">
+          <div class="preview-inner">
+            <div class="preview-header" id="pvHeader" style="background:#1976d2;">
+              <h2 id="pvNomeEvento">Evento</h2>
+            </div>
+            <div class="preview-body">
+              <p id="pvSaudacao">Olá, Participante!</p>
+              <p id="pvMensagem">Sua presença na palestra <strong>Tecnologias na Educação</strong> foi confirmada com sucesso.</p>
+            </div>
+            <div class="preview-footer">
+              <p id="pvRodape">Obrigado pela participação!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
+  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
+
+  function h() { return { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json", "Prefer": "return=representation" }; }
+
+  // ── CARREGAR CONFIG ──────────────────────────────────────────
+  window.onload = function() {
+    fetch(SUPA_URL + "/email_config?id=eq.1&limit=1", { headers: h() })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) return;
+        var c = data[0];
+        document.getElementById("nomeEvento").value = c.nome_evento  || "";
+        document.getElementById("saudacao").value   = c.saudacao     || "";
+        document.getElementById("mensagem").value   = c.mensagem     || "";
+        document.getElementById("rodape").value     = c.rodape       || "";
+        document.getElementById("corHex").value     = c.cor_primaria || "#1976d2";
+        document.getElementById("corPicker").value  = c.cor_primaria || "#1976d2";
+        atualizarPreview();
+      })
+      .catch(function(){ mostrarToast("Erro ao carregar configuracao.", true); });
+  };
+
+  // ── PREVIEW ──────────────────────────────────────────────────
+  function aplicarVariaveis(texto) {
+    return texto
+      .replace(/{nome}/g,     "Maria da Silva")
+      .replace(/{palestra}/g, "<strong>Tecnologias na Educacao</strong>")
+      .replace(/{token}/g,    "EVT000001");
+  }
+
+  function atualizarPreview() {
+    var cor      = document.getElementById("corHex").value   || "#1976d2";
+    var nome     = document.getElementById("nomeEvento").value || "Evento";
+    var saud     = document.getElementById("saudacao").value  || "";
+    var msg      = document.getElementById("mensagem").value  || "";
+    var rod      = document.getElementById("rodape").value    || "";
+
+    document.getElementById("pvHeader").style.background = cor;
+    document.getElementById("pvNomeEvento").textContent  = nome;
+    document.getElementById("pvSaudacao").textContent    = aplicarVariaveis(saud);
+    document.getElementById("pvMensagem").innerHTML      = aplicarVariaveis(msg);
+    document.getElementById("pvRodape").textContent      = rod;
+  }
+
+  // Sincroniza picker <-> hex
+  function sincronizarCor(origem) {
+    var hex    = document.getElementById("corHex");
+    var picker = document.getElementById("corPicker");
+    if (origem === "picker") {
+      hex.value = picker.value;
+    } else {
+      var val = hex.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) picker.value = val;
+    }
+    atualizarPreview();
+  }
+
+  // Atualiza preview em tempo real
+  ["nomeEvento","saudacao","mensagem","rodape"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", atualizarPreview);
+  });
+
+  // ── SALVAR ───────────────────────────────────────────────────
+  function salvar() {
+    var btn = document.getElementById("btnSalvar");
+    btn.disabled = true; btn.textContent = "Salvando...";
+
+    var payload = {
+      id:           1,
+      nome_evento:  document.getElementById("nomeEvento").value.trim(),
+      cor_primaria: document.getElementById("corHex").value.trim() || "#1976d2",
+      saudacao:     document.getElementById("saudacao").value.trim(),
+      mensagem:     document.getElementById("mensagem").value.trim(),
+      rodape:       document.getElementById("rodape").value.trim(),
+      atualizado_em: new Date().toISOString()
+    };
+
+    // Upsert (insert ou update na mesma linha id=1)
+    fetch(SUPA_URL + "/email_config?on_conflict=id", {
+      method:  "POST",
+      headers: h(),
+      body:    JSON.stringify(payload)
+    })
+    .then(function(r) {
+      if (r.status === 200 || r.status === 201) {
+        mostrarToast("Configuracao salva com sucesso!");
+      } else {
+        return r.text().then(function(t){ throw new Error(t); });
+      }
+    })
+    .catch(function(err) {
+      mostrarToast("Erro ao salvar: " + err.message, true);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar';
+    });
+  }
+
+  // ── TOAST ────────────────────────────────────────────────────
+  function mostrarToast(msg, erro) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className   = "toast visivel" + (erro ? " erro" : "");
+    setTimeout(function() { t.className = "toast"; }, 3500);
+  }
+</script>
+</body>
+</html>
