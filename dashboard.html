@@ -162,6 +162,15 @@
     .grupo-corpo.aberto{display:block;}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .acoes-gerente{display:none;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+    .acoes-gerente.visivel{display:flex;}
+    .btn-acao{flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s,border-color .2s;}
+    .btn-acao:hover{background:var(--surface2);}
+    .btn-acao:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-acao svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+    .btn-acao.loading svg{animation:spin 1s linear infinite;}
+    .btn-acao.sucesso{border-color:var(--success);color:#86efac;}
+    .btn-acao.erro{border-color:var(--danger);color:#fca5a5;}
 
     /* TELA EMAILS */
     .email-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
@@ -191,6 +200,19 @@
 
   <!-- TELA DASHBOARD -->
   <div id="tela-dashboard">
+
+    <!-- Ações rápidas — visível só para gerentes -->
+    <div class="acoes-gerente" id="acoesGerente">
+      <button class="btn-acao" id="btnSyncInscritos" onclick="rodarSync()">
+        <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Sync inscritos
+      </button>
+      <button class="btn-acao" id="btnEnviarEmails" onclick="rodarEmails()">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Enviar emails
+      </button>
+    </div>
+
     <div class="resumo">
       <div class="resumo-card"><div class="label">Inscritos</div> <div class="valor cor-total"    id="rTotal">-</div></div>
       <div class="resumo-card"><div class="label">Presentes</div><div class="valor cor-presente" id="rPresentes">-</div></div>
@@ -797,13 +819,65 @@
     document.getElementById("emailsLista").innerHTML = html;
   }
 
+  // ── ACOES RAPIDAS ──────────────────────────────────────────
+  var APPS_URL = "https://script.google.com/macros/s/AKfycbwgn-kasXrfTWULBUe_7chco-O9TUFjFLVtXqkfyBs8WuGHKDLX8hhiENd2r-bly6-E0A/exec";
+
+  function rodarSync() {
+    var btn = document.getElementById("btnSyncInscritos");
+    btn.disabled = true;
+    btn.classList.add("loading");
+    btn.querySelector("span") && (btn.querySelector("span").textContent = "Sincronizando...");
+
+    fetch(APPS_URL + "?action=syncInscritos")
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        btn.classList.remove("loading");
+        btn.classList.add(data.ok ? "sucesso" : "erro");
+        setTimeout(function(){
+          btn.classList.remove("sucesso","erro");
+          btn.disabled = false;
+        }, 3000);
+        if (data.ok) recarregar();
+      })
+      .catch(function() {
+        btn.classList.remove("loading");
+        btn.classList.add("erro");
+        setTimeout(function(){ btn.classList.remove("erro"); btn.disabled = false; }, 3000);
+      });
+  }
+
+  function rodarEmails() {
+    var btn = document.getElementById("btnEnviarEmails");
+    btn.disabled = true;
+    btn.classList.add("loading");
+
+    fetch(APPS_URL + "?action=enviarEmails")
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        btn.classList.remove("loading");
+        btn.classList.add(data.ok ? "sucesso" : "erro");
+        setTimeout(function(){
+          btn.classList.remove("sucesso","erro");
+          btn.disabled = false;
+        }, 3000);
+        if (data.ok && telaEmailsAberta) carregarEmails();
+      })
+      .catch(function() {
+        btn.classList.remove("loading");
+        btn.classList.add("erro");
+        setTimeout(function(){ btn.classList.remove("erro"); btn.disabled = false; }, 3000);
+      });
+  }
+
   // ── INIT ────────────────────────────────────────────────────
-  // Exibe botões de gerente
+  // Exibe elementos exclusivos de gerente
   if (localStorage.getItem("fiscal_perfil") === "gerente") {
     var btnG = document.getElementById("btnGerencial");
     if (btnG) btnG.style.display = "flex";
     var btnE = document.getElementById("btnEmails");
     if (btnE) btnE.style.display = "flex";
+    var acoes = document.getElementById("acoesGerente");
+    if (acoes) acoes.classList.add("visivel");
   }
   carregar().then(function(ok){ if (ok) renderizarDashboard(); });
   setInterval(function(){ if (telaAtual==="dashboard" && !palestraAtual) recarregar(); }, 60000);
