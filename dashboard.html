@@ -162,6 +162,21 @@
     .grupo-corpo.aberto{display:block;}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* TELA EMAILS */
+    .email-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+    .email-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+    .email-row.enviado{border-left:3px solid var(--success);}
+    .email-row.pendente{border-left:3px solid var(--warning);}
+    .email-info{flex:1;min-width:0;}
+    .email-nome{font-size:14px;font-weight:600;}
+    .email-detalhe{font-size:12px;color:var(--muted);margin-top:2px;}
+    .tag-enviado{flex-shrink:0;background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;}
+    .tag-pendente{flex-shrink:0;background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;}
+    .filtros-email{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+    .btn-excluir-inline{flex-shrink:0;background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;margin-left:4px;}
+    .btn-excluir-inline:hover{background:rgba(239,68,68,.22);}
+    .acoes-presente{display:flex;align-items:center;gap:4px;}
     .fadeUp{animation:fadeUp .2s ease both;}
     @media(max-width:480px){.content{padding:12px;}.resumo-card .valor{font-size:22px;}.num-item .n{font-size:16px;}}
   </style>
@@ -169,27 +184,9 @@
 <body>
 
 <!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-center">
-    <h1 id="topTitle">Dashboard de Presencas</h1>
-    <p id="topSub">Carregando...</p>
-  </div>
-  <div class="topbar-actions">
-    <a href="email-config.html" class="btn-icon" title="Configurar e-mail">
-      <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      E-mail
-    </a>
-    <button class="btn-icon" id="btnGerencial" onclick="toggleGerencial()">
-      <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      Gerenciar
-    </button>
-    <button class="btn-icon" id="btnRefresh" onclick="recarregar()">
-      <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-      Atualizar
-    </button>
-  </div>
-</div>
+<!-- topbar removida: navegação feita pelo menu global -->
 
+<script src="menu.js"></script>
 <div class="content">
 
   <!-- TELA DASHBOARD -->
@@ -200,7 +197,23 @@
       <div class="resumo-card"><div class="label">Ausentes</div> <div class="valor cor-ausente"  id="rAusentes">-</div></div>
       <div class="resumo-card"><div class="label">Taxa geral</div><div class="valor cor-taxa"    id="rTaxa">-</div></div>
     </div>
-    <div class="secao-titulo">Por palestra — clique para ver os participantes</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span class="secao-titulo" style="margin-bottom:0">Por palestra</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-icon" id="btnEmails" onclick="toggleEmails()" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          E-mails
+        </button>
+        <button class="btn-icon" id="btnGerencial" onclick="toggleGerencial()" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Gerenciar
+        </button>
+        <button class="btn-icon" id="btnRefresh" onclick="recarregar()">
+          <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          Atualizar
+        </button>
+      </div>
+    </div>
     <div class="palestras-grid" id="palestrasGrid">
       <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
     </div>
@@ -220,6 +233,38 @@
       <input class="busca-input" id="gerencialBusca" type="text" placeholder="Buscar por nome, e-mail ou token..." oninput="renderizarGerencial()"/>
     </div>
     <div id="gerencialLista">
+      <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
+    </div>
+  </div>
+
+
+  <!-- TELA EMAILS -->
+  <div id="tela-emails" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <button onclick="toggleEmails()" style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Voltar ao dashboard
+      </button>
+      <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;">Confirmações por e-mail</span>
+    </div>
+
+    <div class="email-resumo">
+      <div class="resumo-card"><div class="label">Total</div><div class="valor cor-total"    id="emTotal">-</div></div>
+      <div class="resumo-card"><div class="label">Enviados</div><div class="valor cor-presente" id="emEnviados">-</div></div>
+      <div class="resumo-card"><div class="label">Pendentes</div><div class="valor cor-taxa" id="emPendentes">-</div></div>
+    </div>
+
+    <div class="filtros-email">
+      <button class="filtro-btn ativo" id="efTodos"    onclick="filtrarEmails('todos')">Todos</button>
+      <button class="filtro-btn"       id="efEnviados" onclick="filtrarEmails('enviados')">Enviados</button>
+      <button class="filtro-btn"       id="efPendentes" onclick="filtrarEmails('pendentes')">Pendentes</button>
+    </div>
+
+    <div class="gerencial-busca" style="margin-bottom:12px;">
+      <input class="busca-input" id="emailsBusca" type="text" placeholder="Buscar por nome, e-mail ou palestra..." oninput="renderizarEmails()"/>
+    </div>
+
+    <div id="emailsLista">
       <div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>
     </div>
   </div>
@@ -335,7 +380,7 @@
     document.getElementById("rPresentes").textContent = totPres;
     document.getElementById("rAusentes").textContent  = totIns - totPres;
     document.getElementById("rTaxa").textContent      = totIns > 0 ? Math.round(totPres/totIns*100)+"%" : "0%";
-    document.getElementById("topSub").textContent     = dadosPalestras.length + " palestra(s)";
+    // topSub removido
     document.getElementById("atualizado").textContent = "Atualizado em " + new Date().toLocaleString("pt-BR");
 
     var dados = dadosPalestras.map(function(pal){
@@ -478,16 +523,18 @@
   function toggleGerencial() {
     if (telaAtual === "gerencial") {
       telaAtual = "dashboard";
-      document.getElementById("tela-dashboard").style.display  = "block";
-      document.getElementById("tela-gerencial").style.display  = "none";
-      document.getElementById("topTitle").textContent          = "Dashboard de Presencas";
+      document.getElementById("tela-dashboard").style.display = "block";
+      document.getElementById("tela-gerencial").style.display = "none";
       document.getElementById("btnGerencial").classList.remove("ativo");
     } else {
+      // Fecha outras telas
       telaAtual = "gerencial";
-      document.getElementById("tela-dashboard").style.display  = "none";
-      document.getElementById("tela-gerencial").style.display  = "block";
-      document.getElementById("topTitle").textContent          = "Gerenciar Presencas";
+      telaEmailsAberta = false;
+      document.getElementById("tela-emails").style.display    = "none";
+      document.getElementById("tela-dashboard").style.display = "none";
+      document.getElementById("tela-gerencial").style.display = "block";
       document.getElementById("btnGerencial").classList.add("ativo");
+      document.getElementById("btnEmails").classList.remove("ativo");
       document.getElementById("gerencialBusca").value = "";
       renderizarGerencial();
     }
@@ -510,7 +557,7 @@
              pr.token.toLowerCase().indexOf(busca) !== -1;
     });
 
-    document.getElementById("topSub").textContent = lista.length + " presenca(s) registrada(s)";
+    // topSub removido
 
     if (lista.length === 0) {
       document.getElementById("gerencialLista").innerHTML =
@@ -605,6 +652,15 @@
     document.getElementById("confirmOverlay").classList.remove("aberto");
   }
 
+  function pedirExclusaoInline(btn) {
+    var token = btn.getAttribute("data-token");
+    var nome  = btn.getAttribute("data-nome");
+    tokenParaExcluir = token;
+    document.getElementById("confirmMsg").textContent =
+      "Excluir a presenca de " + nome + "? Esta acao nao pode ser desfeita.";
+    document.getElementById("confirmOverlay").classList.add("aberto");
+  }
+
   function confirmarExclusao() {
     if (!tokenParaExcluir) return;
     var token = tokenParaExcluir;
@@ -621,8 +677,10 @@
         // Remove do estado local
         dadosPresencas = dadosPresencas.filter(function(p){ return p.token !== token; });
         fecharConfirm();
-        renderizarGerencial();
         renderizarDashboard();
+        if (telaAtual === "gerencial") renderizarGerencial();
+        // Atualiza o modal se estiver aberto
+        if (palestraAtual) renderizarLista();
       } else {
         return r.text().then(function(t){ throw new Error(t); });
       }
@@ -635,7 +693,117 @@
     });
   }
 
+  // ── EMAILS ─────────────────────────────────────────────────
+  var dadosEmails     = [];   // presenças com info de email_enviado
+  var filtroEmail     = "todos";
+  var telaEmailsAberta = false;
+
+  function toggleEmails() {
+    if (telaEmailsAberta) {
+      telaEmailsAberta = false;
+      telaAtual = "dashboard";
+      document.getElementById("tela-emails").style.display    = "none";
+      document.getElementById("tela-dashboard").style.display = "block";
+      document.getElementById("btnEmails").classList.remove("ativo");
+    } else {
+      telaEmailsAberta = true;
+      telaAtual = "emails";
+      document.getElementById("tela-dashboard").style.display  = "none";
+      document.getElementById("tela-gerencial").style.display  = "none";
+      document.getElementById("tela-emails").style.display     = "block";
+      document.getElementById("btnEmails").classList.add("ativo");
+      document.getElementById("emailsBusca").value = "";
+      filtroEmail = "todos";
+      ["efTodos","efEnviados","efPendentes"].forEach(function(id){ document.getElementById(id).classList.remove("ativo"); });
+      document.getElementById("efTodos").classList.add("ativo");
+      carregarEmails();
+    }
+  }
+
+  function carregarEmails() {
+    document.getElementById("emailsLista").innerHTML =
+      '<div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Carregando...</div>';
+
+    fetch(SUPA_URL + "/presencas?select=token,email_enviado,data_hora,validado_por,participantes(nome,email),palestras(nome)&order=email_enviado.asc,data_hora.desc",
+      { headers: h() })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        dadosEmails = Array.isArray(data) ? data : [];
+        renderizarEmails();
+      })
+      .catch(function(){
+        document.getElementById("emailsLista").innerHTML =
+          '<div class="estado">Erro ao carregar.</div>';
+      });
+  }
+
+  function filtrarEmails(tipo) {
+    filtroEmail = tipo;
+    ["efTodos","efEnviados","efPendentes"].forEach(function(id){ document.getElementById(id).classList.remove("ativo"); });
+    document.getElementById(tipo==="todos"?"efTodos":tipo==="enviados"?"efEnviados":"efPendentes").classList.add("ativo");
+    renderizarEmails();
+  }
+
+  function renderizarEmails() {
+    var busca = document.getElementById("emailsBusca").value.trim().toLowerCase();
+
+    var lista = dadosEmails.filter(function(pr) {
+      if (filtroEmail === "enviados"  && !pr.email_enviado) return false;
+      if (filtroEmail === "pendentes" &&  pr.email_enviado) return false;
+      if (busca) {
+        var nome     = pr.participantes ? pr.participantes.nome.toLowerCase()  : "";
+        var email    = pr.participantes ? pr.participantes.email.toLowerCase() : "";
+        var palestra = pr.palestras     ? pr.palestras.nome.toLowerCase()      : "";
+        if (nome.indexOf(busca)===-1 && email.indexOf(busca)===-1 && palestra.indexOf(busca)===-1) return false;
+      }
+      return true;
+    });
+
+    var total     = dadosEmails.length;
+    var enviados  = dadosEmails.filter(function(p){ return p.email_enviado; }).length;
+    var pendentes = total - enviados;
+
+    document.getElementById("emTotal").textContent    = total;
+    document.getElementById("emEnviados").textContent  = enviados;
+    document.getElementById("emPendentes").textContent = pendentes;
+
+    if (lista.length === 0) {
+      document.getElementById("emailsLista").innerHTML =
+        '<div class="estado"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Nenhum registro encontrado.</div>';
+      return;
+    }
+
+    var html = "";
+    lista.forEach(function(pr) {
+      var nome     = pr.participantes ? pr.participantes.nome  : pr.token;
+      var email    = pr.participantes ? pr.participantes.email : "-";
+      var palestra = pr.palestras     ? pr.palestras.nome      : "-";
+      var dt       = pr.data_hora ? new Date(pr.data_hora).toLocaleString("pt-BR") : "-";
+      var enviado  = pr.email_enviado;
+
+      html += "<div class="email-row " + (enviado ? "enviado" : "pendente") + "">";
+      html +=   "<div class="email-info">";
+      html +=     "<div class="email-nome">" + nome + "</div>";
+      html +=     "<div class="email-detalhe">" + email + " &middot; " + palestra + "</div>";
+      html +=     "<div class="email-detalhe" style="margin-top:2px;font-size:11px;color:var(--muted)">Presença: " + dt + "</div>";
+      html +=   "</div>";
+      html +=   (enviado
+        ? "<span class="tag-enviado">&#10003; Enviado</span>"
+        : "<span class="tag-pendente">Pendente</span>");
+      html += "</div>";
+    });
+
+    document.getElementById("emailsLista").innerHTML = html;
+  }
+
   // ── INIT ────────────────────────────────────────────────────
+  // Exibe botões de gerente
+  if (localStorage.getItem("fiscal_perfil") === "gerente") {
+    var btnG = document.getElementById("btnGerencial");
+    if (btnG) btnG.style.display = "flex";
+    var btnE = document.getElementById("btnEmails");
+    if (btnE) btnE.style.display = "flex";
+  }
   carregar().then(function(ok){ if (ok) renderizarDashboard(); });
   setInterval(function(){ if (telaAtual==="dashboard" && !palestraAtual) recarregar(); }, 60000);
 </script>
