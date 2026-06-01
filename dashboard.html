@@ -822,51 +822,41 @@
   // ── ACOES RAPIDAS ──────────────────────────────────────────
   var APPS_URL = "https://script.google.com/macros/s/AKfycbwgn-kasXrfTWULBUe_7chco-O9TUFjFLVtXqkfyBs8WuGHKDLX8hhiENd2r-bly6-E0A/exec";
 
-  function rodarSync() {
-    var btn = document.getElementById("btnSyncInscritos");
+  function chamarAppsScript(action, btnId, onSucesso) {
+    var btn = document.getElementById(btnId);
     btn.disabled = true;
     btn.classList.add("loading");
-    btn.querySelector("span") && (btn.querySelector("span").textContent = "Sincronizando...");
 
-    fetch(APPS_URL + "?action=syncInscritos")
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
+    // Usa fetch com mode no-cors para evitar bloqueio de CORS
+    // O Apps Script executa mesmo sem retornar resposta legível
+    fetch(APPS_URL + "?action=" + action, { mode: "no-cors" })
+      .then(function() {
         btn.classList.remove("loading");
-        btn.classList.add(data.ok ? "sucesso" : "erro");
+        btn.classList.add("sucesso");
         setTimeout(function(){
-          btn.classList.remove("sucesso","erro");
+          btn.classList.remove("sucesso");
           btn.disabled = false;
         }, 3000);
-        if (data.ok) recarregar();
+        if (onSucesso) setTimeout(onSucesso, 1500);
       })
       .catch(function() {
+        // no-cors sempre resolve — se cair aqui é erro de rede real
         btn.classList.remove("loading");
         btn.classList.add("erro");
         setTimeout(function(){ btn.classList.remove("erro"); btn.disabled = false; }, 3000);
       });
   }
 
-  function rodarEmails() {
-    var btn = document.getElementById("btnEnviarEmails");
-    btn.disabled = true;
-    btn.classList.add("loading");
+  function rodarSync() {
+    chamarAppsScript("syncInscritos", "btnSyncInscritos", function() {
+      recarregar();
+    });
+  }
 
-    fetch(APPS_URL + "?action=enviarEmails")
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
-        btn.classList.remove("loading");
-        btn.classList.add(data.ok ? "sucesso" : "erro");
-        setTimeout(function(){
-          btn.classList.remove("sucesso","erro");
-          btn.disabled = false;
-        }, 3000);
-        if (data.ok && telaEmailsAberta) carregarEmails();
-      })
-      .catch(function() {
-        btn.classList.remove("loading");
-        btn.classList.add("erro");
-        setTimeout(function(){ btn.classList.remove("erro"); btn.disabled = false; }, 3000);
-      });
+  function rodarEmails() {
+    chamarAppsScript("enviarEmails", "btnEnviarEmails", function() {
+      if (telaEmailsAberta) carregarEmails();
+    });
   }
 
   // ── INIT ────────────────────────────────────────────────────
