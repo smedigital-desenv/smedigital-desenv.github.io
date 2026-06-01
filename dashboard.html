@@ -745,7 +745,7 @@
   }
 
   function renderizarEmails() {
-    var busca = document.getElementById("emailsBusca").value.trim().toLowerCase();
+    var busca = document.getElementById('emailsBusca').value.trim().toLowerCase();
 
     var lista = dadosEmails.filter(function(pr) {
       if (filtroEmail === "enviados"  && !pr.email_enviado) return false;
