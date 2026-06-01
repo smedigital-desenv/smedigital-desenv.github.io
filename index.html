@@ -47,6 +47,7 @@
   </style>
 </head>
 <body>
+<script src="menu.js"></script>
 <div class="container">
   <div class="logo">
     <div class="logo-icon">
@@ -114,25 +115,18 @@
     btn.disabled=true; btn.textContent="Verificando...";
     msg.className="msg info"; msg.innerHTML="Verificando autorizacao...";
 
-    fetch(SUPA_URL + "/validadores?email=eq." + encodeURIComponent(email) + "&select=email", { headers: supaHeaders() })
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
-        if (data && data.length > 0) {
-          localStorage.setItem(KEY_EMAIL, email);
-          iniciarSessao(email);
-        } else {
-          msg.className="msg erro"; msg.innerHTML="E-mail nao autorizado.";
-          btn.disabled=false; btn.textContent="Entrar";
-        }
-      })
-      .catch(function(){
-        msg.className="msg erro"; msg.innerHTML="Erro de comunicacao.";
+    verificarECarregarPerfil(email, function(autorizado, dados) {
+      if (autorizado) {
+        iniciarSessao(dados.email, dados.nome || "");
+      } else {
+        msg.className="msg erro"; msg.innerHTML="E-mail nao autorizado.";
         btn.disabled=false; btn.textContent="Entrar";
-      });
+      }
+    });
   }
 
-  function iniciarSessao(email) {
-    document.getElementById("bar-email").textContent    = email;
+  function iniciarSessao(email, nome) {
+    document.getElementById("bar-email").textContent    = nome || email;
     document.getElementById("fiscal-bar").style.display = "flex";
     document.getElementById("etapa-login").style.display= "none";
     document.getElementById("etapa-token").style.display= "block";
