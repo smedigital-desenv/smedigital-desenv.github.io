@@ -1,0 +1,564 @@
+/* ============================================================================
+   admin.js — Painel de Administração de acessos (CENTRAL da rede SME).
+   Visível SOMENTE para super administradores.
+
+   Usa window.AcessoSME (acesso-sme.js) para autenticar e window.ACESSO_SB
+   (cliente Supabase autenticado) para ler/gravar as tabelas sob RLS.
+   ============================================================================ */
+(function () {
+  var SB;            // cliente Supabase autenticado
+  var EU;            // perfil do super admin logado
+  var cachePerfis = [];
+  var cacheSistemas = [];
+
+  // ---- util ----------------------------------------------------------------
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs, html) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var toastT;
+  function toast(msg, err) {
+    var t = $('toast'); t.textContent = msg; t.className = 'toast-box show' + (err ? ' err' : '');
+    clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast-box'; }, 2600);
+  }
+  function erro(e) { console.error(e); toast((e && e.message) || 'Erro inesperado', true); }
+
+  // ---- boot ----------------------------------------------------------------
+  document.addEventListener('acesso-pronto', async function (ev) {
+    var api = ev.detail;
+    SB = window.ACESSO_SB;
+    EU = api.perfil;
+
+    // GATE: só super admin entra no painel.
+    if (!EU || !EU.is_super_admin) {
+      document.documentElement.innerHTML =
+        '<body style="font-family:Inter,sans-serif;background:#f0f4f8;min-height:100vh;display:grid;place-items:center;margin:0;padding:1rem">' +
+        '<div style="background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.12);max-width:440px;padding:2.2rem;text-align:center">' +
+        '<div style="font-size:2.4rem;color:#b45309"><i class="bi bi-shield-lock"></i></div>' +
+        '<h4 style="font-weight:900;color:#002b5e;margin:.6rem 0">Área restrita</h4>' +
+        '<p style="color:#475569;font-size:.9rem">Este painel é exclusivo para administradores da rede.</p>' +
+        '<a href="../index.html" class="btn btn-primary btn-sm">Voltar ao portal</a></div></body>';
+      return;
+    }
+
+    $('me-nome').textContent = EU.nome || 'Administrador';
+    $('me-email').textContent = EU.email || '';
+    $('boot').classList.add('hidden');
+    $('app').classList.remove('hidden');
+
+    bindNav();
+    await Promise.all([carregarPerfis(), carregarSistemas()]);
+    initAcessos();
+    initUsuarios();
+    initEscolas();
+    initCatalogo();
+    initSimular();
+  });
+
+  // ---- navegação entre seções ---------------------------------------------
+  function bindNav() {
+    document.querySelectorAll('.nav-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        document.querySelectorAll('.nav-item').forEach(function (i) { i.classList.remove('active'); });
+        item.classList.add('active');
+        var sec = item.getAttribute('data-sec');
+        ['acessos', 'usuarios', 'escolas', 'catalogo', 'simular'].forEach(function (s) {
+          $('sec-' + s).classList.toggle('hidden', s !== sec);
+        });
+      });
+    });
+  }
+
+  // ---- dados base ----------------------------------------------------------
+  async function carregarPerfis() {
+    var r = await SB.from('perfis').select('id,email,nome,tipo,is_super_admin,ativo').order('nome');
+    if (r.error) return erro(r.error);
+    cachePerfis = r.data || [];
+  }
+  async function carregarSistemas() {
+    var r = await SB.from('sistemas').select('id,slug,nome,url,icone,cor,ordem,ativo').order('ordem');
+    if (r.error) return erro(r.error);
+    cacheSistemas = r.data || [];
+  }
+  function optsPerfis(sel, includeBlank) {
+    sel.innerHTML = (includeBlank ? '<option value="">— selecione —</option>' : '');
+    cachePerfis.forEach(function (p) {
+      var o = el('option', { value: p.id }, esc(p.nome || p.email) + ' · ' + esc(p.email));
+      sel.appendChild(o);
+    });
+  }
+  function optsSistemas(sel) {
+    sel.innerHTML = '';
+    cacheSistemas.forEach(function (s) {
+      sel.appendChild(el('option', { value: s.id }, esc(s.nome) + ' (' + esc(s.slug) + ')'));
+    });
+  }
+
+  /* ==========================================================================
+     SEÇÃO 1 — ACESSOS POR TELA (perfil_tela)
+     ========================================================================== */
+  function initAcessos() {
+    optsSistemas($('ac-sistema'));
+    optsPerfis($('ac-perfil'), true);
+    $('ac-sistema').addEventListener('change', renderMatriz);
+    $('ac-perfil').addEventListener('change', renderMatriz);
+    $('ac-reload').addEventListener('click', renderMatriz);
+    $('ac-salvar').addEventListener('click', salvarAcessos);
+    renderMatriz();
+  }
+
+  async function renderMatriz() {
+    var sistemaId = $('ac-sistema').value;
+    var perfilId = $('ac-perfil').value;
+    var box = $('ac-tabela');
+    $('ac-salvar').disabled = true;
+    $('ac-ctx').textContent = '';
+
+    if (!perfilId) { box.innerHTML = '<div class="empty">Selecione um usuário para liberar telas.</div>'; return; }
+    box.innerHTML = '<div class="loading">Carregando telas…</div>';
+
+    var perfil = cachePerfis.find(function (p) { return String(p.id) === String(perfilId); });
+    var sistema = cacheSistemas.find(function (s) { return String(s.id) === String(sistemaId); });
+    $('ac-ctx').textContent = perfil ? ('— ' + (perfil.nome || perfil.email) + ' em ' + sistema.nome) : '';
+
+    var rt = await SB.from('telas').select('id,slug,nome,ordem').eq('sistema_id', sistemaId).order('ordem');
+    if (rt.error) return erro(rt.error);
+    var telas = rt.data || [];
+
+    if (perfil && perfil.is_super_admin) {
+      box.innerHTML = '<div class="empty"><i class="bi bi-stars"></i> Este usuário é <b>super admin</b>: já tem acesso a tudo, não precisa liberar tela a tela.</div>';
+      return;
+    }
+    if (!telas.length) {
+      box.innerHTML = '<div class="empty">Este sistema ainda não tem telas. Cadastre no <b>Catálogo</b>.</div>';
+      return;
+    }
+
+    var rp = await SB.from('perfil_tela').select('tela_id,pode_ver,pode_editar,pode_exportar').eq('perfil_id', perfilId);
+    if (rp.error) return erro(rp.error);
+    var atual = {};
+    (rp.data || []).forEach(function (x) { atual[x.tela_id] = x; });
+
+    var tbl = el('table');
+    tbl.innerHTML =
+      '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th><th class="chk-col">Exportar</th></tr></thead>';
+    var tb = el('tbody');
+    telas.forEach(function (t) {
+      var a = atual[t.id] || {};
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'));
+      ['ver', 'editar', 'exportar'].forEach(function (acao) {
+        var td = el('td', { class: 'chk-col' });
+        var chk = el('input', { type: 'checkbox', class: 'form-check-input', 'data-tela': t.id, 'data-acao': acao });
+        if (a['pode_' + acao]) chk.checked = true;
+        chk.addEventListener('change', function () { onChkChange(tr); });
+        td.appendChild(chk); tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+      syncRow(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = '';
+    box.appendChild(tbl);
+    $('ac-salvar').disabled = false;
+  }
+
+  // editar/exportar dependem de "ver"
+  function onChkChange(tr) {
+    var ver = tr.querySelector('[data-acao="ver"]');
+    if (!ver.checked) {
+      tr.querySelector('[data-acao="editar"]').checked = false;
+      tr.querySelector('[data-acao="exportar"]').checked = false;
+    }
+    syncRow(tr);
+  }
+  function syncRow(tr) {
+    var ver = tr.querySelector('[data-acao="ver"]').checked;
+    tr.querySelector('[data-acao="editar"]').disabled = !ver;
+    tr.querySelector('[data-acao="exportar"]').disabled = !ver;
+  }
+
+  async function salvarAcessos() {
+    var perfilId = Number($('ac-perfil').value);
+    if (!perfilId) return;
+    var btn = $('ac-salvar'); btn.disabled = true;
+
+    var upserts = [], deletes = [];
+    document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
+      var telaId = Number(tr.querySelector('[data-acao="ver"]').getAttribute('data-tela'));
+      var ver = tr.querySelector('[data-acao="ver"]').checked;
+      if (ver) {
+        upserts.push({
+          perfil_id: perfilId, tela_id: telaId,
+          pode_ver: true,
+          pode_editar: tr.querySelector('[data-acao="editar"]').checked,
+          pode_exportar: tr.querySelector('[data-acao="exportar"]').checked
+        });
+      } else {
+        deletes.push(telaId);
+      }
+    });
+
+    try {
+      if (upserts.length) {
+        var u = await SB.from('perfil_tela').upsert(upserts, { onConflict: 'perfil_id,tela_id' });
+        if (u.error) throw u.error;
+      }
+      if (deletes.length) {
+        var d = await SB.from('perfil_tela').delete().eq('perfil_id', perfilId).in('tela_id', deletes);
+        if (d.error) throw d.error;
+      }
+      toast('Liberações salvas. (o usuário vê na próxima entrada)');
+    } catch (e) { erro(e); }
+    btn.disabled = false;
+  }
+
+  /* ==========================================================================
+     SEÇÃO 2 — USUÁRIOS (perfis)
+     ========================================================================== */
+  function initUsuarios() {
+    $('us-busca').addEventListener('input', renderUsuarios);
+    $('nu-salvar').addEventListener('click', salvarNovoUsuario);
+    renderUsuarios();
+  }
+
+  function renderUsuarios() {
+    var q = ($('us-busca').value || '').toLowerCase().trim();
+    var lista = cachePerfis.filter(function (p) {
+      return !q || (p.nome || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
+    });
+    var box = $('us-tabela');
+    if (!lista.length) { box.innerHTML = '<div class="empty">Nenhum usuário.</div>'; return; }
+
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Nome / E-mail</th><th>Tipo</th><th>Status</th><th>Super</th><th></th></tr></thead>';
+    var tb = el('tbody');
+    lista.forEach(function (p) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<b>' + esc(p.nome || '—') + '</b><br><span class="muted">' + esc(p.email) + '</span>'));
+      tr.appendChild(el('td', null, '<span class="pill tipo">' + esc(p.tipo) + '</span>'));
+      tr.appendChild(el('td', null, p.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
+      tr.appendChild(el('td', null, p.is_super_admin ? '<span class="pill super">super</span>' : '<span class="muted">—</span>'));
+
+      var acts = el('td');
+      var bAtivo = el('button', { class: 'btn btn-sm btn-light', title: p.ativo ? 'Desativar' : 'Ativar' },
+        '<i class="bi ' + (p.ativo ? 'bi-toggle-on text-success' : 'bi-toggle-off text-muted') + '"></i>');
+      bAtivo.addEventListener('click', function () { patchPerfil(p, { ativo: !p.ativo }); });
+      var bSuper = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Alternar super admin' },
+        '<i class="bi bi-shield' + (p.is_super_admin ? '-fill text-primary' : '') + '"></i>');
+      bSuper.addEventListener('click', function () {
+        if (p.email === EU.email && p.is_super_admin) { toast('Você não pode remover seu próprio super admin.', true); return; }
+        patchPerfil(p, { is_super_admin: !p.is_super_admin });
+      });
+      acts.appendChild(bAtivo); acts.appendChild(bSuper);
+      tr.appendChild(acts);
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  async function patchPerfil(p, patch) {
+    var r = await SB.from('perfis').update(patch).eq('id', p.id);
+    if (r.error) return erro(r.error);
+    Object.assign(p, patch);
+    renderUsuarios();
+    toast('Usuário atualizado.');
+  }
+
+  async function salvarNovoUsuario() {
+    var email = ($('nu-email').value || '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Informe um e-mail válido.', true); return; }
+    var novo = {
+      email: email,
+      nome: ($('nu-nome').value || '').trim() || null,
+      tipo: $('nu-tipo').value,
+      is_super_admin: $('nu-super').checked,
+      ativo: true
+    };
+    var r = await SB.from('perfis').insert(novo).select().single();
+    if (r.error) return erro(r.error);
+    cachePerfis.push(r.data);
+    cachePerfis.sort(function (a, b) { return (a.nome || a.email).localeCompare(b.nome || b.email); });
+    renderUsuarios();
+    optsPerfis($('ac-perfil'), true);
+    optsPerfis($('vc-perfil'), true);
+    $('nu-email').value = ''; $('nu-nome').value = ''; $('nu-super').checked = false;
+    bootstrap.Modal.getInstance($('modalUser')).hide();
+    toast('Usuário cadastrado.');
+  }
+
+  /* ==========================================================================
+     SEÇÃO 3 — ESCOLAS + VÍNCULOS
+     ========================================================================== */
+  var cacheEscolas = [];
+  function initEscolas() {
+    optsPerfis($('vc-perfil'), true);
+    $('ne-salvar').addEventListener('click', salvarNovaEscola);
+    $('vc-perfil').addEventListener('change', renderVinculos);
+    carregarEscolas();
+  }
+
+  async function carregarEscolas() {
+    var r = await SB.from('escolas').select('id,codigo_inep,nome,email_institucional,ativo').order('nome');
+    if (r.error) return erro(r.error);
+    cacheEscolas = r.data || [];
+    renderEscolas();
+  }
+
+  function renderEscolas() {
+    var box = $('es-tabela');
+    if (!cacheEscolas.length) { box.innerHTML = '<div class="empty">Nenhuma escola cadastrada.</div>'; return; }
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Escola</th><th>INEP</th><th>Status</th></tr></thead>';
+    var tb = el('tbody');
+    cacheEscolas.forEach(function (e) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<b>' + esc(e.nome) + '</b>' + (e.email_institucional ? '<br><span class="muted">' + esc(e.email_institucional) + '</span>' : '')));
+      tr.appendChild(el('td', null, esc(e.codigo_inep || '—')));
+      tr.appendChild(el('td', null, e.ativo ? '<span class="pill on">ativa</span>' : '<span class="pill off">inativa</span>'));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  async function salvarNovaEscola() {
+    var nome = ($('ne-nome').value || '').trim();
+    if (!nome) { toast('Informe o nome da escola.', true); return; }
+    var nova = {
+      nome: nome,
+      codigo_inep: ($('ne-inep').value || '').trim() || null,
+      email_institucional: ($('ne-email').value || '').trim() || null,
+      ativo: true
+    };
+    var r = await SB.from('escolas').insert(nova).select().single();
+    if (r.error) return erro(r.error);
+    cacheEscolas.push(r.data);
+    cacheEscolas.sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    renderEscolas();
+    if ($('vc-perfil').value) renderVinculos();
+    $('ne-nome').value = ''; $('ne-inep').value = ''; $('ne-email').value = '';
+    bootstrap.Modal.getInstance($('modalEscola')).hide();
+    toast('Escola cadastrada.');
+  }
+
+  async function renderVinculos() {
+    var perfilId = $('vc-perfil').value;
+    var area = $('vc-area');
+    if (!perfilId) { area.innerHTML = '<div class="empty">Selecione um usuário.</div>'; return; }
+    area.innerHTML = '<div class="loading">Carregando…</div>';
+
+    var r = await SB.from('perfil_escola').select('escola_id,vinculo').eq('perfil_id', perfilId);
+    if (r.error) return erro(r.error);
+    var vinc = {};
+    (r.data || []).forEach(function (x) { vinc[x.escola_id] = x.vinculo || ''; });
+
+    if (!cacheEscolas.length) { area.innerHTML = '<div class="empty">Cadastre escolas primeiro.</div>'; return; }
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Escola</th><th>Vínculo</th><th class="chk-col">Vincular</th></tr></thead>';
+    var tb = el('tbody');
+    cacheEscolas.forEach(function (e) {
+      var tem = Object.prototype.hasOwnProperty.call(vinc, e.id);
+      var tr = el('tr');
+      tr.appendChild(el('td', null, esc(e.nome)));
+      var tdV = el('td');
+      var inp = el('input', { class: 'form-control form-control-sm', placeholder: 'gestor, coordenador…' });
+      inp.value = vinc[e.id] || '';
+      inp.disabled = !tem;
+      tdV.appendChild(inp); tr.appendChild(tdV);
+      var tdC = el('td', { class: 'chk-col' });
+      var chk = el('input', { type: 'checkbox', class: 'form-check-input' });
+      chk.checked = tem;
+      chk.addEventListener('change', function () { inp.disabled = !chk.checked; });
+      tdC.appendChild(chk); tr.appendChild(tdC);
+      tr._escola = e; tr._chk = chk; tr._inp = inp;
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    area.innerHTML = '';
+    area.appendChild(tbl);
+    var btn = el('button', { class: 'btn btn-roxo mt-3' }, '<i class="bi bi-check-lg"></i> Salvar vínculos');
+    btn.addEventListener('click', function () { salvarVinculos(perfilId, tb); });
+    area.appendChild(btn);
+  }
+
+  async function salvarVinculos(perfilId, tbody) {
+    perfilId = Number(perfilId);
+    var upserts = [], deletes = [];
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+      if (tr._chk.checked) upserts.push({ perfil_id: perfilId, escola_id: tr._escola.id, vinculo: tr._inp.value.trim() || null });
+      else deletes.push(tr._escola.id);
+    });
+    try {
+      if (upserts.length) {
+        var u = await SB.from('perfil_escola').upsert(upserts, { onConflict: 'perfil_id,escola_id' });
+        if (u.error) throw u.error;
+      }
+      if (deletes.length) {
+        var d = await SB.from('perfil_escola').delete().eq('perfil_id', perfilId).in('escola_id', deletes);
+        if (d.error) throw d.error;
+      }
+      toast('Vínculos salvos.');
+    } catch (e) { erro(e); }
+  }
+
+  /* ==========================================================================
+     SEÇÃO 4 — CATÁLOGO (sistemas + telas)
+     ========================================================================== */
+  var catSistemaId = null;
+  function initCatalogo() {
+    $('ns-salvar').addEventListener('click', salvarNovoSistema);
+    $('t-add').addEventListener('click', adicionarTela);
+    renderCatSistemas();
+  }
+
+  function renderCatSistemas() {
+    var box = $('cat-sistemas');
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Sistema</th><th>Slug</th><th>Status</th></tr></thead>';
+    var tb = el('tbody');
+    cacheSistemas.forEach(function (s) {
+      var tr = el('tr', { style: 'cursor:pointer' });
+      if (String(s.id) === String(catSistemaId)) tr.style.background = '#eef2ff';
+      tr.appendChild(el('td', null, '<i class="bi ' + esc(s.icone || 'bi-app') + '" style="color:' + esc(s.cor || '#64748b') + '"></i> <b>' + esc(s.nome) + '</b>'));
+      tr.appendChild(el('td', null, '<span class="muted">' + esc(s.slug) + '</span>'));
+      tr.appendChild(el('td', null, s.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
+      tr.addEventListener('click', function () { catSistemaId = s.id; renderCatSistemas(); renderCatTelas(); });
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  async function renderCatTelas() {
+    var sis = cacheSistemas.find(function (s) { return String(s.id) === String(catSistemaId); });
+    $('cat-ctx').textContent = sis ? ('— ' + sis.nome) : '';
+    var box = $('cat-telas');
+    if (!catSistemaId) { box.innerHTML = '<div class="empty">Selecione um sistema.</div>'; return; }
+    box.innerHTML = '<div class="loading">Carregando…</div>';
+    var r = await SB.from('telas').select('id,slug,nome,ordem').eq('sistema_id', catSistemaId).order('ordem');
+    if (r.error) return erro(r.error);
+    var telas = r.data || [];
+    if (!telas.length) { box.innerHTML = '<div class="empty">Nenhuma tela. Adicione acima.</div>'; return; }
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Ordem</th><th>Nome</th><th>Slug</th><th></th></tr></thead>';
+    var tb = el('tbody');
+    telas.forEach(function (t) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, esc(t.ordem)));
+      tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b>'));
+      tr.appendChild(el('td', null, '<span class="muted">' + esc(t.slug) + '</span>'));
+      var td = el('td');
+      var b = el('button', { class: 'btn btn-sm btn-light', title: 'Excluir tela' }, '<i class="bi bi-trash text-danger"></i>');
+      b.addEventListener('click', function () { excluirTela(t); });
+      td.appendChild(b); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  async function adicionarTela() {
+    if (!catSistemaId) { toast('Selecione um sistema primeiro.', true); return; }
+    var slug = ($('t-slug').value || '').trim().toLowerCase();
+    var nome = ($('t-nome').value || '').trim();
+    if (!slug || !nome) { toast('Informe slug e nome da tela.', true); return; }
+    var nova = { sistema_id: catSistemaId, slug: slug, nome: nome, ordem: Number($('t-ordem').value) || 0 };
+    var r = await SB.from('telas').insert(nova);
+    if (r.error) return erro(r.error);
+    $('t-slug').value = ''; $('t-nome').value = ''; $('t-ordem').value = '0';
+    renderCatTelas();
+    toast('Tela adicionada.');
+  }
+
+  async function excluirTela(t) {
+    if (!confirm('Excluir a tela "' + t.nome + '"? As liberações dela serão removidas.')) return;
+    var r = await SB.from('telas').delete().eq('id', t.id);
+    if (r.error) return erro(r.error);
+    renderCatTelas();
+    toast('Tela excluída.');
+  }
+
+  async function salvarNovoSistema() {
+    var slug = ($('ns-slug').value || '').trim().toLowerCase();
+    var nome = ($('ns-nome').value || '').trim();
+    if (!slug || !nome) { toast('Informe slug e nome.', true); return; }
+    var novo = {
+      slug: slug, nome: nome,
+      url: ($('ns-url').value || '').trim() || null,
+      icone: ($('ns-icone').value || '').trim() || null,
+      cor: ($('ns-cor').value || '').trim() || null,
+      ordem: Number($('ns-ordem').value) || 0,
+      ativo: true
+    };
+    var r = await SB.from('sistemas').insert(novo).select().single();
+    if (r.error) return erro(r.error);
+    cacheSistemas.push(r.data);
+    cacheSistemas.sort(function (a, b) { return a.ordem - b.ordem; });
+    optsSistemas($('ac-sistema'));
+    renderCatSistemas();
+    ['ns-slug', 'ns-nome', 'ns-url', 'ns-icone', 'ns-cor'].forEach(function (id) { $(id).value = ''; });
+    $('ns-ordem').value = '0';
+    bootstrap.Modal.getInstance($('modalSistema')).hide();
+    toast('Sistema cadastrado.');
+  }
+
+  /* ==========================================================================
+     SEÇÃO 5 — VER COMO (permissoes_de)
+     ========================================================================== */
+  function initSimular() {
+    $('sm-ver').addEventListener('click', consultarSimulacao);
+    $('sm-email').addEventListener('keydown', function (e) { if (e.key === 'Enter') consultarSimulacao(); });
+  }
+
+  async function consultarSimulacao() {
+    var email = ($('sm-email').value || '').trim().toLowerCase();
+    var out = $('sm-result');
+    if (!email) { out.innerHTML = ''; return; }
+    out.innerHTML = '<div class="loading">Consultando…</div>';
+    var r = await SB.rpc('permissoes_de', { p_email: email });
+    if (r.error) { out.innerHTML = ''; return erro(r.error); }
+    var d = r.data;
+    if (!d || !d.autorizado) {
+      out.innerHTML = '<div class="empty"><i class="bi bi-x-circle"></i> Não autorizado' +
+        (d && d.motivo ? ' (' + esc(d.motivo) + ')' : '') + '. Verifique se o e-mail está cadastrado e ativo.</div>';
+      return;
+    }
+    var h = '<div class="panel" style="margin:0">';
+    h += '<div><b>' + esc(d.perfil.nome || d.perfil.email) + '</b> · ' + esc(d.perfil.email) +
+      ' <span class="pill tipo">' + esc(d.perfil.tipo) + '</span>' +
+      (d.perfil.is_super_admin ? ' <span class="pill super">super</span>' : '') + '</div>';
+    if (d.escolas && d.escolas.length) {
+      h += '<div class="mt-2 muted"><i class="bi bi-building"></i> ' +
+        d.escolas.map(function (e) { return esc(e.nome) + (e.vinculo ? ' (' + esc(e.vinculo) + ')' : ''); }).join(' · ') + '</div>';
+    }
+    h += '<div class="tree mt-2">';
+    if (!d.sistemas || !d.sistemas.length) {
+      h += '<div class="empty">Sem sistemas liberados.</div>';
+    } else {
+      d.sistemas.forEach(function (s) {
+        h += '<div class="sis"><i class="bi ' + esc(s.icone || 'bi-app') + '"></i> ' + esc(s.nome) + '</div>';
+        var telas = s.telas || {};
+        var keys = Object.keys(telas);
+        if (!keys.length) { h += '<div class="tela muted">(nenhuma tela)</div>'; }
+        keys.forEach(function (slug) {
+          var t = telas[slug];
+          var acoes = ['ver', 'editar', 'exportar'].filter(function (a) { return t[a]; });
+          h += '<div class="tela">' + esc(t.nome || slug) + ' — <span class="acoes">' + acoes.join(', ') + '</span></div>';
+        });
+      });
+    }
+    h += '</div>';
+    var btn = '<a href="login.html" class="btn btn-sm btn-light mt-2" onclick="sessionStorage.setItem(\'ACESSO_SIMULA\',\'' +
+      esc(email) + '\')"><i class="bi bi-incognito"></i> Abrir portal simulando este usuário</a>';
+    h += btn + '</div>';
+    out.innerHTML = h;
+  }
+})();
