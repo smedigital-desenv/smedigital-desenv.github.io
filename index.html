@@ -139,20 +139,34 @@
 
     @keyframes fade { from{opacity:0} to{opacity:1} }
     @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .hero { animation:slideUp .5s ease both; }
+    .hero { animation:slideUp .5s ease both; background:none; border:none; padding:0; margin:2rem 0 3rem; }
+    .hero-image { display:block; }
+    .hero-content { display:none; }
     .featured-card { animation:slideUp .5s ease both; }
     .featured-card:nth-child(1) { animation-delay:.1s; }
     .featured-card:nth-child(2) { animation-delay:.15s; }
     .featured-card:nth-child(3) { animation-delay:.2s; }
     .category-card { animation:slideUp .4s ease both; }
+    @media (max-width:768px) {
+      .hero { background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
+        border:1px solid rgba(79,142,247,.25); padding:3.5rem 2rem; margin:2rem 0 3rem; }
+      .hero-image { display:none; }
+      .hero-content { display:block !important; text-align:center; }
+      .hero h1 { font-size:2rem; }
+      .hero .sub { font-size:0.95rem; }
+    }
     @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
   </style>
 </head>
 <body>
   <div class="wrap">
     <!-- Hero Section -->
-    <section class="hero" style="background: none; border: none; padding: 0; margin: 2rem 0 3rem;">
-      <img src="images/hero-banner.png" alt="SME Digital - Plataforma de Inteligência e Gestão Educacional" style="width: 100%; height: auto; border-radius: var(--radius); display: block;">
+    <section class="hero" id="hero-section">
+      <img src="images/hero-banner.png" alt="SME Digital - Plataforma de Inteligência e Gestão Educacional" class="hero-image" style="width: 100%; height: auto; border-radius: var(--radius); display: block;">
+      <div class="hero-content" style="display: none;">
+        <h1>SME Digital</h1>
+        <p class="sub">Portal de Sistemas da Secretaria Municipal de Educação de Ribeirão Preto</p>
+      </div>
     </section>
 
     <!-- Featured Systems -->
