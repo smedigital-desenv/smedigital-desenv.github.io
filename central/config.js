@@ -13,9 +13,9 @@
    demais scripts; ele está no .gitignore.
    ============================================================================ */
 window.ACESSO_CFG = window.ACESSO_CFG || {
-  // >>> SUBSTITUA pelos valores do projeto central <<<
-  url:     'https://SEU-PROJETO-CENTRAL.supabase.co',
-  anonKey: 'COLE_AQUI_A_ANON_KEY_DO_PROJETO_CENTRAL',
+  // Projeto Supabase central de DESENVOLVIMENTO (central-dev).
+  url:     'https://pvdhepvtoavkyoschkod.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2ZGhlcHZ0b2F2a3lvc2Noa29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTUzNDQsImV4cCI6MjA5Nzk5MTM0NH0.BY6jPR9iDvh2xRlGtaU8vdKWp0NKyC7Amlzx-tytmrk',
 
   // Domínio institucional aceito no login (super admins são exceção no banco).
   dominio: '@educacao.pmrp.sp.gov.br'
