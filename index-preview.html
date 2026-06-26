@@ -6,74 +6,79 @@
   <title>SME Digital — Portal de Sistemas (preview)</title>
   <meta name="description" content="Portal de sistemas da Secretaria Municipal de Educação de Ribeirão Preto." />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link href="central/estilo.css" rel="stylesheet" />
   <style>
-    /* ===== Portal: conteúdo do index atual + cores do padrão MAPA/GOM ===== */
-    .preview-flag { background:#fff7ed; color:#b45309; border:1px solid #fed7aa; border-radius:10px;
-      padding:.5rem .9rem; font-size:.8rem; font-weight:700; margin-bottom:1.2rem; display:flex; align-items:center; gap:.5rem; }
+    /* ===== Portal escuro e moderno (index atual) harmonizado ao padrão da rede (marinho + neon) ===== */
+    :root {
+      --bg-1:#091022; --bg-2:#0e1c38; --surface:#101d36; --surface-2:#15243f;
+      --txt:#e6ebf5; --mut:#9fb0c9; --fnt:#6b7a98;
+      --navy:#002b5e; --azul:#4f8ef7; --neon:#00e5ff;
+    }
+    body { background:linear-gradient(160deg,var(--bg-1),var(--bg-2)); color:var(--txt);
+      min-height:100vh; padding-bottom:0; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(ellipse 50% 40% at 12% 8%, rgba(0,229,255,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 88% 92%, rgba(0,43,94,.35) 0%, transparent 70%); }
+    .wrap { position:relative; z-index:1; }
 
-    /* Hero com a imagem do banner (igual ao atual), em moldura clara com borda neon */
-    .hero { margin:0 0 2.5rem; border-radius:18px; overflow:hidden; position:relative;
-      box-shadow:0 12px 30px rgba(0,43,94,.18); border-bottom:5px solid var(--neon); background:#fff; }
+    .preview-flag { background:rgba(180,83,9,.16); color:#fdba74; border:1px solid rgba(253,186,116,.3);
+      border-radius:10px; padding:.5rem .9rem; font-size:.8rem; font-weight:700; margin-bottom:1.4rem; display:flex; align-items:center; gap:.5rem; }
+
+    /* Hero — banner do index atual, com borda neon */
+    .hero { margin:0 0 2.6rem; border-radius:18px; overflow:hidden; position:relative;
+      box-shadow:0 16px 40px rgba(0,0,0,.45); border-bottom:4px solid var(--neon); }
     .hero-image { display:block; width:100%; height:auto; }
     .hero-content { display:none; }
     @media (max-width:768px){
-      .hero { background:linear-gradient(135deg,#002b5e,#0146a6); padding:2.4rem 1.6rem; text-align:center; }
+      .hero { padding:2.4rem 1.6rem; text-align:center; background:linear-gradient(135deg,#002b5e,#0146a6); }
       .hero-image { display:none; }
-      .hero-content { display:block; color:#fff; }
+      .hero-content { display:block; }
       .hero-content h1 { font-weight:900; font-size:2rem; margin:0; }
       .hero-content .sub { color:rgba(255,255,255,.85); font-size:.95rem; margin-top:.4rem; }
-      .hero-content .tag { color:var(--neon); font-weight:800; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
+      .hero-content .tag { color:var(--neon); font-weight:800; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; display:block; margin-top:.6rem; }
     }
 
-    .section-title { font-size:1.2rem; font-weight:900; color:var(--primary); letter-spacing:.02em;
+    .section-title { font-size:1.2rem; font-weight:800; color:#fff; letter-spacing:.01em;
       margin:2rem 0 1.2rem; display:flex; align-items:center; gap:.6rem; }
     .section-icon { font-size:1.3rem; }
 
-    /* Cards em destaque — estilo dos botões do atual, cores do padrão da rede */
-    .featured-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.4rem; margin-bottom:2.5rem; }
-    .featured-card { position:relative; background:#fff; border:1.5px solid var(--border); border-radius:16px;
-      padding:1.8rem; text-decoration:none; color:inherit; overflow:hidden; transition:transform .2s, box-shadow .2s, border-color .2s;
-      box-shadow:0 4px 15px rgba(0,0,0,.05); }
-    .featured-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px;
-      background:linear-gradient(90deg,var(--primary),var(--neon)); }
-    .featured-card:hover { transform:translateY(-3px); border-color:#bcdcff; box-shadow:0 12px 28px rgba(0,43,94,.14); }
+    /* Cards — fundo escuro marinho, topo em degradê marinho→neon */
+    .featured-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.4rem; margin-bottom:2.6rem; }
+    .featured-card, .category-card { position:relative; background:linear-gradient(160deg,var(--surface),var(--surface-2));
+      border:1px solid rgba(79,142,247,.18); border-radius:16px; text-decoration:none; color:inherit; overflow:hidden;
+      transition:transform .2s, box-shadow .2s, border-color .2s; }
+    .featured-card { padding:1.8rem; }
+    .featured-card::before, .category-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:linear-gradient(90deg,var(--navy),var(--neon)); }
+    .featured-card:hover, .category-card:hover { transform:translateY(-3px); border-color:rgba(0,229,255,.45);
+      box-shadow:0 14px 34px rgba(0,0,0,.45); }
     .featured-icon { font-size:2.2rem; margin-bottom:.8rem; }
-    .featured-badge { display:inline-block; background:#e8f0fb; color:var(--primary);
+    .featured-badge { display:inline-block; background:rgba(79,142,247,.16); color:#9cc4ff;
       padding:.32rem .7rem; border-radius:6px; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.7rem; }
-    .featured-card h3 { font-size:1.35rem; font-weight:900; color:var(--primary); margin:0 0 .4rem; }
-    .featured-card p { color:var(--muted); line-height:1.6; margin-bottom:1.1rem; font-size:.9rem; }
-    .featured-go { display:inline-flex; align-items:center; gap:8px; font-size:.86rem; font-weight:800; color:#fff;
-      background:linear-gradient(135deg,#002b5e,#0146a6); padding:.62rem 1.3rem; border-radius:10px;
-      box-shadow:0 4px 12px rgba(0,43,94,.22); transition:transform .2s, box-shadow .2s, filter .2s; }
-    .featured-card:hover .featured-go { filter:brightness(1.1); box-shadow:0 8px 20px rgba(0,43,94,.3); transform:translateY(-1px); }
-    .featured-go svg { width:16px; height:16px; transition:transform .2s ease; }
-    .featured-card:hover .featured-go svg { transform:translateX(4px); }
+    .featured-card h3 { font-size:1.35rem; font-weight:800; color:#fff; margin:0 0 .4rem; }
+    .featured-card p { color:var(--mut); line-height:1.6; margin-bottom:1.1rem; font-size:.9rem; }
 
-    /* Cards de categoria */
+    /* Botão "Acessar →" — MESMO estilo do index atual (link de texto, azul claro, seta) */
+    .featured-go, .category-go { display:inline-flex; align-items:center; gap:6px; font-size:.9rem; font-weight:700; color:var(--azul); }
+    .featured-go svg, .category-go svg { width:16px; height:16px; transition:transform .2s ease; }
+    .featured-card:hover .featured-go svg, .category-card:hover .category-go svg { transform:translateX(4px); }
+
     .category-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1rem; margin-bottom:1.4rem; }
-    .category-card { position:relative; background:#fff; border:1.5px solid var(--border); border-radius:16px;
-      padding:1.4rem; text-decoration:none; color:inherit; transition:transform .15s, box-shadow .15s, border-color .15s;
-      box-shadow:0 4px 15px rgba(0,0,0,.05); }
-    .category-card:hover { transform:translateY(-3px); border-color:#bcdcff; box-shadow:0 10px 24px rgba(0,43,94,.12); }
+    .category-card { padding:1.4rem; }
     .category-icon { font-size:1.8rem; margin-bottom:.6rem; }
-    .category-card h4 { font-size:1.02rem; font-weight:900; color:var(--primary); margin:0 0 .3rem; }
-    .category-card p { color:var(--muted); font-size:.84rem; line-height:1.5; margin:0 0 1rem; }
-    .category-go { display:inline-flex; align-items:center; gap:7px; font-size:.78rem; font-weight:800; color:#fff;
-      background:linear-gradient(135deg,#002b5e,#0146a6); padding:.45rem 1rem; border-radius:9px;
-      box-shadow:0 3px 10px rgba(0,43,94,.2); transition:transform .2s, box-shadow .2s, filter .2s; }
-    .category-card:hover .category-go { filter:brightness(1.1); box-shadow:0 6px 16px rgba(0,43,94,.28); transform:translateY(-1px); }
-    .category-go svg { width:14px; height:14px; transition:transform .2s ease; }
-    .category-card:hover .category-go svg { transform:translateX(3px); }
-    .em-breve { display:inline-flex; align-items:center; gap:6px; font-size:.76rem; font-weight:800; color:#b45309;
-      background:#fff7ed; border:1px solid #fed7aa; padding:.42rem 1rem; border-radius:9px; }
+    .category-card h4 { font-size:1.02rem; font-weight:800; color:#fff; margin:0 0 .3rem; }
+    .category-card p { color:var(--mut); font-size:.84rem; line-height:1.5; margin:0 0 .9rem; }
+    .category-go { font-size:.82rem; }
 
-    .dev-badge { position:absolute; top:12px; right:12px; background:#fff7ed; color:#b45309; border:1px solid #fed7aa;
-      padding:3px 9px; border-radius:999px; font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
-    .featured-card[aria-disabled], .category-card[aria-disabled] { opacity:.72; pointer-events:none; }
+    .dev-badge { position:absolute; top:12px; right:12px; background:rgba(180,83,9,.2); color:#fdba74;
+      border:1px solid rgba(253,186,116,.35); padding:3px 9px; border-radius:999px; font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .em-breve { display:inline-flex; align-items:center; gap:6px; font-size:.8rem; font-weight:700; color:#fdba74; }
+    .featured-card[aria-disabled], .category-card[aria-disabled] { opacity:.62; pointer-events:none; }
 
-    .foot { text-align:center; color:var(--faint); font-size:.8rem; padding:1.8rem 0 0; border-top:1px solid var(--border); margin-top:2.6rem; }
+    .foot { text-align:center; color:var(--fnt); font-size:.8rem; padding:1.8rem 0; border-top:1px solid rgba(79,142,247,.14); margin-top:2.6rem; }
+    .foot span { color:var(--neon); }
   </style>
 </head>
 <body>
@@ -93,9 +98,8 @@
   </header>
 
   <main class="wrap">
-    <div class="preview-flag"><i class="bi bi-eye-fill"></i> Pré-visualização: conteúdo do portal atual com as cores do padrão MAPA/GOM. O <b>index.html</b> não foi alterado.</div>
+    <div class="preview-flag"><i class="bi bi-eye-fill"></i> Pré-visualização: visual escuro do index atual, harmonizado às cores da rede (marinho + neon). O <b>index.html</b> não foi alterado.</div>
 
-    <!-- Hero (imagem do banner, igual ao atual) -->
     <section class="hero" id="hero-section">
       <img src="images/hero-banner.png" alt="SME Digital - Plataforma de Inteligência e Gestão Educacional" class="hero-image">
       <div class="hero-content">
@@ -108,7 +112,7 @@
     <section id="featured-section"></section>
     <main id="main"></main>
 
-    <div class="foot">Secretaria Municipal de Educação — Ribeirão Preto, SP · SME Digital</div>
+    <div class="foot">Secretaria Municipal de Educação — Ribeirão Preto, SP · <span>SME Digital</span></div>
   </main>
 
   <script>
@@ -124,6 +128,12 @@
 
     const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
 
+    function go(s, cls) {
+      return s.status === 'active'
+        ? '<span class="' + cls + '">Acessar ' + arrow + '</span>'
+        : '<span class="em-breve"><i class="bi bi-cone-striped"></i> Em breve</span>';
+    }
+
     function renderFeaturedCard(s) {
       const a = document.createElement('a');
       a.className = 'featured-card';
@@ -134,8 +144,7 @@
         '<div class="featured-icon">' + s.icon + '</div>' +
         '<span class="featured-badge">' + s.badge + '</span>' +
         '<h3>' + s.nome + '</h3>' +
-        '<p>' + s.desc + '</p>' +
-        '<span class="featured-go">Acessar ' + arrow + '</span>';
+        '<p>' + s.desc + '</p>' + go(s, 'featured-go');
       return a;
     }
 
@@ -145,13 +154,10 @@
       if (s.status === 'active') a.href = s.url; else a.setAttribute('aria-disabled', 'true');
       a.setAttribute('aria-label', 'Acessar ' + s.nome);
       const devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
-      const acao = s.status === 'active'
-        ? '<span class="category-go">Acessar ' + arrow + '</span>'
-        : '<span class="em-breve"><i class="bi bi-cone-striped"></i> Em breve</span>';
       a.innerHTML = devBadge +
         '<div class="category-icon">' + s.icon + '</div>' +
         '<h4>' + s.nome + '</h4>' +
-        '<p>' + s.desc + '</p>' + acao;
+        '<p>' + s.desc + '</p>' + go(s, 'category-go');
       return a;
     }
 
