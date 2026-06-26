@@ -32,85 +32,138 @@
         radial-gradient(ellipse 50% 40% at 15% 10%,rgba(79,142,247,.10) 0%,transparent 70%),
         radial-gradient(ellipse 50% 50% at 85% 90%,rgba(124,58,237,.10) 0%,transparent 70%);
     }
-    .wrap { width:100%; max-width:1100px; margin:0 auto; padding:48px 20px 32px; position:relative; z-index:1; flex:1; }
+    .wrap { width:100%; max-width:1200px; margin:0 auto; padding:0 20px; position:relative; z-index:1; flex:1; }
 
-    /* Header */
-    .header { text-align:center; margin-bottom:44px; animation:fade .5s ease both; }
-    .logo {
-      width:64px; height:64px; margin:0 auto 18px;
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      border-radius:20px; display:flex; align-items:center; justify-content:center;
-      box-shadow:0 10px 30px rgba(79,142,247,.28);
+    /* Hero Section */
+    .hero {
+      background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
+      border:1px solid rgba(79,142,247,.25); border-radius:var(--radius);
+      padding:3.5rem 2rem; text-align:center; margin:3rem 0 3.5rem;
+      position:relative; overflow:hidden;
     }
-    .logo svg { width:34px; height:34px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    .header h1 { font-size:clamp(1.6rem,4vw,2.2rem); font-weight:700; letter-spacing:-.02em; }
-    .header .sub { color:var(--muted); font-size:1rem; margin-top:8px; }
-    .header .tag {
-      display:inline-block; margin-top:14px; font-family:'DM Mono',monospace; font-size:.72rem;
-      color:var(--faint); text-transform:uppercase; letter-spacing:.12em;
-      border:1px solid var(--border); border-radius:999px; padding:5px 14px;
+    .hero::before {
+      content:''; position:absolute; top:-50%; right:-15%;
+      width:400px; height:400px; background:radial-gradient(circle,rgba(79,142,247,.15) 0%,transparent 70%);
+      border-radius:50%;
+    }
+    .hero-content { position:relative; z-index:1; }
+    .hero h1 { font-size:2.8rem; font-weight:700; margin-bottom:0.8rem; letter-spacing:-.02em; }
+    .hero .sub { color:var(--muted); font-size:1.1rem; margin-bottom:1.5rem; }
+    .hero-cta {
+      display:inline-block; padding:0.75rem 2rem; background:rgba(79,142,247,.2);
+      border:1px solid rgba(79,142,247,.4); border-radius:999px; color:var(--accent);
+      font-weight:600; cursor:pointer; transition:all .2s ease;
+      font-family:inherit; font-size:1rem;
+    }
+    .hero-cta:hover { background:rgba(79,142,247,.3); border-color:rgba(79,142,247,.6); }
+
+    /* Section Title */
+    .section-title {
+      font-size:1.4rem; font-weight:600; margin:2.5rem 0 1.5rem; color:var(--text);
+      display:flex; align-items:center; gap:0.75rem;
+    }
+    .section-icon { font-size:1.4rem; }
+
+    /* Featured Grid */
+    .featured-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.5rem;
+      margin-bottom:3rem;
+    }
+    .featured-card {
+      position:relative; background:linear-gradient(135deg,rgba(79,142,247,.08) 0%,rgba(124,58,237,.08) 100%);
+      border:1px solid rgba(79,142,247,.2); border-radius:var(--radius); padding:2rem;
+      text-decoration:none; color:inherit; overflow:hidden; transition:all .3s ease;
+    }
+    .featured-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+    .featured-card:hover {
+      background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
+      border-color:rgba(79,142,247,.4); transform:translateY(-3px);
+      box-shadow:0 12px 32px rgba(0,0,0,.25);
+    }
+    .featured-icon { font-size:2.2rem; margin-bottom:1rem; }
+    .featured-badge {
+      display:inline-block; background:rgba(79,142,247,.15); color:var(--accent);
+      padding:0.35rem 0.75rem; border-radius:6px; font-size:.7rem; font-weight:600;
+      text-transform:uppercase; letter-spacing:.1em; margin-bottom:0.8rem;
+    }
+    .featured-card h3 { font-size:1.4rem; font-weight:600; margin-bottom:0.5rem; }
+    .featured-card p { color:var(--muted); line-height:1.6; margin-bottom:1.2rem; }
+    .featured-go {
+      display:inline-flex; align-items:center; gap:6px; font-size:.9rem;
+      font-weight:600; color:var(--accent);
+    }
+    .featured-go svg { width:16px; height:16px; transition:transform .2s ease; }
+    .featured-card:hover .featured-go svg { transform:translateX(4px); }
+
+    /* Category Grid */
+    .category-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1rem;
+      margin-bottom:2rem;
+    }
+    .category-card {
+      position:relative; background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1.5rem; text-decoration:none; color:inherit;
+      transition:all .2s ease; overflow:hidden;
+    }
+    .category-card::after {
+      content:''; position:absolute; inset:0 0 auto 0; height:2px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:0;
+      transition:opacity .2s ease;
+    }
+    .category-card:hover {
+      transform:translateY(-2px); background:var(--surface-2);
+      border-color:rgba(79,142,247,.35); box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+    .category-card:hover::after { opacity:1; }
+    .category-icon { font-size:1.8rem; margin-bottom:0.75rem; }
+    .category-card h4 { font-size:1rem; font-weight:600; margin-bottom:0.35rem; }
+    .category-card p {
+      color:var(--muted); font-size:.85rem; line-height:1.5;
     }
 
-    /* Grid */
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px; }
-    .card {
-      position:relative; display:flex; flex-direction:column;
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-      padding:24px; text-decoration:none; color:inherit; overflow:hidden;
-      transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
-      animation:fadeUp .5s ease both;
+    /* Development Badge */
+    .dev-badge {
+      position:absolute; top:12px; right:12px; background:rgba(220,100,50,.2);
+      color:rgba(220,100,50,.9); padding:4px 8px; border-radius:4px;
+      font-size:.65rem; font-weight:600; text-transform:uppercase;
     }
-    .card::after {
-      content:''; position:absolute; inset:0 0 auto 0; height:3px;
-      background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:0; transition:opacity .18s ease;
-    }
-    .card:hover {
-      transform:translateY(-4px); background:var(--surface-2);
-      border-color:rgba(79,142,247,.45); box-shadow:0 14px 34px rgba(0,0,0,.35);
-    }
-    .card:hover::after { opacity:1; }
-    .card-icon {
-      width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center;
-      font-size:24px; background:rgba(79,142,247,.10); border:1px solid rgba(79,142,247,.18); margin-bottom:16px;
-    }
-    .card h3 { font-size:1.12rem; font-weight:600; margin-bottom:6px; }
-    .card .badge {
-      font-family:'DM Mono',monospace; font-size:.66rem; color:var(--faint);
-      text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px;
-    }
-    .card p { color:var(--muted); font-size:.9rem; line-height:1.55; flex:1; }
-    .card .go {
-      margin-top:16px; display:inline-flex; align-items:center; gap:6px;
-      font-size:.85rem; font-weight:600; color:var(--accent);
-    }
-    .card .go svg { width:15px; height:15px; transition:transform .18s ease; }
-    .card:hover .go svg { transform:translateX(4px); }
 
     /* Footer */
-    .footer { text-align:center; padding:28px 20px; color:var(--faint); font-size:.82rem; position:relative; z-index:1; border-top:1px solid var(--border); }
+    .footer { text-align:center; padding:2rem 20px; color:var(--faint); font-size:.82rem;
+      position:relative; z-index:1; border-top:1px solid var(--border); margin-top:3rem;
+    }
     .footer span { font-family:'DM Mono',monospace; }
 
     @keyframes fade { from{opacity:0} to{opacity:1} }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-    .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.10s}
-    .card:nth-child(3){animation-delay:.15s} .card:nth-child(4){animation-delay:.20s}
-    .card:nth-child(5){animation-delay:.25s} .card:nth-child(6){animation-delay:.30s}
-    .card:nth-child(7){animation-delay:.35s} .card:nth-child(8){animation-delay:.40s}
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .hero { animation:slideUp .5s ease both; }
+    .featured-card { animation:slideUp .5s ease both; }
+    .featured-card:nth-child(1) { animation-delay:.1s; }
+    .featured-card:nth-child(2) { animation-delay:.15s; }
+    .featured-card:nth-child(3) { animation-delay:.2s; }
+    .category-card { animation:slideUp .4s ease both; }
     @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="header">
-      <div class="logo">
-        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>SME Digital</h1>
+        <p class="sub">Portal de Sistemas da Secretaria Municipal de Educação de Ribeirão Preto</p>
+        <button class="hero-cta">Explorar sistemas</button>
       </div>
-      <h1>SME Digital</h1>
-      <p class="sub">Secretaria Municipal de Educação · Ribeirão Preto</p>
-      <span class="tag">smedigital.com.br</span>
-    </header>
+    </section>
 
-    <main class="grid" id="grid"></main>
+    <!-- Featured Systems -->
+    <section id="featured-section"></section>
+
+    <!-- Categories -->
+    <main id="main"></main>
   </div>
 
   <footer class="footer">
@@ -122,69 +175,141 @@
       {
         nome: 'MAPA',
         badge: 'Monitoramento',
+        category: 'Monitoramento',
         desc: 'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.',
         icon: '🗺️',
-        url: '/mapa-sme/'
+        url: '/mapa-sme/',
+        featured: true,
+        status: 'active'
       },
       {
         nome: 'GOM',
         badge: 'Obras e Manutenção',
+        category: 'Serviços',
         desc: 'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.',
         icon: '🔧',
-        url: '/gom-sme/'
+        url: '/gom-sme/',
+        featured: true,
+        status: 'active'
       },
       {
         nome: 'SATE',
         badge: 'Transporte Escolar',
+        category: 'Serviços',
         desc: 'Sistema de Agendamento do Transporte Escolar e abertura de chamados.',
         icon: '🚌',
-        url: '/sate-sme/'
+        url: '/sate-sme/',
+        featured: false,
+        status: 'active'
       },
       {
         nome: 'Roçadas',
         badge: 'Serviços',
+        category: 'Serviços',
         desc: 'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.',
         icon: '🌿',
-        url: '/rocada/'
+        url: '/rocada/',
+        featured: false,
+        status: 'active'
       },
       {
         nome: 'Repositório Pedagógico',
         badge: 'Pedagógico',
+        category: 'Pedagógico',
         desc: 'Repositório Pedagógico Municipal com materiais e recursos para a rede.',
         icon: '📚',
-        url: '/repositorio/'
+        url: '/repositorio/',
+        featured: false,
+        status: 'development'
       },
       {
         nome: 'Portfólio MAG',
         badge: 'Revista',
+        category: 'Pedagógico',
         desc: 'Portfólio e revista digital com produções e registros da rede municipal.',
         icon: '📖',
-        url: '/revista/'
+        url: '/revista/',
+        featured: false,
+        status: 'development'
       },
       {
         nome: 'Validação de Presença',
         badge: 'Eventos',
+        category: 'Eventos',
         desc: 'Inscrição, emissão de QR Code e validação de presença em eventos e formações.',
         icon: '✅',
-        url: '/presenca/'
+        url: '/presenca/',
+        featured: false,
+        status: 'active'
       },
     ];
 
-    const grid = document.getElementById('grid');
     const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
 
-    sistemas.forEach((s) => {
+    function renderFeaturedCard(s) {
       const a = document.createElement('a');
-      a.className = 'card';
-      a.href = s.url;
+      a.className = 'featured-card';
+      if (s.status === 'active') a.href = s.url;
+      else a.style.pointerEvents = 'none';
       a.setAttribute('aria-label', 'Acessar ' + s.nome);
-      a.innerHTML =
-        '<div class="card-icon">' + s.icon + '</div>' +
-        '<div class="badge">' + s.badge + '</div>' +
+
+      let devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
+
+      a.innerHTML = devBadge +
+        '<div class="featured-icon">' + s.icon + '</div>' +
+        '<span class="featured-badge">' + s.badge + '</span>' +
         '<h3>' + s.nome + '</h3>' +
         '<p>' + s.desc + '</p>' +
-        '<span class="go">Acessar ' + arrow + '</span>';
-      grid.appendChild(a);
+        '<span class="featured-go">Acessar ' + arrow + '</span>';
+      return a;
+    }
+
+    function renderCategoryCard(s) {
+      const a = document.createElement('a');
+      a.className = 'category-card';
+      if (s.status === 'active') a.href = s.url;
+      else a.style.pointerEvents = 'none';
+      a.setAttribute('aria-label', 'Acessar ' + s.nome);
+
+      let devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
+
+      a.innerHTML = devBadge +
+        '<div class="category-icon">' + s.icon + '</div>' +
+        '<h4>' + s.nome + '</h4>' +
+        '<p>' + s.desc + '</p>';
+      return a;
+    }
+
+    const featured = sistemas.filter(s => s.featured);
+    const mainEl = document.getElementById('main');
+    const featuredSection = document.getElementById('featured-section');
+
+    if (featured.length > 0) {
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.innerHTML = '<span class="section-icon">⭐</span>Sistemas em Destaque';
+      featuredSection.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'featured-grid';
+      featured.forEach(s => grid.appendChild(renderFeaturedCard(s)));
+      featuredSection.appendChild(grid);
+    }
+
+    const categories = [...new Set(sistemas.map(s => s.category))];
+    categories.forEach(cat => {
+      const catSistemas = sistemas.filter(s => s.category === cat && !s.featured);
+      if (catSistemas.length === 0) return;
+
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.textContent = cat;
+      mainEl.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'category-grid';
+      catSistemas.forEach(s => grid.appendChild(renderCategoryCard(s)));
+      mainEl.appendChild(grid);
     });
   </script>
 </body>
