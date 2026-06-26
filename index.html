@@ -1,219 +1,198 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fiscal - Validacao de Presenca</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SME Digital — Portal de Sistemas | SME Ribeirão Preto</title>
+  <meta name="description" content="Portal de sistemas da Secretaria Municipal de Educação de Ribeirão Preto." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <style>
     :root {
-      --bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;
-      --accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;
-      --text:#e8eaf0;--muted:#6b7280;--radius:14px;
+      --bg-1:#0f1117; --bg-2:#1a1f2e; --surface:#171b27; --surface-2:#1f2533;
+      --text:#e4e6eb; --muted:#a8adbf; --faint:#6e7693;
+      --accent:#4f8ef7; --accent2:#7c3aed;
+      --border:#2a2f3e; --radius:16px;
     }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
-    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(124,58,237,.07) 0%,transparent 70%);pointer-events:none;}
-    .container{width:100%;max-width:400px;}
-    .logo{text-align:center;margin-bottom:28px;}
-    .logo-icon{width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 8px 24px rgba(79,142,247,.25);}
-    .logo-icon svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .logo h1{font-size:20px;font-weight:600;}
-    .logo p{font-size:13px;color:var(--muted);margin-top:4px;}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:12px;animation:fadeUp .25s ease both;}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .fiscal-bar{display:none;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;}
-    .fiscal-bar .info{display:flex;align-items:center;gap:10px;}
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success);}
-    .email-mono{font-family:'DM Mono',monospace;font-size:12px;}
-    .fiscal-bar button{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .2s;}
-    .fiscal-bar button:hover{background:var(--border);color:var(--text);}
-    label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
-    input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;}
-    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.15);}
-    .btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:14px;}
-    .btn:active{transform:scale(.98);}
-    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(79,142,247,.3);}
-    .msg{margin-top:12px;padding:11px 14px;border-radius:10px;font-size:13px;display:none;line-height:1.5;}
-    .msg.erro{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.2);display:block;}
-    .msg.info{background:rgba(79,142,247,.12);color:#93c5fd;border:1px solid rgba(79,142,247,.2);display:block;}
-    #leitor{border-radius:12px;overflow:hidden;border:2px solid var(--accent);box-shadow:0 0 20px rgba(79,142,247,.2);}
-    .dica{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6;}
-    .cache-status{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
-    .cache-status span{color:var(--success);}
-    #etapa-token{display:none;}
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      font-family:'DM Sans',sans-serif;
+      background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 100%);
+      color:var(--text); min-height:100vh; min-height:100dvh;
+      display:flex; flex-direction:column;
+      -webkit-font-smoothing:antialiased;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(ellipse 50% 40% at 15% 10%,rgba(79,142,247,.10) 0%,transparent 70%),
+        radial-gradient(ellipse 50% 50% at 85% 90%,rgba(124,58,237,.10) 0%,transparent 70%);
+    }
+    .wrap { width:100%; max-width:1100px; margin:0 auto; padding:48px 20px 32px; position:relative; z-index:1; flex:1; }
+
+    /* Header */
+    .header { text-align:center; margin-bottom:44px; animation:fade .5s ease both; }
+    .logo {
+      width:64px; height:64px; margin:0 auto 18px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border-radius:20px; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 10px 30px rgba(79,142,247,.28);
+    }
+    .logo svg { width:34px; height:34px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .header h1 { font-size:clamp(1.6rem,4vw,2.2rem); font-weight:700; letter-spacing:-.02em; }
+    .header .sub { color:var(--muted); font-size:1rem; margin-top:8px; }
+    .header .tag {
+      display:inline-block; margin-top:14px; font-family:'DM Mono',monospace; font-size:.72rem;
+      color:var(--faint); text-transform:uppercase; letter-spacing:.12em;
+      border:1px solid var(--border); border-radius:999px; padding:5px 14px;
+    }
+
+    /* Grid */
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px; }
+    .card {
+      position:relative; display:flex; flex-direction:column;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+      padding:24px; text-decoration:none; color:inherit; overflow:hidden;
+      transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+      animation:fadeUp .5s ease both;
+    }
+    .card::after {
+      content:''; position:absolute; inset:0 0 auto 0; height:3px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:0; transition:opacity .18s ease;
+    }
+    .card:hover {
+      transform:translateY(-4px); background:var(--surface-2);
+      border-color:rgba(79,142,247,.45); box-shadow:0 14px 34px rgba(0,0,0,.35);
+    }
+    .card:hover::after { opacity:1; }
+    .card-icon {
+      width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center;
+      font-size:24px; background:rgba(79,142,247,.10); border:1px solid rgba(79,142,247,.18); margin-bottom:16px;
+    }
+    .card h3 { font-size:1.12rem; font-weight:600; margin-bottom:6px; }
+    .card .badge {
+      font-family:'DM Mono',monospace; font-size:.66rem; color:var(--faint);
+      text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px;
+    }
+    .card p { color:var(--muted); font-size:.9rem; line-height:1.55; flex:1; }
+    .card .go {
+      margin-top:16px; display:inline-flex; align-items:center; gap:6px;
+      font-size:.85rem; font-weight:600; color:var(--accent);
+    }
+    .card .go svg { width:15px; height:15px; transition:transform .18s ease; }
+    .card:hover .go svg { transform:translateX(4px); }
+
+    /* Footer */
+    .footer { text-align:center; padding:28px 20px; color:var(--faint); font-size:.82rem; position:relative; z-index:1; border-top:1px solid var(--border); }
+    .footer span { font-family:'DM Mono',monospace; }
+
+    @keyframes fade { from{opacity:0} to{opacity:1} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.10s}
+    .card:nth-child(3){animation-delay:.15s} .card:nth-child(4){animation-delay:.20s}
+    .card:nth-child(5){animation-delay:.25s} .card:nth-child(6){animation-delay:.30s}
+    .card:nth-child(7){animation-delay:.35s} .card:nth-child(8){animation-delay:.40s}
+    @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
   </style>
 </head>
 <body>
-<script src="menu.js"></script>
-<div class="container">
-  <div class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-    </div>
-    <h1>Validacao de Presenca</h1>
-    <p>Acesso do fiscal</p>
+  <div class="wrap">
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <h1>Portal de Sistemas</h1>
+      <p class="sub">Secretaria Municipal de Educação · Ribeirão Preto</p>
+      <span class="tag">smedigital.com.br</span>
+    </header>
+
+    <main class="grid" id="grid"></main>
   </div>
 
-  <div class="fiscal-bar" id="fiscal-bar">
-    <div class="info"><div class="dot"></div><span class="email-mono" id="bar-email"></span></div>
-    <button onclick="logout()">Sair</button>
-  </div>
+  <footer class="footer">
+    <p>Secretaria Municipal de Educação — Ribeirão Preto, SP · <span>SME Digital</span></p>
+  </footer>
 
-  <div class="card" id="etapa-login">
-    <label for="inputEmail">E-mail institucional</label>
-    <input type="email" id="inputEmail" placeholder="fiscal@exemplo.com" autocomplete="email"/>
-    <button class="btn btn-primary" id="btnEntrar" onclick="entrar()">Entrar</button>
-    <div class="msg" id="msgLogin"></div>
-  </div>
-
-  <div id="etapa-token">
-    <div class="card">
-      <div id="leitor"></div>
-      <p class="dica">Aponte para o QR Code do participante</p>
-      <div class="cache-status" id="cacheStatus"></div>
-      <div class="msg" id="msgLeitor"></div>
-    </div>
-    <div class="card">
-      <label for="inputToken">Ou digite o token manualmente</label>
-      <input type="text" id="inputToken" placeholder="Ex: EVT000001" autocomplete="off" autocapitalize="characters"/>
-      <button class="btn btn-primary" onclick="irParaValidar()">Validar presenca</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  var SUPA_URL = "https://kormvmwdkyssxhdkgthd.supabase.co/rest/v1";
-  var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtvcm12bXdka3lzc3hoZGtndGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU3MDAsImV4cCI6MjA5NTcyMTcwMH0._x3hrly1GYE4CNj8xZllQHoFqbgt5Bwrj2T9clMx0ls";
-  var KEY_EMAIL    = "fiscal_email";
-  var KEY_CACHE    = "participantes_cache";
-  var KEY_CACHE_DT = "participantes_cache_data";
-  var html5QrCode  = null;
-
-  function supaHeaders() {
-    return { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY };
-  }
-
-  function dataHoje() { return new Date().toISOString().slice(0,10); }
-  function cacheValido() { return localStorage.getItem(KEY_CACHE_DT) === dataHoje() && localStorage.getItem(KEY_CACHE); }
-  function salvarCache(lista) { localStorage.setItem(KEY_CACHE, JSON.stringify(lista)); localStorage.setItem(KEY_CACHE_DT, dataHoje()); }
-  function totalCache() { try { return JSON.parse(localStorage.getItem(KEY_CACHE)||"[]").length; } catch(e){ return 0; } }
-
-  window.onload = function() {
-    var emailSalvo = localStorage.getItem(KEY_EMAIL);
-    if (emailSalvo) iniciarSessao(emailSalvo);
-  };
-
-  function entrar() {
-    var email = document.getElementById("inputEmail").value.trim().toLowerCase();
-    var msg   = document.getElementById("msgLogin");
-    var btn   = document.getElementById("btnEntrar");
-    if (!email) { msg.className="msg erro"; msg.innerHTML="Informe seu e-mail."; return; }
-
-    btn.disabled=true; btn.textContent="Verificando...";
-    msg.className="msg info"; msg.innerHTML="Verificando autorizacao...";
-
-    verificarECarregarPerfil(email, function(autorizado, dados) {
-      if (autorizado) {
-        iniciarSessao(dados.email, dados.nome || "");
-      } else {
-        msg.className="msg erro"; msg.innerHTML="E-mail nao autorizado.";
-        btn.disabled=false; btn.textContent="Entrar";
-      }
-    });
-  }
-
-  function iniciarSessao(email, nome) {
-    document.getElementById("bar-email").textContent    = nome || email;
-    document.getElementById("fiscal-bar").style.display = "flex";
-    document.getElementById("etapa-login").style.display= "none";
-    document.getElementById("etapa-token").style.display= "block";
-    garantirCache(function(total){
-      var st = document.getElementById("cacheStatus");
-      st.innerHTML = "<span>" + total + "</span> participantes em cache";
-    });
-    abrirCamera(email);
-  }
-
-  function garantirCache(callback) {
-    if (cacheValido()) { if (callback) callback(totalCache()); return; }
-    var st = document.getElementById("cacheStatus");
-    st.innerHTML = "Carregando participantes...";
-    fetch(SUPA_URL + "/participantes?select=token,nome,email,palestra_id,qr_url,palestras(nome)&order=token", { headers: supaHeaders() })
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
-        if (Array.isArray(data)) {
-          // Normaliza palestraNome
-          var lista = data.map(function(p) {
-            return {
-              token:       p.token,
-              nome:        p.nome,
-              email:       p.email,
-              palestraId:  p.palestra_id,
-              palestraNome: p.palestras ? p.palestras.nome : "",
-              qr_url:      p.qr_url
-            };
-          });
-          salvarCache(lista);
-          if (callback) callback(lista.length);
-        }
-      })
-      .catch(function(){ st.innerHTML = "Sem cache — buscas serao online."; });
-  }
-
-  function abrirCamera(email) {
-    if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode=null; }
-    html5QrCode = new Html5Qrcode("leitor");
-    html5QrCode.start(
-      { facingMode:"environment" },
-      { fps:10, qrbox:{width:250,height:250} },
-      function(texto) {
-        html5QrCode.stop().then(function(){
-          var token = extrairToken(texto);
-          if (!token) {
-            var m=document.getElementById("msgLeitor");
-            m.className="msg erro"; m.innerHTML="QR invalido.";
-            setTimeout(function(){ m.className="msg"; abrirCamera(email); }, 1500);
-            return;
-          }
-          irParaValidarComToken(token);
-        });
+  <script>
+    const sistemas = [
+      {
+        nome: 'MAPA',
+        badge: 'Monitoramento',
+        desc: 'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.',
+        icon: '🗺️',
+        url: '/mapa-sme/'
       },
-      function(){}
-    ).catch(function(){ document.getElementById("leitor").style.display="none"; });
-  }
+      {
+        nome: 'GOM',
+        badge: 'Obras e Manutenção',
+        desc: 'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.',
+        icon: '🔧',
+        url: '/gom-sme/'
+      },
+      {
+        nome: 'SATE',
+        badge: 'Transporte Escolar',
+        desc: 'Sistema de Agendamento do Transporte Escolar e abertura de chamados.',
+        icon: '🚌',
+        url: '/sate-sme/'
+      },
+      {
+        nome: 'Roçadas',
+        badge: 'Serviços',
+        desc: 'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.',
+        icon: '🌿',
+        url: 'https://rocada.vercel.app'
+      },
+      {
+        nome: 'Repositório Pedagógico',
+        badge: 'Pedagógico',
+        desc: 'Repositório Pedagógico Municipal com materiais e recursos para a rede.',
+        icon: '📚',
+        url: '/repositorio/'
+      },
+      {
+        nome: 'Portfólio MAG',
+        badge: 'Revista',
+        desc: 'Portfólio e revista digital com produções e registros da rede municipal.',
+        icon: '📖',
+        url: '/revista/'
+      },
+      {
+        nome: 'Validação de Presença',
+        badge: 'Eventos',
+        desc: 'Inscrição, emissão de QR Code e validação de presença em eventos e formações.',
+        icon: '✅',
+        url: '/presenca/'
+      },
+      {
+        nome: 'Congresso',
+        badge: 'Eventos',
+        desc: 'Verificação e checagem de QR Code dos participantes do congresso.',
+        icon: '🎫',
+        url: '/congresso/'
+      }
+    ];
 
-  function extrairToken(texto) {
-    try { var u=new URL(texto); var t=u.searchParams.get("t"); if(t) return t; } catch(e){}
-    return texto.trim()||null;
-  }
+    const grid = document.getElementById('grid');
+    const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
 
-  function irParaValidar() {
-    var token = document.getElementById("inputToken").value.trim().toUpperCase();
-    if (!token) return;
-    irParaValidarComToken(token);
-  }
-
-  function irParaValidarComToken(token) {
-    window.location.href = "validar.html?t=" + encodeURIComponent(token);
-  }
-
-  function logout() {
-    localStorage.removeItem(KEY_EMAIL);
-    if (html5QrCode) { html5QrCode.stop().catch(function(){}); html5QrCode=null; }
-    document.getElementById("fiscal-bar").style.display  = "none";
-    document.getElementById("etapa-token").style.display = "none";
-    document.getElementById("etapa-login").style.display = "block";
-    document.getElementById("inputEmail").value="";
-    document.getElementById("btnEntrar").disabled=false;
-    document.getElementById("btnEntrar").textContent="Entrar";
-    document.getElementById("msgLogin").className="msg";
-  }
-
-  document.getElementById("inputEmail").addEventListener("keydown", function(e){ if(e.key==="Enter") entrar(); });
-  document.getElementById("inputToken").addEventListener("keydown", function(e){ if(e.key==="Enter") irParaValidar(); });
-</script>
+    sistemas.forEach((s) => {
+      const a = document.createElement('a');
+      a.className = 'card';
+      a.href = s.url;
+      a.setAttribute('aria-label', 'Acessar ' + s.nome);
+      a.innerHTML =
+        '<div class="card-icon">' + s.icon + '</div>' +
+        '<div class="badge">' + s.badge + '</div>' +
+        '<h3>' + s.nome + '</h3>' +
+        '<p>' + s.desc + '</p>' +
+        '<span class="go">Acessar ' + arrow + '</span>';
+      grid.appendChild(a);
+    });
+  </script>
 </body>
 </html>
