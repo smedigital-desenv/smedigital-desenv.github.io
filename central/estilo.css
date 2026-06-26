@@ -1,0 +1,112 @@
+/* ============================================================================
+   estilo.css — Identidade visual padrão da rede SME (igual MAPA e GOM).
+   Primário #002b5e, acento neon #00e5ff, fonte Inter, fundo #f0f4f8.
+   Usado pelo login.html e pelo admin.html do central.
+   ============================================================================ */
+:root {
+  --primary:#002b5e; --primary-2:#0146a6; --neon:#00e5ff; --bg:#f0f4f8;
+  --text:#1e293b; --muted:#64748b; --faint:#94a3b8; --border:#e2e8f0;
+}
+* { box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); margin:0; padding-bottom:50px; }
+a { text-decoration:none; }
+.hidden { display:none !important; }
+.wrap { max-width:1200px; margin:0 auto; padding:1.6rem 1.4rem; }
+
+/* ── Cabeçalho global (padrão MAPA/GOM) ───────────────────────────────────── */
+.mg-header {
+  background:var(--primary); color:#fff; border-bottom:5px solid var(--neon);
+  padding:.95rem 1.6rem; display:flex; align-items:center; justify-content:space-between;
+  gap:1rem; flex-wrap:wrap; position:sticky; top:0; z-index:1050;
+  box-shadow:0 6px 18px rgba(0,43,94,.18);
+}
+.mg-brand { display:flex; align-items:center; gap:.6rem; min-width:180px; }
+.mg-brand-icon { width:34px; height:34px; display:grid; place-items:center; color:var(--neon);
+  font-size:1.4rem; filter:drop-shadow(0 0 6px rgba(0,229,255,.55)); }
+.mg-brand h4 { margin:0; font-weight:900; letter-spacing:.03em; font-size:1.4rem; line-height:1; }
+.mg-brand-sub { font-size:.63rem; color:rgba(255,255,255,.68); font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-top:2px; }
+.mg-nav { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; flex:1; min-width:280px; }
+.mg-nav-btn { display:inline-flex; align-items:center; gap:.4rem; justify-content:center; min-width:130px;
+  font-size:.78rem; font-weight:900; padding:6px 14px; border-radius:8px; border:2px solid transparent;
+  color:#fff; cursor:pointer; background:none; transition:.2s; white-space:nowrap; }
+.mg-nav-btn:hover { border-color:rgba(255,255,255,.4); }
+.mg-nav-btn.active { background:#fff; color:var(--primary); box-shadow:0 2px 10px rgba(0,0,0,.18); }
+.mg-user { display:flex; align-items:center; gap:.55rem; font-size:.78rem; min-width:180px; justify-content:flex-end; }
+.mg-user i { font-size:1.5rem; color:var(--neon); }
+.mg-user b { display:block; font-weight:800; line-height:1.1; }
+.mg-user span { color:rgba(255,255,255,.7); font-size:.68rem; }
+.mg-sair { background:rgba(255,255,255,.12); border:0; color:#fff; border-radius:999px; width:30px; height:30px;
+  cursor:pointer; margin-left:.3rem; }
+.mg-sair:hover { background:rgba(255,255,255,.25); }
+@media (max-width:992px){ .mg-nav-btn{ min-width:auto; } .mg-user{ min-width:auto; } }
+
+/* ── Títulos de página ────────────────────────────────────────────────────── */
+.page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem; flex-wrap:wrap; gap:.6rem; }
+.page-head h1 { font-size:1.4rem; font-weight:900; color:var(--primary); margin:0; letter-spacing:.01em; }
+.page-head .desc { color:var(--muted); font-size:.86rem; margin-top:.15rem; }
+
+/* ── Cards / painéis ──────────────────────────────────────────────────────── */
+.panel { background:#fff; border:1.5px solid transparent; border-radius:16px; padding:1.4rem; margin-bottom:1.2rem;
+  box-shadow:0 4px 15px rgba(0,0,0,.05); }
+.panel h2 { font-size:1rem; font-weight:800; margin:0 0 1rem; color:var(--primary); display:flex; align-items:center; gap:.5rem; }
+
+/* ── Formulários ──────────────────────────────────────────────────────────── */
+label.lbl { font-size:.8rem; font-weight:700; color:#475569; margin-bottom:.25rem; display:block; }
+.form-select, .form-control { border-radius:9px; font-size:.9rem; }
+
+/* ── Tabelas ──────────────────────────────────────────────────────────────── */
+table { width:100%; border-collapse:collapse; font-size:.88rem; }
+th, td { padding:.6rem .7rem; border-bottom:1px solid #eef2f7; text-align:left; vertical-align:middle; }
+th { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--faint); font-weight:800; }
+tbody tr:hover { background:#f8fafc; }
+.chk-col { text-align:center; width:90px; }
+.form-check-input { cursor:pointer; }
+
+/* ── Selos ────────────────────────────────────────────────────────────────── */
+.pill { display:inline-block; padding:.18rem .55rem; border-radius:999px; font-size:.72rem; font-weight:800; }
+.pill.super { background:#cffafe; color:#0e7490; }
+.pill.on { background:#dcfce7; color:#15803d; }
+.pill.off { background:#fee2e2; color:#b91c1c; }
+.pill.tipo { background:#e0f2fe; color:#0369a1; }
+
+/* ── Botões (família da marca) ────────────────────────────────────────────── */
+.btn-azul { background:var(--primary); color:#fff; border:0; font-weight:800; }
+.btn-azul:hover { background:#013e87; color:#fff; }
+.btn-roxo { background:var(--primary-2); color:#fff; border:0; font-weight:800; }
+.btn-roxo:hover { background:#0a59c4; color:#fff; }
+
+/* ── Auxiliares ───────────────────────────────────────────────────────────── */
+.empty { color:var(--faint); font-size:.88rem; text-align:center; padding:1.4rem; }
+.loading { color:var(--muted); font-size:.88rem; padding:.6rem 0; }
+.muted { color:var(--faint); font-size:.82rem; }
+.tree { font-size:.86rem; }
+.tree .sis { font-weight:800; color:var(--primary); margin-top:.7rem; }
+.tree .tela { margin-left:1.2rem; color:#475569; }
+.tree .acoes { color:#16a34a; font-weight:700; }
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+.toast-box { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:6000;
+  background:var(--primary); color:#fff; padding:.7rem 1.2rem; border-radius:10px; font-size:.88rem; font-weight:700;
+  box-shadow:0 10px 30px rgba(0,0,0,.3); opacity:0; transition:.2s; pointer-events:none; }
+.toast-box.show { opacity:1; }
+.toast-box.err { background:#b91c1c; }
+
+/* ── Tela de login (padrão MAPA) ──────────────────────────────────────────── */
+.login-body { min-height:100vh; margin:0; display:grid; place-items:center; padding:20px;
+  background:linear-gradient(135deg,#002b5e,#0146a6); padding-bottom:20px; }
+.card-login { background:#fff; border-radius:18px; box-shadow:0 20px 60px rgba(0,0,0,.35); width:100%; max-width:400px; overflow:hidden; }
+.card-login .topo { background:var(--primary); color:#fff; padding:1.6rem; text-align:center; border-bottom:5px solid var(--neon); }
+.card-login .topo .ic { font-size:2.2rem; color:var(--neon); filter:drop-shadow(0 0 8px rgba(0,229,255,.5)); }
+.card-login .topo h3 { margin:.4rem 0 0; font-weight:900; letter-spacing:.04em; }
+.card-login .topo .sub { font-size:.66rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.7); }
+.card-login .corpo { padding:1.8rem 1.4rem; text-align:center; }
+.btn-google { display:inline-flex; align-items:center; justify-content:center; gap:.6rem; width:100%;
+  padding:.7rem 1rem; border:1.5px solid #dadce0; border-radius:10px; background:#fff;
+  font-weight:800; color:#3c4043; cursor:pointer; transition:.15s; font-size:.95rem; }
+.btn-google:hover { box-shadow:0 2px 10px rgba(0,0,0,.12); background:#f8fafc; }
+.btn-google:disabled { opacity:.6; cursor:default; }
+.btn-google img { width:20px; height:20px; }
+.msg { margin-top:1rem; font-size:.84rem; border-radius:10px; padding:.7rem .9rem; display:none; text-align:left; }
+.msg.erro { display:block; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+.msg.info { display:block; background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
+.foot { margin-top:1.4rem; font-size:.72rem; color:var(--faint); }
