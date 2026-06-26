@@ -60,10 +60,15 @@
     .featured-card h3 { font-size:1.35rem; font-weight:800; color:#fff; margin:0 0 .4rem; }
     .featured-card p { color:var(--mut); line-height:1.6; margin-bottom:1.1rem; font-size:.9rem; }
 
-    /* Botão "Acessar →" — MESMO estilo do index atual (link de texto, azul claro, seta) */
-    .featured-go, .category-go { display:inline-flex; align-items:center; gap:6px; font-size:.9rem; font-weight:700; color:var(--azul); }
+    /* Botão "Acessar →" — botão com fundo, no clima neon/escuro da rede */
+    .featured-go, .category-go { display:inline-flex; align-items:center; gap:8px; font-size:.88rem; font-weight:800; color:#dff3ff;
+      background:rgba(79,142,247,.14); border:1px solid rgba(0,229,255,.35); padding:.55rem 1.25rem; border-radius:10px;
+      transition:background .2s, border-color .2s, box-shadow .2s, color .2s, transform .2s; }
+    .featured-card:hover .featured-go, .category-card:hover .category-go {
+      background:rgba(0,229,255,.16); border-color:rgba(0,229,255,.7); color:#fff; box-shadow:0 0 18px rgba(0,229,255,.28); transform:translateY(-1px); }
     .featured-go svg, .category-go svg { width:16px; height:16px; transition:transform .2s ease; }
     .featured-card:hover .featured-go svg, .category-card:hover .category-go svg { transform:translateX(4px); }
+    .category-go { font-size:.82rem; padding:.45rem 1.05rem; }
 
     .category-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1rem; margin-bottom:1.4rem; }
     .category-card { padding:1.4rem; }
