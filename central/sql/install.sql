@@ -373,11 +373,13 @@ create policy perfil_tela_admin on public.perfil_tela for all to authenticated
 -- 5) SEED — super admins + sistemas da rede + telas iniciais
 -- ============================================================================
 
--- Super admins iniciais (contas administrativas, fora do domínio escolar).
+-- Super admins iniciais (contas administrativas + e-mails institucionais).
 insert into public.perfis (email, nome, tipo, is_super_admin)
 values
-  ('desenv.sme@gmail.com',      'Desenvolvimento SME', 'secretaria', true),
-  ('matheusprospero@gmail.com', 'Matheus Prospero',    'secretaria', true)
+  ('desenv.sme@gmail.com',                    'Desenvolvimento SME', 'secretaria', true),
+  ('diogoperez@educacao.pmrp.sp.gov.br',      'Diogo Perez',         'secretaria', true),
+  ('matheusprospero@educacao.pmrp.sp.gov.br', 'Matheus Prospero',    'secretaria', true),
+  ('matheusprospero@gmail.com',               'Matheus Prospero',    'secretaria', true)
 on conflict (email) do update set is_super_admin = true, tipo = 'secretaria', ativo = true;
 
 -- Sistemas da rede (alinhados ao portal smedigital.com.br).
