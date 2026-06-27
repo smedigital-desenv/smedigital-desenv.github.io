@@ -66,7 +66,8 @@ tbody tr:hover { background:#f8fafc; }
 .form-check-input:hover { border-color:var(--primary); }
 .form-check-input:checked { background-color:var(--primary); border-color:var(--primary); }
 .form-check-input:focus { border-color:var(--neon); box-shadow:0 0 0 .2rem rgba(0,229,255,.25); }
-.form-check-input:disabled { opacity:.45; background-color:#eef2f7; border-color:#cbd5e1; }
+/* desabilitado = visível, porém claramente inativo (não "sumido") */
+.form-check-input:disabled { opacity:1; background-color:#f1f5f9; border-color:#cbd5e1; cursor:not-allowed; }
 
 /* ── Selos ────────────────────────────────────────────────────────────────── */
 .pill { display:inline-block; padding:.18rem .55rem; border-radius:999px; font-size:.72rem; font-weight:800; }
