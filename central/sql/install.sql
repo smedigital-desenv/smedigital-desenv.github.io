@@ -38,6 +38,7 @@ create table if not exists public.perfis (
   tipo           text not null default 'escola',  -- 'secretaria' | 'escola' | 'externo'
   auth_user_id   uuid,                            -- preenchido no 1º login (referência a auth.users)
   is_super_admin boolean not null default false,  -- acesso total (administra tudo)
+  bypass_dominio boolean not null default false,  -- libera login fora do domínio institucional
   ativo          boolean not null default true,
   created_at     timestamptz not null default now()
 );
@@ -60,7 +61,8 @@ create table if not exists public.sistemas (
   icone text,                                     -- classe bootstrap-icons, ex 'bi-map-fill'
   cor   text,                                     -- cor do card no portal
   ordem int not null default 0,
-  ativo boolean not null default true
+  ativo boolean not null default true,
+  acesso_escola_total boolean not null default false  -- escola vê todas as telas (dados isolados no front)
 );
 
 -- Telas dentro de cada sistema (avaliacao, atribuicao, ...)
@@ -151,6 +153,7 @@ create or replace function public.permissoes_json(p_email text)
 returns json language plpgsql stable security definer set search_path = public as $$
 declare
   v_perfil public.perfis%rowtype;
+  v_tem_escola boolean;
   v_result json;
 begin
   select * into v_perfil from public.perfis
@@ -160,6 +163,9 @@ begin
   if v_perfil.id is null then
     return json_build_object('autorizado', false);
   end if;
+
+  -- tem unidade vinculada? (usado p/ "escola vê todas as telas" nos sistemas marcados)
+  v_tem_escola := exists (select 1 from public.perfil_escola pe where pe.perfil_id = v_perfil.id);
 
   select json_build_object(
     'autorizado', true,
@@ -175,8 +181,10 @@ begin
           select s.ordem,
             json_build_object(
               'slug', s.slug, 'nome', s.nome, 'url', s.url, 'icone', s.icone, 'cor', s.cor,
-              'papel', (case when v_perfil.is_super_admin then 'admin' else coalesce(pp_papel.slug,'perfil') end),
-              -- telas que o usuário pode VER neste sistema (união das 3 fontes)
+              'papel', (case when v_perfil.is_super_admin then 'admin'
+                             when (v_tem_escola and s.acesso_escola_total) then 'escola'
+                             else coalesce(pp_papel.slug,'perfil') end),
+              -- telas que o usuário pode VER neste sistema (união das fontes)
               'telas', coalesce((
                  select json_object_agg(tl.slug, json_build_object(
                           'nome', tl.nome, 'ver', tl.ver, 'editar', tl.editar, 'exportar', tl.exportar))
@@ -186,6 +194,9 @@ begin
                    from public.telas t
                    join lateral (
                      select true as ver, true as editar, true as exportar where v_perfil.is_super_admin
+                     union all
+                     -- tem unidade vinculada (só nos sistemas com a flag): vê TODAS as telas (dados isolados no front)
+                     select true, false, false where (v_tem_escola and s.acesso_escola_total)
                      union all
                      select pt.pode_ver, pt.pode_editar, pt.pode_exportar
                      from public.perfil_tela pt where pt.tela_id = t.id and pt.perfil_id = v_perfil.id
@@ -210,6 +221,7 @@ begin
           where s.ativo = true
             and (
               v_perfil.is_super_admin
+              or (v_tem_escola and s.acesso_escola_total)
               or pp_papel.id is not null
               or exists (
                  select 1 from public.perfil_tela pt
@@ -239,8 +251,9 @@ begin
     return json_build_object('autorizado', false);
   end if;
 
-  -- RESTRIÇÃO DE DOMÍNIO: só @educacao.pmrp.sp.gov.br (super admin é exceção).
+  -- RESTRIÇÃO DE DOMÍNIO: @educacao.pmrp.sp.gov.br, OU super admin, OU bypass_dominio.
   if not v_perfil.is_super_admin
+     and not v_perfil.bypass_dominio
      and lower(v_perfil.email) not like '%@educacao.pmrp.sp.gov.br' then
     return json_build_object('autorizado', false, 'motivo', 'dominio');
   end if;
@@ -394,6 +407,9 @@ insert into public.sistemas (slug, nome, url, icone, cor, ordem) values
   ('presenca',    'Validação de Presença',  '/presenca/',    'bi-check2-circle',    '#0d9488', 7)
 on conflict (slug) do update
   set nome=excluded.nome, url=excluded.url, icone=excluded.icone, cor=excluded.cor, ordem=excluded.ordem;
+
+-- MAPA usa o modelo "escola vê todas as telas" (dados isolados por unidade no front).
+update public.sistemas set acesso_escola_total = true where slug = 'mapa';
 
 -- Telas do PAINEL CENTRAL (o próprio painel de administração).
 insert into public.telas (sistema_id, slug, nome, ordem)
