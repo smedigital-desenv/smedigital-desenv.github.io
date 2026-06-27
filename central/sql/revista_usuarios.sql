@@ -12,7 +12,7 @@
 -- ████████████████████████████████████████████████████████████████████████████
 with base as (
   select lower(trim(email)) as email,
-         case lower(coalesce(perfil,'')) when 'secretaria' then 'secretaria' else 'externo' end as tipo,
+         case lower(coalesce(perfil,'')) when 'secretaria' then 'secretaria' else 'escola' end as tipo,
          case lower(coalesce(perfil,'')) when 'secretaria' then 'secretaria' else 'publico' end as papel,
          coalesce(ativo, true) as ativo
   from public.usuarios

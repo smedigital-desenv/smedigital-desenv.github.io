@@ -16,7 +16,7 @@ with base as (
          case upper(coalesce(p.perfil,'')) when 'SME' then 'secretaria' else 'externo' end as tipo,
          case upper(coalesce(p.perfil,'')) when 'SME' then 'sme'
               when 'EMPRESA' then 'empresa' else 'sme' end as papel
-  from public.perfis p
+  from rocadas.perfis p
   join auth.users u on u.id = p.user_id
   where u.email is not null and trim(u.email) <> ''
 ),
