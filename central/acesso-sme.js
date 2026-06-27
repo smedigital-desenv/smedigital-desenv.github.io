@@ -43,6 +43,13 @@
     return (f === 'index' || f === '') ? null : f;   // index = portal do sistema
   }
 
+  // ── Normalização de nomes de escola (isolamento de dados por unidade) ──
+  function normEscola(s) {
+    return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function baseEscola(s) { return normEscola(String(s || '').split(',')[0]); }
+
   function carregarSupabaseJs() {
     return new Promise(function (resolve, reject) {
       if (window.supabase && window.supabase.createClient) return resolve();
@@ -85,6 +92,24 @@
 
     var api = {
       pronto: null, perfil: null, escolas: [], sistema: null, sistemas: [], _todos: [],
+      // Isolamento de dados por escola (espelha o auth.js do MAPA).
+      restritoEscola: false, escolasNomes: [], escolasBases: [],
+      podeVerEscola: function (nome) {
+        if (!this.restritoEscola) return true;
+        var n = normEscola(nome); if (!n) return false;
+        if (this.escolasNomes.indexOf(n) !== -1) return true;
+        var nb = baseEscola(nome);
+        for (var i = 0; i < this.escolasBases.length; i++) {
+          var b = this.escolasBases[i];
+          if (b && (b === nb || nb.indexOf(b) === 0 || b.indexOf(nb) === 0)) return true;
+        }
+        return false;
+      },
+      filtrarEscolas: function (rows, getNome) {
+        if (!this.restritoEscola) return rows || [];
+        var self = this;
+        return (rows || []).filter(function (r) { return self.podeVerEscola(getNome ? getNome(r) : r); });
+      },
       can: function (tela, acao) {
         if (this.perfil && this.perfil.is_super_admin) return true;
         if (!this.sistema) return false;
@@ -163,6 +188,9 @@
 
       api.perfil = perms.perfil;
       api.escolas = perms.escolas || [];
+      api.escolasNomes = api.escolas.map(function (e) { return normEscola(e.nome); }).filter(Boolean);
+      api.escolasBases = api.escolas.map(function (e) { return baseEscola(e.nome); }).filter(Boolean);
+      api.restritoEscola = !(api.perfil && api.perfil.is_super_admin) && api.escolasNomes.length > 0;
       api._todos = perms.sistemas || [];
       api.sistemas = api._todos;
       api.sistema = api._todos.filter(function (s) { return s.slug === SISTEMA_SLUG; })[0] || null;
