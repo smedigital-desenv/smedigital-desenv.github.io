@@ -60,7 +60,13 @@ th, td { padding:.6rem .7rem; border-bottom:1px solid #eef2f7; text-align:left; 
 th { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--faint); font-weight:800; }
 tbody tr:hover { background:#f8fafc; }
 .chk-col { text-align:center; width:90px; }
-.form-check-input { cursor:pointer; }
+/* Checkboxes bem visíveis (matriz de acessos e afins) */
+.form-check-input { cursor:pointer; width:1.25rem; height:1.25rem; margin-top:0; vertical-align:middle;
+  border:1.6px solid #94a3b8; background-color:#fff; transition:background-color .15s, border-color .15s, box-shadow .15s; }
+.form-check-input:hover { border-color:var(--primary); }
+.form-check-input:checked { background-color:var(--primary); border-color:var(--primary); }
+.form-check-input:focus { border-color:var(--neon); box-shadow:0 0 0 .2rem rgba(0,229,255,.25); }
+.form-check-input:disabled { opacity:.45; background-color:#eef2f7; border-color:#cbd5e1; }
 
 /* ── Selos ────────────────────────────────────────────────────────────────── */
 .pill { display:inline-block; padding:.18rem .55rem; border-radius:999px; font-size:.72rem; font-weight:800; }
