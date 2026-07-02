@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+
+    :root {
+      --bg: #eef4ff;
+      --bg-2: #f8fafc;
+      --surface: rgba(255,255,255,.92);
+      --surface-2: #f8fafc;
+      --primary: #1d4ed8;
+      --primary-dark: #1e3a8a;
+      --primary-soft: #dbeafe;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #0f9f6e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+      --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(29, 78, 216, .16), transparent 28%),
+        radial-gradient(circle at 84% 12%, rgba(15, 159, 110, .14), transparent 30%),
+        linear-gradient(135deg, var(--bg-2) 0%, var(--bg) 50%, var(--bg-2) 100%);
+      padding: 26px;
+    }
+    .page { width: min(1180px, 100%); margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon { width: 50px; height: 50px; border-radius: 17px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; display: grid; place-items: center; font-size: 22px; box-shadow: 0 14px 30px rgba(29,78,216,.28); }
+    .brand-title { margin: 0; font-size: 23px; letter-spacing: -0.03em; color: var(--text); }
+    .brand-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    .user-pill { background: rgba(255,255,255,.82); border: 1px solid var(--border); border-radius: 999px; padding: 10px 14px; color: var(--muted); font-size: 12px; font-weight: 800; box-shadow: var(--shadow-soft); backdrop-filter: blur(12px); }
+    .hero { background: var(--surface); border: 1px solid rgba(255,255,255,.72); border-radius: 32px; box-shadow: var(--shadow); overflow: hidden; backdrop-filter: blur(16px); position: relative; }
+    .hero::before { content:''; position:absolute; inset:0 0 auto 0; height:6px; background: linear-gradient(90deg, var(--primary), var(--success), var(--purple)); }
+    .hero-inner { padding: 34px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+    h1 { margin: 16px 0 10px; font-size: clamp(30px, 5vw, 48px); line-height: 1.02; letter-spacing: -.055em; max-width: 850px; }
+    .lead { margin: 0 0 26px; color: var(--muted); font-size: 16px; line-height: 1.65; max-width: 900px; }
+    .systems-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .systems-grid.single { grid-template-columns: minmax(0, 1fr); max-width: 580px; }
+    .system-card { text-decoration: none; color: inherit; background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.92)); border: 1px solid var(--border); border-radius: 26px; padding: 22px; min-height: 260px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-soft); transition: transform .18s, box-shadow .18s, border-color .18s; position: relative; overflow: hidden; }
+    .system-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background: var(--primary); }
+    .system-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: rgba(29,78,216,.30); }
+    .system-card.pdde::before { background: var(--success); }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    .card-icon { width:54px; height:54px; border-radius:18px; display:grid; place-items:center; background: var(--primary-soft); color: var(--primary); font-size:24px; }
+    .pdde .card-icon { background: #dcfce7; color: var(--success); }
+    .badge { display:inline-flex; align-items:center; padding: 6px 10px; border-radius:999px; border:1px solid var(--border); color: var(--muted); background:#fff; font-size:10px; text-transform:uppercase; font-weight:900; letter-spacing:.06em; }
+    .badge.new { color: var(--success); border-color: rgba(15,159,110,.28); background: rgba(15,159,110,.09); }
+    .card-title { margin: 0 0 10px; font-size: 24px; letter-spacing: -.035em; }
+    .card-text { margin: 0; color: var(--muted); line-height: 1.55; font-size: 14px; }
+    .card-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:22px; flex-wrap:wrap; }
+    .btn-enter { display:inline-flex; align-items:center; justify-content:center; border-radius:14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color:#fff; padding:11px 14px; font-weight:900; box-shadow:0 12px 26px rgba(29,78,216,.20); }
+    .pdde .btn-enter { background: linear-gradient(135deg, var(--success), #047857); box-shadow:0 12px 26px rgba(15,159,110,.20); }
+    .hint { color: var(--muted); font-size: 12px; font-weight: 800; }
+    @media (max-width: 760px) { body { padding:16px; } .topbar { align-items:flex-start; flex-direction:column; } .hero-inner { padding:24px; } .systems-grid { grid-template-columns:1fr; } .system-card { min-height:245px; } .user-pill { width:100%; border-radius:16px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">▦</div>
+        <div>
+          <h2 class="brand-title">Portal de Sistemas</h2>
+          <p class="brand-subtitle">Secretaria Municipal da Educação · Ribeirão Preto</p>
+        </div>
+      </div>
+      <div class="user-pill">Usuário: <?= emailLogado ?> · Perfil: <?= perfilLogado ?></div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <span class="eyebrow">Portal operacional</span>
+        <h1>Escolha qual sistema deseja acessar</h1>
+        <p class="lead"><? if (podeAcessarPrestacao) { ?>Portal oficial de acesso aos sistemas de Prestação de Contas e PDDE. Escolha abaixo o módulo que deseja operar.<? } else { ?>Você tem acesso ao Sistema PDDE. A área de Prestação de Contas permanece restrita aos perfis administrativos cadastrados e à lista VIP.<? } ?></p>
+
+        <div class="systems-grid <? if (!podeAcessarPrestacao) { ?>single<? } ?>">
+          <a class="system-card pdde" href="<?= baseUrl ?>?sistema=pdde" target="_top">
+            <div class="card-head">
+              <div class="card-icon">💼</div>
+              <span class="badge new">Sistema ativo</span>
+            </div>
+            <h2 class="card-title">Sistema PDDE</h2>
+            <p class="card-text">Módulo para acompanhamento, análise, documentos, saldos, relatórios e gestão do PDDE.</p>
+            <div class="card-footer">
+              <span class="btn-enter">Acessar PDDE →</span>
+              <span class="hint">Painel de gestão</span>
+            </div>
+          </a>
+
+          <? if (podeAcessarPrestacao) { ?>
+          <a class="system-card" href="<?= baseUrl ?>?sistema=prestacao&modo=adm" target="_top">
+            <div class="card-head">
+              <div class="card-icon">📊</div>
+              <span class="badge">Sistema ativo</span>
+            </div>
+            <h2 class="card-title">Prestação de Contas</h2>
+            <p class="card-text">Acesse o painel de acompanhamento, conferência, devoluções, finalizações, usuários, escolas e templates de e-mail.</p>
+            <div class="card-footer">
+              <span class="btn-enter">Acessar Prestação de Contas →</span>
+              <span class="hint">Painel operacional</span>
+            </div>
+          </a>
+          <? } ?>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

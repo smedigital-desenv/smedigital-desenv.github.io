@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #effdf5;
+      --bg-2: #f8fafc;
+      --surface: rgba(255,255,255,.92);
+      --surface-2: #f8fafc;
+      --primary: #0f9f6e;
+      --primary-dark: #166534;
+      --primary-soft: #dcfce7;
+      --blue: #1d4ed8;
+      --blue-dark: #1e3a8a;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --purple: #7c3aed;
+      --shadow: 0 24px 60px rgba(15,23,42,.10);
+      --shadow-soft: 0 12px 30px rgba(15,23,42,.08);
+      --radius: 28px;
+      --radius-sm: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin:0;
+      min-height:100vh;
+      font-family:'Segoe UI', Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(15,159,110,.16), transparent 28%),
+        radial-gradient(circle at 84% 12%, rgba(29,78,216,.12), transparent 30%),
+        linear-gradient(135deg, var(--bg-2) 0%, var(--bg) 48%, var(--bg-2) 100%);
+      padding:26px;
+    }
+    .page { width:min(1360px,100%); margin:0 auto; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .brand-icon { width:50px; height:50px; border-radius:17px; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; display:grid; place-items:center; font-size:17px; font-weight:900; box-shadow:0 14px 30px rgba(15,159,110,.26); }
+    .brand-title { margin:0; font-size:23px; letter-spacing:-.03em; color:var(--text); }
+    .brand-subtitle { margin:4px 0 0; font-size:13px; color:var(--muted); }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .top-btn, .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-decoration:none;
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:10px 14px;
+      background:rgba(255,255,255,.82);
+      color:var(--text);
+      font-weight:900;
+      font-size:13px;
+      box-shadow:var(--shadow-soft);
+      transition:.18s;
+      backdrop-filter:blur(12px);
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .top-btn:hover, .btn:hover { transform:translateY(-1px); box-shadow:var(--shadow); }
+    .top-btn.primary, .btn.primary { color:white; border-color:transparent; background:linear-gradient(135deg,var(--blue),var(--blue-dark)); }
+    .btn.green { color:white; border-color:transparent; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    .btn.warn { color:#78350f; background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.25); }
+    .btn:disabled { opacity:.65; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    .panel {
+      background:var(--surface);
+      border:1px solid rgba(255,255,255,.72);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      backdrop-filter:blur(16px);
+      position:relative;
+      margin-bottom:20px;
+    }
+    .panel::before { content:''; position:absolute; inset:0 0 auto 0; height:6px; background:linear-gradient(90deg,var(--primary),var(--blue),var(--warning)); }
+    .panel-body { padding:28px; }
+    .section-title { margin:0 0 8px; font-size:24px; letter-spacing:-.04em; display:flex; align-items:center; gap:10px; }
+    .section-subtitle { margin:0; color:var(--muted); line-height:1.55; font-size:14px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border-radius:999px; background:var(--primary-soft); color:var(--primary); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px; }
+
+    .upload-grid { display:grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, .7fr); gap:18px; margin-top:22px; align-items:stretch; }
+    .upload-card, .rules-card, .chart-card, .table-card {
+      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,250,252,.92));
+      border:1px solid var(--border);
+      border-radius:24px;
+      box-shadow:var(--shadow-soft);
+      padding:20px;
+    }
+    .upload-area {
+      border:2px dashed rgba(15,159,110,.35);
+      background:rgba(15,159,110,.07);
+      border-radius:22px;
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-height:210px;
+      justify-content:center;
+    }
+    label { font-size:11px; font-weight:900; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:6px; }
+    input, select {
+      width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:14px;
+      background:white; color:var(--text); font-family:inherit; outline:none;
+    }
+    input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 4px rgba(15,159,110,.10); }
+    .muted { color:var(--muted); }
+    .mini { font-size:12px; line-height:1.5; }
+    .rules-list { margin:14px 0 0; padding-left:18px; color:var(--muted); font-size:13px; line-height:1.65; }
+    .status-box { display:none; margin-top:14px; padding:12px 14px; border-radius:16px; background:rgba(29,78,216,.08); border:1px solid rgba(29,78,216,.16); color:var(--blue-dark); font-size:13px; font-weight:800; }
+    .status-box.error { background:rgba(220,38,38,.08); border-color:rgba(220,38,38,.18); color:#991b1b; }
+    .status-box.ok { background:rgba(15,159,110,.10); border-color:rgba(15,159,110,.20); color:var(--primary-dark); }
+
+    .kpi-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap:14px; margin:20px 0; }
+    .kpi-card {
+      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,250,252,.90));
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow:var(--shadow-soft);
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+      min-height:112px;
+    }
+    .kpi-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--primary); }
+    .kpi-card.blue::before { background:var(--blue); }
+    .kpi-card.warn::before { background:var(--warning); }
+    .kpi-card.purple::before { background:var(--purple); }
+    .kpi-card.danger::before { background:var(--danger); }
+    .kpi-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .kpi-title { color:var(--muted); font-size:10px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; line-height:1.25; }
+    .kpi-icon { width:34px; height:34px; border-radius:13px; display:grid; place-items:center; background:var(--primary-soft); color:var(--primary); font-size:16px; flex:0 0 auto; }
+    .kpi-value { font-size:26px; font-weight:950; letter-spacing:-.055em; line-height:1; }
+    .kpi-note { margin-top:8px; font-size:11px; color:var(--muted); }
+
+    .tabbar { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 12px; margin-top:10px; }
+    .tab-action {
+      border:1px solid var(--border); background:rgba(255,255,255,.80); border-radius:999px; padding:10px 14px;
+      font-weight:900; color:var(--text); white-space:nowrap; cursor:pointer; box-shadow:var(--shadow-soft); transition:.18s;
+    }
+    .tab-action.active { color:white; border-color:transparent; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    .tab-action small { opacity:.78; font-weight:800; }
+
+    .filters { display:grid; grid-template-columns: 1.2fr .8fr .8fr auto; gap:14px; align-items:end; background:rgba(255,255,255,.66); border:1px solid var(--border); border-radius:22px; padding:16px; box-shadow:var(--shadow-soft); margin:4px 0 18px; }
+    .charts { display:grid; grid-template-columns: 1.15fr .85fr; gap:16px; margin-bottom:18px; }
+    .chart-card h3, .table-card h3 { margin:0 0 12px; font-size:16px; letter-spacing:-.02em; }
+    .chart-wrap { height:300px; position:relative; }
+
+    .table-card { padding:0; overflow:hidden; }
+    .table-header { padding:18px 20px; display:flex; justify-content:space-between; gap:12px; align-items:center; border-bottom:1px solid var(--border); }
+    .table-header p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+    .table-box { overflow:auto; max-height:560px; background:white; }
+    table { width:100%; border-collapse:separate; border-spacing:0; min-width:1280px; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:right; font-size:12px; white-space:nowrap; }
+    th { position:sticky; top:0; z-index:4; background:#f8fafc; color:var(--muted); text-transform:uppercase; font-size:10px; letter-spacing:.06em; }
+
+    /* Relatório PDDE: evita que os valores entrem visualmente dentro da instituição ao rolar */
+    .pdde-pivot-table {
+      width: max-content;
+      min-width: 100%;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .pdde-pivot-table .col-instituicao { width: 430px; }
+    .pdde-pivot-table .col-valor { width: 190px; }
+    .pdde-pivot-table th,
+    .pdde-pivot-table td {
+      vertical-align: top;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+    }
+    .pdde-pivot-table th:first-child,
+    .pdde-pivot-table td:first-child {
+      text-align:left;
+      position:sticky;
+      left:0;
+      z-index:3;
+      width:430px;
+      min-width:430px;
+      max-width:430px;
+      white-space:normal;
+      background:#fff !important;
+      border-right:1px solid var(--border);
+      box-shadow: 10px 0 18px -18px rgba(15,23,42,.65);
+    }
+    .pdde-pivot-table th:first-child { z-index:6; background:#f8fafc !important; }
+    .pdde-pivot-table tr:nth-child(even) td { background:#fbfdff; }
+    .pdde-pivot-table tr:nth-child(even) td:first-child { background:#fbfdff !important; }
+    .pdde-pivot-table tr.total-row td { background:rgba(15,159,110,.10) !important; font-weight:950; color:var(--primary-dark); }
+    .pdde-pivot-table tr.total-row td:first-child { background:#eaf8f2 !important; }
+    .pdde-inst-nome { display:block; font-weight:950; color:#0f172a; line-height:1.25; margin-bottom:6px; }
+    .pdde-inst-meta { display:block; color:var(--muted); font-size:11px; line-height:1.35; }
+    .pdde-valor { font-variant-numeric: tabular-nums; font-weight:800; color:#111827; }
+    .empty { text-align:center; padding:46px 20px; color:var(--muted); }
+
+    .hidden { display:none !important; }
+
+    @media (max-width:980px) {
+      .upload-grid, .charts { grid-template-columns:1fr; }
+      .filters { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:700px) {
+      body { padding:16px; }
+      .topbar { align-items:flex-start; flex-direction:column; }
+      .actions { width:100%; justify-content:flex-start; }
+      .top-btn, .btn { width:100%; border-radius:16px; }
+      .panel-body { padding:22px; }
+      .filters { grid-template-columns:1fr; }
+      .chart-wrap { height:260px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">PD</div>
+        <div>
+          <h2 class="brand-title">Sistema PDDE</h2>
+          <p class="brand-subtitle">Painel PDDE · Usuário: <?= emailLogado ?></p>
+        </div>
+      </div>
+      <nav class="actions">
+        <a class="top-btn" href="<?= baseUrl ?>" target="_top">← Menu de sistemas</a>
+        <a class="top-btn" href="<?= baseUrl ?>?sistema=pdde&modo=conferente" target="_top">Conferente PDDE (em implantação)</a>
+        <? if (podeAcessarPrestacao) { ?>
+        <a class="top-btn primary" href="<?= baseUrl ?>?sistema=prestacao&modo=adm" target="_top">Prestação de Contas</a>
+        <? } ?>
+      </nav>
+    </header>
+
+    <section class="panel" id="painel-upload">
+      <div class="panel-body">
+        <span class="eyebrow">PDDE · Gestão e relatórios</span>
+        <h1 class="section-title">Importar Excel e gerar painéis por Recurso/Ação</h1>
+        <p class="section-subtitle">Receba a planilha-base em <strong>Excel</strong>, identifique automaticamente a coluna de <strong>Recurso/Ação</strong> e a coluna de <strong>Instituição</strong>, e atualize os painéis operacionais com KPIs, gráficos e resumo consolidado por instituição.</p>
+
+        <div class="upload-grid">
+          <div class="upload-card">
+            <div class="upload-area">
+              <div>
+                <label>Arquivo Excel da base PDDE</label>
+                <input type="file" id="arquivo-pdde" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
+              </div>
+              <div class="actions" style="justify-content:flex-start;">
+                <button class="btn green" id="btn-processar" onclick="processarArquivoPdde()">📊 Processar e atualizar painéis</button>
+                <button class="btn" onclick="limparProcessamento()">Limpar tela</button>
+              </div>
+              <div class="mini muted">Use o arquivo geral em Excel (.xlsx ou .xls). Há suporte auxiliar a CSV para validações específicas quando necessário.</div>
+              <div id="status-importacao" class="status-box"></div>
+              <div id="status-cache-pdde" class="status-box"></div>
+            </div>
+          </div>
+
+          <aside class="rules-card">
+            <h3 style="margin:0 0 8px;">Estrutura esperada da planilha</h3>
+            <p class="mini muted" style="margin:0;">Estrutura definida com base no modelo operacional enviado.</p>
+            <ul class="rules-list">
+              <li>O arquivo pode vir com a <strong>Coluna A em branco</strong>, <strong>Coluna B = Recurso</strong> e <strong>Coluna C = Instituição</strong>.</li>
+              <li>O sistema também aceita o modelo alternativo com <strong>Ação na Coluna A</strong> e <strong>Instituição na Coluna B</strong>.</li>
+              <li>Colunas seguintes: valores financeiros que serão somados.</li>
+              <li>Campos repetidos são ajustados automaticamente. Exemplo: segundo “Saldo a Reprogramar Custeio” vira “Saldo a Reprogramar Capital”.</li>
+              <li>O sistema lê a primeira aba útil do Excel, ignora colunas vazias de margem e monta os relatórios automaticamente.</li>
+              <li>O botão <strong>Gerar relatório XLSX</strong> salva a planilha com base consolidada, bases por ação, resumos por instituição e uma aba de conferência dos cálculos.</li>
+              <li>O relatório da <strong>Gerência de Orçamentos e Finanças</strong> soma os programas nas contas Básico, Qualidade e Equidade conforme as regras cadastradas no sistema.</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel hidden" id="painel-relatorios">
+      <div class="panel-body">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div>
+            <span class="eyebrow">Relatórios gerados</span>
+            <h2 class="section-title" id="titulo-acao">Todas as ações</h2>
+            <p class="section-subtitle" id="subtitulo-acao">Selecione uma ação para visualizar os indicadores e o resumo por instituição.</p>
+          </div>
+          <div class="actions" style="justify-content:flex-end;">
+            <button class="btn green" id="btn-visao-relatorios" onclick="mudarVisaoPdde('relatorios')">Relatório PDDE</button>
+            <button class="btn" id="btn-visao-gof" onclick="mudarVisaoPdde('gof')">Relatório GOF</button>
+            <button class="btn warn" id="btn-exportar-visao" onclick="exportarVisaoAtualPdde()">💾 Gerar relatório XLSX no modelo</button>
+          </div>
+        </div>
+
+        <div class="tabbar relatorios-view" id="tabs-acoes"></div>
+        <div class="kpi-grid relatorios-view" id="kpis-pdde"></div>
+
+        <article class="table-card gof-view hidden" id="card-gof" style="margin:20px 0;">
+          <div class="table-header">
+            <div>
+              <h3>Relatório G. Orçamentos e Finanças</h3>
+              <p>Somatório das contas PDDE Básico, Qualidade e Equidade seguindo o mesmo padrão do relatório principal.</p>
+            </div>
+            <div class="actions">
+              <button class="btn warn" onclick="exportarRelatorioGofXlsx()">💾 Gerar relatório GOF XLSX</button>
+            </div>
+          </div>
+
+          <div style="padding:0 18px 18px;">
+            <div class="filters" style="margin-top:0;">
+              <div>
+                <label>Filtrar conta</label>
+                <select id="gof-filtro-conta" onchange="renderizarRelatorioGof()">
+                  <option value="ALL">Todas as contas</option>
+                  <option value="PDDE Conta Básico">PDDE Conta Básico</option>
+                  <option value="PDDE Conta Qualidade">PDDE Conta Qualidade</option>
+                  <option value="PDDE Conta Equidade">PDDE Conta Equidade</option>
+                  <option value="Não classificado">Não classificado</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="gof-kpis"></div>
+            <div class="mini muted" id="gof-nota" style="margin:8px 0 14px;"></div>
+            <div class="table-box" id="gof-tabela"></div>
+          </div>
+        </article>
+
+        <div class="filters relatorios-view">
+          <div><label>Buscar instituição</label><input type="text" id="filtro-instituicao" placeholder="Digite parte do nome da APM..." oninput="renderizarRelatorio()"></div>
+          <div><label>Ordenar por</label><select id="ordenar-campo" onchange="renderizarRelatorio()"></select></div>
+          <div><label>Sentido</label><select id="ordenar-sentido" onchange="renderizarRelatorio()"><option value="desc">Maior para menor</option><option value="asc">Menor para maior</option><option value="az">A-Z instituição</option></select></div>
+          <button class="btn" onclick="limparFiltrosPdde()">Limpar filtros</button>
+        </div>
+
+        <div class="charts relatorios-view">
+          <article class="chart-card">
+            <h3>Top instituições por total</h3>
+            <div class="chart-wrap"><canvas id="chart-top"></canvas></div>
+          </article>
+          <article class="chart-card">
+            <h3>Composição financeira</h3>
+            <div class="chart-wrap"><canvas id="chart-composicao"></canvas></div>
+          </article>
+        </div>
+
+        <article class="table-card relatorios-view">
+          <div class="table-header">
+            <div>
+              <h3 id="titulo-tabela">Resumo por instituição</h3>
+              <p id="info-tabela">Nenhum dado carregado.</p>
+            </div>
+          </div>
+          <div class="table-box" id="tabela-pdde"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+<script>
+  var estadoPdde = {
+    bruto: [],
+    agregado: [],
+    camposNumericos: [],
+    acaoAtual: '__GERAL__',
+    charts: {},
+    nomeArquivo: '',
+    salvoEm: '',
+    salvoPor: '',
+    visaoAtual: 'relatorios'
+  };
+
+  window.addEventListener('load', function(){
+    carregarEstadoPddeSalvo();
+  });
+
+  function setStatusImportacao(msg, tipo) {
+    var el = document.getElementById('status-importacao');
+    el.style.display = 'block';
+    el.className = 'status-box ' + (tipo || '');
+    el.textContent = msg;
+  }
+
+
+  function setStatusCachePdde(msg, tipo) {
+    var el = document.getElementById('status-cache-pdde');
+    if (!el) return;
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.className = 'status-box ' + (tipo || '');
+    el.textContent = msg;
+  }
+
+  function formatarDataHoraPdde(valor) {
+    if (!valor) return '';
+    try { return new Date(valor).toLocaleString('pt-BR'); } catch(e) { return String(valor); }
+  }
+
+  function carregarEstadoPddeSalvo() {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    setStatusCachePdde('Buscando último relatório PDDE salvo no sistema...', '');
+
+    google.script.run
+      .withFailureHandler(function(err){
+        setStatusCachePdde('Não foi possível carregar o último relatório salvo: ' + (err && err.message ? err.message : err), 'error');
+      })
+      .withSuccessHandler(function(res){
+        if (!res || res.vazio) {
+          setStatusCachePdde('Nenhum relatório PDDE salvo ainda. Envie uma planilha para gerar os painéis.', '');
+          return;
+        }
+        if (!res.ok) {
+          setStatusCachePdde(res.mensagem || 'Não foi possível carregar o último relatório salvo.', 'error');
+          return;
+        }
+        aplicarEstadoPddeSalvo(res.payload || {}, res);
+      })
+      .getEstadoPddeWeb();
+  }
+
+  function aplicarEstadoPddeSalvo(payload, meta) {
+    if (!payload || !payload.bruto || !payload.agregado || !payload.camposNumericos) {
+      setStatusCachePdde('O relatório salvo não possui dados suficientes para renderizar.', 'error');
+      return;
+    }
+
+    Object.keys(estadoPdde.charts || {}).forEach(function(id){
+      if (estadoPdde.charts[id]) estadoPdde.charts[id].destroy();
+    });
+
+    estadoPdde.bruto = payload.bruto || [];
+    estadoPdde.agregado = payload.agregado || [];
+    estadoPdde.camposNumericos = payload.camposNumericos || [];
+    estadoPdde.acaoAtual = payload.acaoAtual || '__GERAL__';
+    estadoPdde.charts = {};
+    estadoPdde.nomeArquivo = payload.nomeArquivo || meta.nomeArquivo || '';
+    estadoPdde.salvoEm = meta.salvoEm || payload.salvoEm || '';
+    estadoPdde.salvoPor = meta.salvoPor || payload.salvoPor || '';
+
+    montarTabsAcoes();
+    montarSelectOrdenacao();
+    document.getElementById('painel-relatorios').classList.remove('hidden');
+
+    var existeAcao = estadoPdde.acaoAtual === '__GERAL__' || getAcoesUnicas().indexOf(estadoPdde.acaoAtual) > -1;
+    if (!existeAcao) estadoPdde.acaoAtual = '__GERAL__';
+    document.querySelectorAll('.tab-action').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-acao') === estadoPdde.acaoAtual); });
+
+    renderizarRelatorio();
+    mudarVisaoPdde(estadoPdde.visaoAtual || 'relatorios');
+
+    var info = 'Último relatório carregado do sistema';
+    if (estadoPdde.nomeArquivo) info += ': ' + estadoPdde.nomeArquivo;
+    if (estadoPdde.salvoEm) info += ' · salvo em ' + formatarDataHoraPdde(estadoPdde.salvoEm);
+    if (estadoPdde.salvoPor) info += ' por ' + estadoPdde.salvoPor;
+    setStatusCachePdde(info, 'ok');
+  }
+
+  function salvarEstadoPddeNoSistema() {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    if (!estadoPdde.bruto.length || !estadoPdde.agregado.length) return;
+
+    var payload = {
+      bruto: estadoPdde.bruto,
+      agregado: estadoPdde.agregado,
+      camposNumericos: estadoPdde.camposNumericos,
+      acaoAtual: estadoPdde.acaoAtual || '__GERAL__',
+      nomeArquivo: estadoPdde.nomeArquivo || '',
+      salvoEm: new Date().toISOString()
+    };
+
+    setStatusCachePdde('Salvando o relatório no sistema para manter os gráficos disponíveis...', '');
+    google.script.run
+      .withFailureHandler(function(err){
+        setStatusCachePdde('O relatório foi gerado na tela, mas não consegui salvar no sistema: ' + (err && err.message ? err.message : err), 'error');
+      })
+      .withSuccessHandler(function(res){
+        if (res && res.ok) {
+          estadoPdde.salvoEm = res.salvoEm || '';
+          estadoPdde.salvoPor = res.salvoPor || '';
+          var msg = 'Relatório salvo no sistema. Os gráficos permanecerão disponíveis até uma nova planilha ser importada.';
+          if (res.salvoEm) msg += ' Salvo em ' + formatarDataHoraPdde(res.salvoEm) + '.';
+          setStatusCachePdde(msg, 'ok');
+        } else {
+          setStatusCachePdde('Não foi possível confirmar o salvamento do relatório no sistema.', 'error');
+        }
+      })
+      .salvarEstadoPddeWeb(payload);
+  }
+
+  function detectarDelimitador(texto) {
+    var linhas = texto.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
+    var primeira = linhas[0] || '';
+    var candidatos = [',', ';', '\t'];
+    var melhor = ',', maior = -1;
+    candidatos.forEach(function(d){
+      var count = (primeira.match(new RegExp(d === '\\t' ? '\\t' : escapeRegExp(d), 'g')) || []).length;
+      if (count > maior) { maior = count; melhor = d; }
+    });
+    return melhor;
+  }
+
+  function escapeRegExp(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function parseCsv(texto, delimitador) {
+    var rows = [], row = [], valor = '', emAspas = false;
+    texto = texto.replace(/^\uFEFF/, '');
+    for (var i = 0; i < texto.length; i++) {
+      var c = texto[i], prox = texto[i + 1];
+      if (c === '"') {
+        if (emAspas && prox === '"') { valor += '"'; i++; }
+        else emAspas = !emAspas;
+      } else if (c === delimitador && !emAspas) {
+        row.push(valor); valor = '';
+      } else if ((c === '\n' || c === '\r') && !emAspas) {
+        if (c === '\r' && prox === '\n') i++;
+        row.push(valor); valor = '';
+        if (row.some(function(v){ return String(v).trim() !== ''; })) rows.push(row);
+        row = [];
+      } else {
+        valor += c;
+      }
+    }
+    if (valor !== '' || row.length) {
+      row.push(valor);
+      if (row.some(function(v){ return String(v).trim() !== ''; })) rows.push(row);
+    }
+    return rows;
+  }
+
+  function normalizarTextoHeader(t) {
+    return String(t || '').replace(/^\uFEFF/, '').replace(/\t/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function encontrarLinhaCabecalho(rows) {
+    var limite = Math.min(rows.length, 20);
+    for (var i = 0; i < limite; i++) {
+      var row = rows[i] || [];
+      var preenchidos = row.filter(function(v){ return String(v || '').trim() !== ''; }).length;
+      var c0 = normalizarTextoHeader(row[0]).toLowerCase();
+      var c1 = normalizarTextoHeader(row[1]).toLowerCase();
+      var pareceCabecalho = preenchidos >= 3 && (
+        c0.indexOf('ação') > -1 || c0.indexOf('acao') > -1 ||
+        c0.indexOf('institui') > -1 || c1.indexOf('institui') > -1 ||
+        c1.indexOf('apm') > -1
+      );
+      if (pareceCabecalho) return i;
+    }
+    return 0;
+  }
+
+  function normalizarTextoBusca(t) {
+    return String(t || '')
+      .replace(/^\uFEFF/, '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_.\-\/]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function detectarEstruturaPdde(rawHeaders, linhasDados) {
+    rawHeaders = rawHeaders || [];
+    linhasDados = linhasDados || [];
+    var colAcao = -1;
+    var colInstituicao = -1;
+    var maxCols = rawHeaders.length;
+
+    function headerTem(idx, termos) {
+      var h = normalizarTextoBusca(rawHeaders[idx]);
+      return termos.some(function(t){ return h.indexOf(t) > -1; });
+    }
+
+    for (var i = 0; i < maxCols; i++) {
+      if (colAcao === -1 && headerTem(i, ['acao', 'recurso', 'programa'])) colAcao = i;
+      if (colInstituicao === -1 && headerTem(i, ['instituicao', 'apm', 'escola', 'unidade'])) colInstituicao = i;
+    }
+
+    // Modelo antigo: duas colunas chamadas Instituição; a primeira carrega a ação e a segunda a instituição.
+    if (colAcao === -1) {
+      var h0 = normalizarTextoBusca(rawHeaders[0]);
+      var h1 = normalizarTextoBusca(rawHeaders[1]);
+      var primeira = linhasDados.find(function(r){ return (r || []).some(function(v){ return String(v || '').trim() !== ''; }); }) || [];
+      var v0 = normalizarTextoBusca(primeira[0]);
+      var v1 = normalizarTextoBusca(primeira[1]);
+      if (h0.indexOf('instituicao') > -1 && h1.indexOf('instituicao') > -1 && (v0.indexOf('acao') === 0 || v0.indexOf('pdde') > -1) && v1) {
+        colAcao = 0;
+        colInstituicao = 1;
+      }
+    }
+
+    // Quando o cabeçalho não ajuda, identifica a coluna de recurso/ação pelo conteúdo.
+    if (colAcao === -1) {
+      var melhorAcao = { idx: -1, score: 0 };
+      for (var ca = 0; ca < Math.min(maxCols, 6); ca++) {
+        if (ca === colInstituicao) continue;
+        var scoreA = 0;
+        linhasDados.slice(0, 80).forEach(function(r){
+          var v = normalizarTextoBusca(r[ca]);
+          if (!v) return;
+          if (v.indexOf('acao') === 0 || v.indexOf('pdde') > -1 || v.indexOf('educ conectada') > -1 || v.indexOf('acessibilidade') > -1 || v.indexOf('qualidade') > -1 || v.indexOf('estrutura') > -1 || v.indexOf('sustent') > -1) scoreA++;
+        });
+        if (scoreA > melhorAcao.score) melhorAcao = { idx: ca, score: scoreA };
+      }
+      if (melhorAcao.score >= 2) colAcao = melhorAcao.idx;
+    }
+
+    // Identifica instituição pelo conteúdo: APM, CEI, EMEI, EMEF etc.
+    if (colInstituicao === -1) {
+      var melhorInst = { idx: -1, score: 0 };
+      for (var ci = 0; ci < maxCols; ci++) {
+        if (ci === colAcao) continue;
+        var scoreI = 0;
+        linhasDados.slice(0, 120).forEach(function(r){
+          var v = normalizarTextoBusca(r[ci]);
+          if (v.indexOf('apm ') === 0 || v.indexOf(' emef ') > -1 || v.indexOf(' emei ') > -1 || v.indexOf(' cei ') > -1 || v.indexOf('apm') > -1) scoreI++;
+        });
+        if (scoreI > melhorInst.score) melhorInst = { idx: ci, score: scoreI };
+      }
+      if (melhorInst.score > 0) colInstituicao = melhorInst.idx;
+    }
+
+    if (colInstituicao === -1) colInstituicao = colAcao === 0 ? 1 : 0;
+
+    return { colAcao: colAcao, colInstituicao: colInstituicao };
+  }
+
+  function normalizarHeaders(headers, estrutura) {
+    estrutura = estrutura || { colAcao: 0, colInstituicao: 1 };
+    var usados = {};
+    return headers.map(function(h, idx){
+      var nome = normalizarTextoHeader(h);
+      if (idx === estrutura.colAcao) nome = 'Ação';
+      if (idx === estrutura.colInstituicao) nome = 'Instituição';
+      nome = nome.replace(/^SUM de\s+/i, '').trim();
+      var nomeNorm = normalizarTextoBusca(nome);
+      var mapaNomes = {
+        'vl tot receita custeio': 'Valor Total Receita Custeio',
+        'vl tot receita capital': 'Valor Total Receita Capital',
+        'valor credit custeio': 'Valor Creditado Custeio',
+        'valor credit capital': 'Valor Creditado Capital',
+        'rec proprio custeio': 'Recurso Próprio Custeio',
+        'rec proprio capital': 'Recurso Próprio Capital',
+        'rend aplic custeio': 'Rendimento Aplicação Custeio',
+        'rend aplic capital': 'Rendimento Aplicação Capital',
+        'saldo reprog custeio': 'Saldo Reprogramado Custeio',
+        'saldo reprog capital': 'Saldo Reprogramado Capital',
+        'saldo a reprog custeio': 'Saldo a Reprogramar Custeio',
+        'saldo a reprog capital': 'Saldo a Reprogramar Capital'
+      };
+      if (mapaNomes[nomeNorm]) nome = mapaNomes[nomeNorm];
+      if (/^\/?\s*total$/i.test(nome)) nome = 'Total';
+      if (!nome) nome = 'Campo ' + (idx + 1);
+      var base = nome;
+      if (usados[base] === undefined) {
+        usados[base] = 0;
+        return base;
+      }
+      usados[base]++;
+      if (base.toLowerCase() === 'saldo a reprogramar custeio') return 'Saldo a Reprogramar Capital';
+      return base + ' (' + (usados[base] + 1) + ')';
+    });
+  }
+
+  function brNumero(v) {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v).replace(/\t/g, '').trim();
+    if (!s || s === '-') return 0;
+    s = s.replace(/R\$/g, '').replace(/\s/g, '');
+    if (s.indexOf(',') > -1) s = s.replace(/\./g, '').replace(',', '.');
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function moeda(v) {
+    return (Number(v) || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+  }
+
+  function prepararRowsPlanilha(rows) {
+    return (rows || []).map(function(row){
+      return (row || []).map(function(v){ return v === null || v === undefined ? '' : v; });
+    }).filter(function(row){
+      return row.some(function(v){ return String(v || '').trim() !== ''; });
+    });
+  }
+
+  function letraColuna(idx) {
+    if (idx === undefined || idx === null || idx < 0) return 'não encontrada';
+    var s = '';
+    idx++;
+    while (idx > 0) {
+      var m = (idx - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      idx = Math.floor((idx - m) / 26);
+    }
+    return s;
+  }
+
+  function processarRowsPdde(rows, origem) {
+    rows = prepararRowsPlanilha(rows);
+    if (rows.length < 2) throw new Error('O arquivo não possui linhas suficientes para processar.');
+
+    var idxCabecalho = encontrarLinhaCabecalho(rows);
+    var rawHeaders = rows[idxCabecalho];
+    var linhasDados = rows.slice(idxCabecalho + 1);
+    var estrutura = detectarEstruturaPdde(rawHeaders, linhasDados);
+    var headers = normalizarHeaders(rawHeaders, estrutura);
+
+    var dados = linhasDados.map(function(r, idx){
+      var obj = {};
+      headers.forEach(function(h, i){ obj[h] = r[i] === undefined ? '' : r[i]; });
+      obj['Ação'] = estrutura.colAcao > -1 ? (r[estrutura.colAcao] || '') : 'PDDE';
+      obj['Instituição'] = r[estrutura.colInstituicao] || '';
+      obj['__linhaOrigem'] = idxCabecalho + 2 + idx;
+      return obj;
+    }).filter(function(obj){
+      var inst = (obj['Instituição'] || '').toString().trim();
+      var acao = (obj['Ação'] || '').toString().trim();
+      if (!inst) return false;
+      if (/total geral/i.test(inst)) return false;
+      if (/institui[cç][aã]o/i.test(inst) && !acao) return false;
+      return true;
+    });
+
+    if (!dados.length) {
+      throw new Error('Não encontrei instituições na coluna esperada. No modelo atual, a coluna de instituição geralmente é a Coluna C.');
+    }
+
+    var camposNumericos = headers.filter(function(h, idx){
+      if (idx === estrutura.colAcao || idx === estrutura.colInstituicao) return false;
+      if (h === 'Ação' || h === 'Instituição') return false;
+      if (/^Campo\s+\d+$/i.test(h)) return false;
+      return dados.some(function(l){ return brNumero(l[h]) !== 0; }) || /total|saldo|valor|receita|despesa|rendimento|recurso|creditado|reprog/i.test(h);
+    });
+
+    if (!camposNumericos.length) throw new Error('Não encontrei colunas numéricas para montar os relatórios.');
+
+    estadoPdde.bruto = dados;
+    estadoPdde.camposNumericos = camposNumericos;
+    estadoPdde.agregado = agregarPorAcaoEInstituicao(dados, camposNumericos);
+    estadoPdde.acaoAtual = '__GERAL__';
+
+    montarTabsAcoes();
+    montarSelectOrdenacao();
+    document.getElementById('painel-relatorios').classList.remove('hidden');
+    setStatusImportacao('Arquivo processado com sucesso' + (origem ? ' (' + origem + ')' : '') + ': ' + dados.length + ' linhas, ' + getAcoesUnicas().length + ' recursos/ações encontrados. Estrutura detectada: ação/recurso na coluna ' + letraColuna(estrutura.colAcao) + ' e instituição na coluna ' + letraColuna(estrutura.colInstituicao) + '.', 'ok');
+    estadoPdde.visaoAtual = 'relatorios';
+    renderizarRelatorio();
+    mudarVisaoPdde('relatorios');
+    salvarEstadoPddeNoSistema();
+    setTimeout(function(){ document.getElementById('painel-relatorios').scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
+  }
+
+  function processarArquivoPdde() {
+    var input = document.getElementById('arquivo-pdde');
+    var arquivo = input.files && input.files[0];
+    if (!arquivo) return setStatusImportacao('Selecione um arquivo Excel antes de processar.', 'error');
+
+    var btn = document.getElementById('btn-processar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Processando arquivo...';
+    setStatusImportacao('Lendo arquivo Excel e separando por ação...', '');
+
+    var nome = arquivo.name || '';
+    estadoPdde.nomeArquivo = nome;
+    var ehExcel = /\.(xlsx|xls)$/i.test(nome) || /spreadsheet|excel/i.test(arquivo.type || '');
+    var ehCsv = /\.csv$/i.test(nome) || /csv|text\/plain/i.test(arquivo.type || '');
+
+    var finalizar = function() {
+      btn.disabled = false;
+      btn.textContent = '📊 Processar e atualizar painéis';
+    };
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        if (ehExcel) {
+          if (typeof XLSX === 'undefined') throw new Error('Biblioteca de leitura de Excel não carregou. Verifique a conexão e tente novamente.');
+          var data = e.target.result;
+          var workbook = XLSX.read(data, { type: 'array' });
+          if (!workbook.SheetNames || !workbook.SheetNames.length) throw new Error('O Excel não possui abas para leitura.');
+          var nomeAba = workbook.SheetNames[0];
+          var sheet = workbook.Sheets[nomeAba];
+          var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+          processarRowsPdde(rows, 'aba "' + nomeAba + '"');
+        } else if (ehCsv) {
+          var texto = e.target.result || '';
+          var delimitador = detectarDelimitador(texto);
+          var rowsCsv = parseCsv(texto, delimitador);
+          processarRowsPdde(rowsCsv, 'CSV');
+        } else {
+          throw new Error('Formato não reconhecido. Envie um arquivo .xlsx, .xls ou .csv.');
+        }
+      } catch(err) {
+        setStatusImportacao('Erro ao processar: ' + err.message, 'error');
+      } finally {
+        finalizar();
+      }
+    };
+    reader.onerror = function(){
+      setStatusImportacao('Não consegui ler o arquivo selecionado.', 'error');
+      finalizar();
+    };
+
+    if (ehExcel) reader.readAsArrayBuffer(arquivo);
+    else reader.readAsText(arquivo, 'UTF-8');
+  }
+
+
+  function obterObservacaoPdde(linha) {
+    var chaves = ['OBSERVAÇÃO', 'Observação', 'OBSERVACAO', 'Observacao'];
+    for (var i = 0; i < chaves.length; i++) {
+      if (linha[chaves[i]] !== undefined && String(linha[chaves[i]] || '').trim() !== '') return String(linha[chaves[i]] || '').trim();
+    }
+    return '';
+  }
+
+  function agregarPorAcaoEInstituicao(dados, campos) {
+    var mapa = {};
+    dados.forEach(function(linha){
+      var acao = normalizarTextoHeader(linha['Ação']) || 'Sem ação';
+      var instituicao = normalizarTextoHeader(linha['Instituição']) || 'Sem instituição';
+      var chave = acao + '||' + instituicao;
+      if (!mapa[chave]) {
+        mapa[chave] = { 'Ação': acao, 'Instituição': instituicao, '__linhas': 0, '__linhasOrigem': [], '__observacoes': [], 'OBSERVAÇÃO': '' };
+        campos.forEach(function(c){ mapa[chave][c] = 0; });
+      }
+      mapa[chave].__linhas += 1;
+      if (linha['__linhaOrigem']) mapa[chave].__linhasOrigem.push(linha['__linhaOrigem']);
+      var obs = obterObservacaoPdde(linha);
+      if (obs && mapa[chave].__observacoes.indexOf(obs) === -1) {
+        mapa[chave].__observacoes.push(obs);
+        mapa[chave]['OBSERVAÇÃO'] = mapa[chave].__observacoes.join(' | ');
+      }
+      campos.forEach(function(c){ mapa[chave][c] += brNumero(linha[c]); });
+    });
+    return Object.keys(mapa).map(function(k){ return mapa[k]; });
+  }
+
+  function getAcoesUnicas() {
+    return Array.from(new Set(estadoPdde.agregado.map(function(l){ return l['Ação']; }))).sort(function(a,b){ return a.localeCompare(b, 'pt-BR'); });
+  }
+
+  function totalCampo(linhas, campo) {
+    return linhas.reduce(function(s, l){ return s + (Number(l[campo]) || 0); }, 0);
+  }
+
+  function montarTabsAcoes() {
+    var box = document.getElementById('tabs-acoes');
+    var acoes = getAcoesUnicas();
+    var totalGeral = totalCampo(estadoPdde.agregado, 'Total');
+    var html = '<button class="tab-action active" data-acao="__GERAL__" onclick="selecionarAcaoPdde(\'__GERAL__\')">Todas as ações <small>' + moeda(totalGeral) + '</small></button>';
+    acoes.forEach(function(acao){
+      var linhas = estadoPdde.agregado.filter(function(l){ return l['Ação'] === acao; });
+      html += '<button class="tab-action" data-acao="' + escAttr(acao) + '" onclick="selecionarAcaoPdde(\'' + jsStr(acao) + '\')">' + esc(acao) + ' <small>' + linhas.length + ' unidades</small></button>';
+    });
+    box.innerHTML = html;
+  }
+
+  function selecionarAcaoPdde(acao) {
+    estadoPdde.acaoAtual = acao;
+    document.querySelectorAll('.tab-action').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-acao') === acao); });
+    renderizarRelatorio();
+  }
+
+  function montarSelectOrdenacao() {
+    var sel = document.getElementById('ordenar-campo');
+    var camposPreferidos = ['Total', 'Valor Total Receita Custeio', 'Valor Total Receita Capital', 'Valor Despesa Custeio', 'Valor Despesa Capital', 'Saldo a Reprogramar Custeio', 'Saldo a Reprogramar Capital'];
+    var campos = camposPreferidos.filter(function(c){ return estadoPdde.camposNumericos.indexOf(c) > -1; });
+    estadoPdde.camposNumericos.forEach(function(c){ if (campos.indexOf(c) === -1) campos.push(c); });
+    sel.innerHTML = campos.map(function(c){ return '<option value="' + escAttr(c) + '">' + esc(c) + '</option>'; }).join('');
+    if (campos.indexOf('Total') > -1) sel.value = 'Total';
+  }
+
+
+  function mudarVisaoPdde(visao) {
+    estadoPdde.visaoAtual = visao === 'gof' ? 'gof' : 'relatorios';
+    document.querySelectorAll('.relatorios-view').forEach(function(el){ el.classList.toggle('hidden', estadoPdde.visaoAtual !== 'relatorios'); });
+    document.querySelectorAll('.gof-view').forEach(function(el){ el.classList.toggle('hidden', estadoPdde.visaoAtual !== 'gof'); });
+
+    var btnRel = document.getElementById('btn-visao-relatorios');
+    var btnGof = document.getElementById('btn-visao-gof');
+    if (btnRel) btnRel.className = estadoPdde.visaoAtual === 'relatorios' ? 'btn green' : 'btn';
+    if (btnGof) btnGof.className = estadoPdde.visaoAtual === 'gof' ? 'btn green' : 'btn';
+
+    var btnExportar = document.getElementById('btn-exportar-visao');
+    if (btnExportar) btnExportar.textContent = estadoPdde.visaoAtual === 'gof' ? '💾 Gerar relatório GOF XLSX' : '💾 Gerar relatório XLSX no modelo';
+
+    if (estadoPdde.visaoAtual === 'gof') {
+      document.getElementById('titulo-acao').textContent = 'Relatório GOF';
+      document.getElementById('subtitulo-acao').textContent = 'Somatório por contas PDDE para a Gerência de Orçamentos e Finanças.';
+      renderizarRelatorioGof();
+    } else {
+      renderizarRelatorio();
+    }
+  }
+
+  function exportarVisaoAtualPdde() {
+    if (estadoPdde.visaoAtual === 'gof') return exportarRelatorioGofXlsx();
+    return exportarRelatorioAtual();
+  }
+
+  function linhasFiltradas() {
+    var termo = document.getElementById('filtro-instituicao').value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    var linhas = estadoPdde.agregado.filter(function(l){ return estadoPdde.acaoAtual === '__GERAL__' || l['Ação'] === estadoPdde.acaoAtual; });
+    if (termo) {
+      linhas = linhas.filter(function(l){ return l['Instituição'].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').indexOf(termo) > -1; });
+    }
+    var campo = document.getElementById('ordenar-campo').value || 'Total';
+    var sentido = document.getElementById('ordenar-sentido').value;
+    linhas.sort(function(a,b){
+      if (sentido === 'az') return a['Instituição'].localeCompare(b['Instituição'], 'pt-BR');
+      var av = Number(a[campo]) || 0, bv = Number(b[campo]) || 0;
+      return sentido === 'asc' ? av - bv : bv - av;
+    });
+    return linhas;
+  }
+
+  function renderizarRelatorio() {
+    if (!estadoPdde.agregado.length) return;
+    var linhas = linhasFiltradas();
+    var titulo = estadoPdde.acaoAtual === '__GERAL__' ? 'Todas as ações' : estadoPdde.acaoAtual;
+    if (estadoPdde.visaoAtual !== 'gof') {
+      document.getElementById('titulo-acao').textContent = titulo;
+      document.getElementById('subtitulo-acao').textContent = linhas.length + ' registro(s) na visão atual.';
+    }
+    renderizarKpis(linhas);
+    renderizarRelatorioGof();
+    renderizarTabela(linhas);
+    renderizarGraficos(linhas);
+  }
+
+  function renderizarKpis(linhas) {
+    var campos = estadoPdde.camposNumericos;
+    var kpis = [
+      { titulo:'Instituições', valor: linhas.length, nota:'Linhas agregadas', icone:'🏫', cls:'blue', money:false },
+      { titulo:'Total', campo:'Total', nota:'Soma geral', icone:'Σ', cls:'green', money:true },
+      { titulo:'Receita Custeio', campo:'Valor Total Receita Custeio', nota:'Total de receitas', icone:'💵', cls:'blue', money:true },
+      { titulo:'Receita Capital', campo:'Valor Total Receita Capital', nota:'Total de receitas', icone:'🏛️', cls:'purple', money:true },
+      { titulo:'Despesa Custeio', campo:'Valor Despesa Custeio', nota:'Execução em custeio', icone:'🧾', cls:'danger', money:true },
+      { titulo:'Despesa Capital', campo:'Valor Despesa Capital', nota:'Execução em capital', icone:'🧱', cls:'warn', money:true },
+      { titulo:'Saldo Custeio', campo:'Saldo a Reprogramar Custeio', nota:'Saldo final', icone:'↪', cls:'green', money:true },
+      { titulo:'Saldo Capital', campo:'Saldo a Reprogramar Capital', nota:'Saldo final', icone:'↪', cls:'purple', money:true }
+    ];
+    var html = '';
+    kpis.forEach(function(k){
+      // Mantém os KPIs visíveis mesmo quando o valor calculado é zero.
+      // Só deixa de renderizar quando a coluna realmente não existe no arquivo importado.
+      if (k.campo && campos.indexOf(k.campo) === -1) return;
+      var valor = k.campo ? totalCampo(linhas, k.campo) : k.valor;
+      html += '<article class="kpi-card ' + (k.cls || '') + '">' +
+        '<div class="kpi-head"><div class="kpi-title">' + esc(k.titulo) + '</div><div class="kpi-icon">' + k.icone + '</div></div>' +
+        '<div class="kpi-value">' + (k.money ? moeda(valor) : valor.toLocaleString('pt-BR')) + '</div>' +
+        '<div class="kpi-note">' + esc(k.nota) + '</div>' +
+      '</article>';
+    });
+    document.getElementById('kpis-pdde').innerHTML = html;
+  }
+
+  function renderizarTabela(linhas) {
+    var campos = estadoPdde.camposNumericos;
+    var total = {};
+    campos.forEach(function(c){ total[c] = totalCampo(linhas, c); });
+    var colgroup = '<colgroup><col class="col-instituicao"><col class="col-instituicao">' + campos.map(function(){ return '<col class="col-valor">'; }).join('') + '<col class="col-instituicao"></colgroup>';
+    var html = '<table class="pdde-pivot-table">' + colgroup + '<thead><tr><th>Instituição</th><th>Instituição</th>' + campos.map(function(c){ return '<th title="' + esc(c) + '">' + esc(c) + '</th>'; }).join('') + '<th>OBSERVAÇÃO</th></tr></thead><tbody>';
+    if (!linhas.length) {
+      html += '<tr><td colspan="' + (campos.length + 3) + '" class="empty">Nenhuma instituição encontrada.</td></tr>';
+    } else {
+      linhas.forEach(function(l){
+        var observacao = l['OBSERVAÇÃO'] || '';
+        html += '<tr><td><span class="pdde-inst-nome">' + esc(l['Ação']) + '</span></td><td><span class="pdde-inst-nome">' + esc(l['Instituição']) + '</span><span class="pdde-inst-meta">Linhas fonte: ' + esc((l['__linhasOrigem'] || []).join(', ') || '-') + '</span></td>' + campos.map(function(c){ return '<td class="pdde-valor">' + moeda(l[c]) + '</td>'; }).join('') + '<td>' + esc(observacao) + '</td></tr>';
+      });
+      html += '<tr class="total-row"><td>Total da visão</td><td></td>' + campos.map(function(c){ return '<td class="pdde-valor">' + moeda(total[c]) + '</td>'; }).join('') + '<td></td></tr>';
+    }
+    html += '</tbody></table>';
+    document.getElementById('tabela-pdde').innerHTML = html;
+    document.getElementById('info-tabela').textContent = linhas.length + ' registro(s) agregados por instituição.';
+  }
+
+  function renderizarGraficos(linhas) {
+    var campoOrdenacao = document.getElementById('ordenar-campo').value || 'Total';
+    var top = linhas.slice().sort(function(a,b){ return (Number(b[campoOrdenacao])||0) - (Number(a[campoOrdenacao])||0); }).slice(0, 10);
+    criarChart('chart-top', 'bar', {
+      labels: top.map(function(l){ return l['Instituição'].replace(/^APM\s+/i, ''); }),
+      datasets: [{ label: campoOrdenacao, data: top.map(function(l){ return Number(l[campoOrdenacao]) || 0; }) }]
+    }, { indexAxis: 'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(ctx){ return moeda(ctx.raw); } } } }, scales:{ x:{ ticks:{ callback:function(v){ return moeda(v).replace('R$ ','R$ '); } } } } });
+
+    var compCampos = ['Valor Total Receita Custeio','Valor Total Receita Capital','Valor Despesa Custeio','Valor Despesa Capital','Saldo a Reprogramar Custeio','Saldo a Reprogramar Capital'].filter(function(c){ return estadoPdde.camposNumericos.indexOf(c) > -1; });
+    var compValores = compCampos.map(function(c){ return totalCampo(linhas, c); });
+    criarChart('chart-composicao', 'doughnut', {
+      labels: compCampos,
+      datasets: [{ data: compValores }]
+    }, { responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ label:function(ctx){ return ctx.label + ': ' + moeda(ctx.raw); } } } } });
+  }
+
+  function criarChart(id, tipo, data, options) {
+    var canvas = document.getElementById(id);
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (estadoPdde.charts[id]) estadoPdde.charts[id].destroy();
+    estadoPdde.charts[id] = new Chart(canvas.getContext('2d'), { type: tipo, data: data, options: options || {} });
+  }
+
+  function limparFiltrosPdde() {
+    document.getElementById('filtro-instituicao').value = '';
+    document.getElementById('ordenar-sentido').value = 'desc';
+    if (estadoPdde.camposNumericos.indexOf('Total') > -1) document.getElementById('ordenar-campo').value = 'Total';
+    renderizarRelatorio();
+  }
+
+  function limparProcessamento() {
+    Object.keys(estadoPdde.charts || {}).forEach(function(id){
+      if (estadoPdde.charts[id]) estadoPdde.charts[id].destroy();
+    });
+    estadoPdde = { bruto: [], agregado: [], camposNumericos: [], acaoAtual: '__GERAL__', charts: {}, nomeArquivo: '', salvoEm: '', salvoPor: '', visaoAtual: 'relatorios' };
+    document.getElementById('arquivo-pdde').value = '';
+    document.getElementById('painel-relatorios').classList.add('hidden');
+    var el = document.getElementById('status-importacao');
+    el.style.display = 'none';
+    setStatusCachePdde('Tela limpa. O último relatório salvo continua guardado no sistema e voltará ao recarregar a página; ele só será substituído por uma nova planilha processada.', '');
+  }
+
+
+  function normalizarTextoGof(t) {
+    return String(t || '')
+      .replace(/^\uFEFF/, '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[_.\-\/]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function campoTotalGof() {
+    if (estadoPdde.camposNumericos.indexOf('Total') > -1) return 'Total';
+    var preferidos = ['Saldo a Reprogramar Capital', 'Saldo a Reprogramar Custeio', 'Valor Total Receita Capital', 'Valor Total Receita Custeio'];
+    for (var i = 0; i < preferidos.length; i++) {
+      if (estadoPdde.camposNumericos.indexOf(preferidos[i]) > -1) return preferidos[i];
+    }
+    return estadoPdde.camposNumericos[estadoPdde.camposNumericos.length - 1] || '';
+  }
+
+  function classificarContaGof(linha) {
+    var programa = normalizarTextoGof(linha['Ação'] || linha['Recurso'] || '');
+    var instituicao = normalizarTextoGof(linha['Instituição'] || '');
+
+    // Prioridade: Estrutura Acessibilidade deve entrar em Equidade, não na regra especial do Básico.
+    if (programa.indexOf('PDDE ESTRUTURA ACESSIBILIDADE') > -1 ||
+        programa.indexOf('PDDE ESTRUTURA SALA DE RECURSOS') > -1 ||
+        programa.indexOf('PDDE ESTRUTURA SUSTENTAVEL') > -1 ||
+        programa.indexOf('PDDE EQUIDADE') > -1 ||
+        programa.indexOf('PDDE SRM') > -1 ||
+        programa.indexOf('PDDE SUSTENTAVEL') > -1) {
+      return 'PDDE Conta Equidade';
+    }
+
+    if ((programa.indexOf('PDDE PROGRAMA DINHEIRO DIRETO NA ESCOLA') > -1 ||
+         programa.indexOf('PROGRAMA DINHEIRO DIRETO NA ESCOLA') > -1 ||
+         programa.indexOf('DINHEIRO DIRETO NA ESCOLA') > -1) && programa.indexOf('EMERGENCIAL') === -1) {
+      return 'PDDE Conta Básico';
+    }
+
+    if ((programa === 'ACESSIBILIDADE' || programa.indexOf('PDDE ACESSIBILIDADE') > -1) && instituicao.indexOf('ANISIO TEIXEIRA') > -1) {
+      return 'PDDE Conta Básico';
+    }
+
+    if (programa.indexOf('PDDE CONECTADA') > -1 ||
+        programa.indexOf('EDUC CONECTADA') > -1 ||
+        programa.indexOf('PDDE EMERGENCIAL') > -1 ||
+        programa.indexOf('CANTINHO DA LEITURA') > -1 ||
+        programa.indexOf('EDUCACAO E FAMILIA') > -1 ||
+        programa.indexOf('ESCOLA DAS ADOLESCENCIAS') > -1 ||
+        programa.indexOf('ESCOLA E COMUNIDADE') > -1 ||
+        programa.indexOf('TEMPO DE APRENDER') > -1 ||
+        programa.indexOf('PDDE ALFABETIZACAO') > -1 ||
+        programa.indexOf('MAIS ALFABETIZACAO') > -1 ||
+        programa.indexOf('MAIS CULTURA') > -1 ||
+        programa.indexOf('ATLETA ESCOLA') > -1) {
+      return 'PDDE Conta Qualidade';
+    }
+
+    return 'Não classificado';
+  }
+
+  function montarDadosGof() {
+    var campo = campoTotalGof();
+    var campos = estadoPdde.camposNumericos || [];
+    var totais = {
+      'PDDE Conta Básico': 0,
+      'PDDE Conta Qualidade': 0,
+      'PDDE Conta Equidade': 0,
+      'Não classificado': 0
+    };
+    var mapa = {};
+
+    (estadoPdde.agregado || []).forEach(function(l){
+      var conta = classificarContaGof(l);
+      var instituicao = l['Instituição'] || '';
+      var chave = conta + '||' + instituicao;
+      if (!mapa[chave]) {
+        mapa[chave] = { conta: conta, instituicao: instituicao, programas: [], linhasFonte: [], qtdeLinhas: 0, observacoes: [], 'OBSERVAÇÃO': '' };
+        campos.forEach(function(c){ mapa[chave][c] = 0; });
+      }
+      campos.forEach(function(c){ mapa[chave][c] += Number(l[c]) || 0; });
+      var programa = l['Ação'] || l['Recurso'] || '';
+      if (programa && mapa[chave].programas.indexOf(programa) === -1) mapa[chave].programas.push(programa);
+      (l['__linhasOrigem'] || []).forEach(function(n){ if (mapa[chave].linhasFonte.indexOf(n) === -1) mapa[chave].linhasFonte.push(n); });
+      mapa[chave].qtdeLinhas += l['__linhas'] || 0;
+      var obs = l['OBSERVAÇÃO'] || '';
+      if (obs && mapa[chave].observacoes.indexOf(obs) === -1) mapa[chave].observacoes.push(obs);
+      mapa[chave]['OBSERVAÇÃO'] = mapa[chave].observacoes.join(' | ');
+      totais[conta] = (totais[conta] || 0) + (Number(l[campo]) || 0);
+    });
+
+    var detalhes = Object.keys(mapa).map(function(k){
+      var d = mapa[k];
+      d.linhasFonte.sort(function(a,b){ return Number(a) - Number(b); });
+      d.programas.sort(function(a,b){ return String(a).localeCompare(String(b), 'pt-BR'); });
+      if (!d['OBSERVAÇÃO']) d['OBSERVAÇÃO'] = 'Programas: ' + d.programas.join('; ') + '. Linhas fonte: ' + (d.linhasFonte.join(', ') || '-');
+      return d;
+    }).sort(function(a,b){
+      var c = ordemContaGof(a.conta) - ordemContaGof(b.conta);
+      if (c !== 0) return c;
+      return String(a.instituicao || '').localeCompare(String(b.instituicao || ''), 'pt-BR');
+    });
+
+    return { campo: campo, campos: campos, totais: totais, detalhes: detalhes };
+  }
+
+  function ordemContaGof(conta) {
+    var ordem = {
+      'PDDE Conta Básico': 1,
+      'PDDE Conta Qualidade': 2,
+      'PDDE Conta Equidade': 3,
+      'Não classificado': 4
+    };
+    return ordem[conta] || 99;
+  }
+
+  function clsContaGof(conta) {
+    if (conta === 'PDDE Conta Básico') return 'gof-basico';
+    if (conta === 'PDDE Conta Qualidade') return 'gof-qualidade';
+    if (conta === 'PDDE Conta Equidade') return 'gof-equidade';
+    return 'gof-nao';
+  }
+
+  function renderizarRelatorioGof() {
+    var card = document.getElementById('card-gof');
+    if (!card || !estadoPdde.agregado.length) return;
+    var dados = montarDadosGof();
+    var totalClassificado = (dados.totais['PDDE Conta Básico'] || 0) + (dados.totais['PDDE Conta Qualidade'] || 0) + (dados.totais['PDDE Conta Equidade'] || 0);
+    var totalGeral = totalClassificado + (dados.totais['Não classificado'] || 0);
+
+    var kpis = [
+      { titulo:'PDDE Conta Básico', valor:dados.totais['PDDE Conta Básico'] || 0, cls:'blue', nota:'Dinheiro Direto na Escola + Acessibilidade Anísio Teixeira' },
+      { titulo:'PDDE Conta Qualidade', valor:dados.totais['PDDE Conta Qualidade'] || 0, cls:'purple', nota:'Conectada, Emergencial, Qualidade, Alfabetização, Cultura e Atleta Escola' },
+      { titulo:'PDDE Conta Equidade', valor:dados.totais['PDDE Conta Equidade'] || 0, cls:'green', nota:'Equidade, Estrutura Acessibilidade, Sala de Recursos e Sustentável' },
+      { titulo:'Total classificado', valor:totalClassificado, cls:'warn', nota:'Somatório das três contas solicitadas' }
+    ];
+    var htmlKpi = '';
+    kpis.forEach(function(k){
+      htmlKpi += '<article class="kpi-card ' + k.cls + '">' +
+        '<div class="kpi-head"><div class="kpi-title">' + esc(k.titulo) + '</div><div class="kpi-icon">Σ</div></div>' +
+        '<div class="kpi-value">' + moeda(k.valor) + '</div>' +
+        '<div class="kpi-note">' + esc(k.nota) + '</div>' +
+      '</article>';
+    });
+    document.getElementById('gof-kpis').innerHTML = htmlKpi;
+
+    var naoClassificado = dados.totais['Não classificado'] || 0;
+    document.getElementById('gof-nota').innerHTML = 'Campo utilizado para o somatório: <strong>' + esc(dados.campo || 'não identificado') + '</strong>. ' +
+      'Total classificado nas três contas: <strong>' + moeda(totalClassificado) + '</strong>.' +
+      (naoClassificado ? ' Há <strong>' + moeda(naoClassificado) + '</strong> em programas não classificados pelas regras atuais, mantidos separados para conferência.' : ' Não há valores fora das regras de classificação.') +
+      ' Total geral lido na base: <strong>' + moeda(totalGeral) + '</strong>.';
+
+    var filtro = document.getElementById('gof-filtro-conta') ? document.getElementById('gof-filtro-conta').value : 'ALL';
+    var linhas = dados.detalhes.filter(function(d){ return filtro === 'ALL' || d.conta === filtro; });
+    var totalFiltro = linhas.reduce(function(s, d){ return s + (Number(d.valor) || 0); }, 0);
+
+    var campos = estadoPdde.camposNumericos || [];
+    var totaisFiltro = {};
+    campos.forEach(function(c){ totaisFiltro[c] = linhas.reduce(function(s, d){ return s + (Number(d[c]) || 0); }, 0); });
+    var colgroup = '<colgroup><col class="col-instituicao"><col class="col-instituicao">' + campos.map(function(){ return '<col class="col-valor">'; }).join('') + '<col class="col-instituicao"></colgroup>';
+    var html = '<table class="pdde-pivot-table">' + colgroup + '<thead><tr><th>Instituição</th><th>Instituição</th>' + campos.map(function(c){ return '<th title="' + esc(c) + '">' + esc(c) + '</th>'; }).join('') + '<th>OBSERVAÇÃO</th></tr></thead><tbody>';
+    if (!linhas.length) {
+      html += '<tr><td colspan="' + (campos.length + 3) + '" class="empty">Nenhum registro encontrado para o filtro selecionado.</td></tr>';
+    } else {
+      linhas.forEach(function(d){
+        html += '<tr><td><span class="pdde-inst-nome">' + esc(d.conta) + '</span></td><td><span class="pdde-inst-nome">' + esc(d.instituicao) + '</span><span class="pdde-inst-meta">Linhas fonte: ' + esc((d.linhasFonte || []).join(', ') || '-') + '</span></td>' + campos.map(function(c){ return '<td class="pdde-valor">' + moeda(d[c]) + '</td>'; }).join('') + '<td>' + esc(d['OBSERVAÇÃO'] || '') + '</td></tr>';
+      });
+      html += '<tr class="total-row"><td>Total do filtro</td><td></td>' + campos.map(function(c){ return '<td class="pdde-valor">' + moeda(totaisFiltro[c]) + '</td>'; }).join('') + '<td></td></tr>';
+    }
+    html += '</tbody></table>';
+    document.getElementById('gof-tabela').innerHTML = html;
+  }
+
+  function exportarRelatorioGofXlsx() {
+    if (!estadoPdde.agregado.length) return alert('Não há dados processados para gerar o relatório da Gerência de Orçamentos e Finanças.');
+    if (typeof XLSX === 'undefined') return alert('A biblioteca de Excel não carregou. Verifique a conexão e tente novamente.');
+
+    var wb = XLSX.utils.book_new();
+    var usados = {};
+    var dados = montarDadosGof();
+    var campos = estadoPdde.camposNumericos.slice();
+    var linhasModelo = criarLinhasModeloGof(dados, campos);
+    var contas = ['PDDE Conta Básico', 'PDDE Conta Qualidade', 'PDDE Conta Equidade', 'Não classificado'].filter(function(conta){
+      return linhasModelo.some(function(l){ return l['Ação'] === conta; });
+    });
+
+    // Mesmo formato do relatório antigo: base consolidada, bases por grupo, resumos, conferência e resumo geral.
+    adicionarAbaUnica(wb, criarWorksheetBasePdde(linhasModelo, campos), 'Base Consolidada', usados);
+
+    contas.forEach(function(conta){
+      var linhasConta = linhasModelo.filter(function(l){ return l['Ação'] === conta; });
+      adicionarAbaUnica(wb, criarWorksheetBasePdde(linhasConta, campos), conta, usados);
+      adicionarAbaUnica(wb, criarWorksheetTabelaDinamicaPdde(linhasConta, campos), 'Resumo ' + conta, usados);
+    });
+
+    adicionarAbaUnica(wb, criarWorksheetConferenciaPdde(linhasModelo, campos), 'Conferência dos cálculos', usados);
+    adicionarAbaUnica(wb, criarWorksheetResumoGofModelo(contas, campos, linhasModelo), 'Resumo', usados);
+
+    var agora = new Date();
+    XLSX.writeFile(wb, 'relatorio_pdde_gof_modelo_' + agora.toISOString().slice(0,10) + '.xlsx', { bookType: 'xlsx' });
+  }
+
+
+
+  function criarLinhasModeloGof(dados, campos) {
+    return (dados.detalhes || []).map(function(d){
+      var obj = {
+        'Ação': d.conta || '',
+        'Instituição': d.instituicao || '',
+        '__linhasOrigem': d.linhasFonte || [],
+        '__linhas': d.qtdeLinhas || 0,
+        'OBSERVAÇÃO': d['OBSERVAÇÃO'] || ''
+      };
+      campos.forEach(function(c){ obj[c] = Number(d[c]) || 0; });
+      return obj;
+    });
+  }
+
+  function criarWorksheetResumoGofModelo(contas, campos, linhasModelo) {
+    var matriz = [
+      ['Relatório PDDE', 'Somatório por contas GOF no mesmo modelo do relatório antigo'],
+      ['Arquivo processado', estadoPdde.nomeArquivo || ''],
+      ['Último salvamento no sistema', estadoPdde.salvoEm ? formatarDataHoraPdde(estadoPdde.salvoEm) : ''],
+      ['Salvo por', estadoPdde.salvoPor || ''],
+      ['Gerado em', new Date().toLocaleString('pt-BR')],
+      ['Total de contas', contas.length],
+      ['Total de registros da base GOF', linhasModelo.length],
+      [],
+      ['Conta', 'Instituições'].concat(campos)
+    ];
+
+    contas.forEach(function(conta){
+      var linhas = linhasModelo.filter(function(l){ return l['Ação'] === conta; });
+      var row = [conta, linhas.length];
+      campos.forEach(function(c){ row.push(totalCampo(linhas, c)); });
+      matriz.push(row);
+    });
+
+    var total = ['Total geral', linhasModelo.length];
+    campos.forEach(function(c){ total.push(totalCampo(linhasModelo, c)); });
+    matriz.push(total);
+
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'resumo', colunasMoedaInicio: 2, totalRow: matriz.length });
+    return ws;
+  }
+
+  function adicionarAbasGofNoWorkbook(wb, usados) {
+    var dados = montarDadosGof();
+    adicionarAbaUnica(wb, criarWorksheetGofResumo(dados), 'Resumo GOF', usados);
+    adicionarAbaUnica(wb, criarWorksheetGofDetalhamento(dados), 'Detalhamento GOF', usados);
+    adicionarAbaUnica(wb, criarWorksheetGofRegras(), 'Regras GOF', usados);
+  }
+
+  function criarWorksheetGofResumo(dados) {
+    var totalClassificado = (dados.totais['PDDE Conta Básico'] || 0) + (dados.totais['PDDE Conta Qualidade'] || 0) + (dados.totais['PDDE Conta Equidade'] || 0);
+    var totalGeral = totalClassificado + (dados.totais['Não classificado'] || 0);
+    var matriz = [
+      ['Relatório', 'Somatório de contas PDDE - Gerência de Orçamentos e Finanças'],
+      ['Arquivo processado', estadoPdde.nomeArquivo || ''],
+      ['Campo utilizado no somatório', dados.campo || ''],
+      ['Gerado em', new Date().toLocaleString('pt-BR')],
+      [],
+      ['Conta', 'Total'],
+      ['PDDE Conta Básico', dados.totais['PDDE Conta Básico'] || 0],
+      ['PDDE Conta Qualidade', dados.totais['PDDE Conta Qualidade'] || 0],
+      ['PDDE Conta Equidade', dados.totais['PDDE Conta Equidade'] || 0],
+      ['Total classificado', totalClassificado],
+      ['Não classificado', dados.totais['Não classificado'] || 0],
+      ['Total geral lido', totalGeral]
+    ];
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'resumo', colunasMoedaInicio: 1, totalRow: 12 });
+    return ws;
+  }
+
+  function criarWorksheetGofDetalhamento(dados) {
+    var campos = estadoPdde.camposNumericos || [];
+    var matriz = [['Instituição', 'Instituição'].concat(campos).concat(['OBSERVAÇÃO'])];
+    dados.detalhes.forEach(function(d){
+      var row = [d.conta, d.instituicao];
+      campos.forEach(function(c){ row.push(Number(d[c]) || 0); });
+      row.push(d['OBSERVAÇÃO'] || '');
+      matriz.push(row);
+    });
+    var total = ['Total geral', ''];
+    campos.forEach(function(c){
+      total.push(dados.detalhes.reduce(function(s, d){ return s + (Number(d[c]) || 0); }, 0));
+    });
+    total.push('');
+    matriz.push(total);
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'pivot', colunasMoedaInicio: 2, totalRow: matriz.length });
+    ws['!cols'] = [{wch:34},{wch:46}].concat(campos.map(function(){ return {wch:16}; })).concat([{wch:80}]);
+    return ws;
+  }
+
+  function criarWorksheetGofRegras() {
+    var matriz = [
+      ['Conta', 'Programas/Regras'],
+      ['PDDE Conta Básico', 'PDDE Dinheiro Direto na Escola. Também entra PDDE Acessibilidade somente para a escola Anísio Teixeira.'],
+      ['PDDE Conta Qualidade', 'PDDE Conectada; PDDE Emergencial; PDDE Qualidade - Compromisso - Cantinho da Leitura; PDDE Qualidade - Educação e Família; PDDE Qualidade - Escola das Adolescências; PDDE Qualidade - Escola e Comunidade; PDDE Qualidade - Tempo de Aprender; PDDE Alfabetização; Mais Cultura; Atleta Escola.'],
+      ['PDDE Conta Equidade', 'PDDE Equidade; PDDE Estrutura Acessibilidade; PDDE Estrutura Sala de Recursos; PDDE Estrutura Sustentável.'],
+      ['Observação', 'PDDE Acessibilidade e PDDE Estrutura Acessibilidade são tratados separadamente. Estrutura Acessibilidade entra em Equidade.']
+    ];
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'resumo', colunasMoedaInicio: 99, totalRow: 0 });
+    ws['!cols'] = [{wch:26},{wch:120}];
+    return ws;
+  }
+
+  function exportarRelatorioAtual() {
+    if (!estadoPdde.bruto.length || !estadoPdde.agregado.length) return alert('Não há dados processados para gerar o relatório.');
+    if (typeof XLSX === 'undefined') return alert('A biblioteca de Excel não carregou. Verifique a conexão e tente novamente.');
+
+    var wb = XLSX.utils.book_new();
+    var usados = {};
+    var campos = estadoPdde.camposNumericos.slice();
+    var acoes = getAcoesUnicas();
+
+    // 1) Aba geral no mesmo modelo do arquivo enviado: base completa com ação na coluna A e instituição na coluna B.
+    var wsGeral = criarWorksheetBasePdde(estadoPdde.bruto, campos);
+    adicionarAbaUnica(wb, wsGeral, 'Base Consolidada', usados);
+
+    // 2) Para cada ação, cria a base filtrada e o resumo consolidado por instituição correspondente.
+    acoes.forEach(function(acao){
+      var linhasBase = estadoPdde.bruto.filter(function(l){ return normalizarTextoHeader(l['Ação']) === acao; });
+      var linhasPivot = estadoPdde.agregado.filter(function(l){ return l['Ação'] === acao; });
+      var nomeBase = nomeBaseAcaoPdde(acao);
+
+      var wsAcao = criarWorksheetBasePdde(linhasBase, campos);
+      adicionarAbaUnica(wb, wsAcao, nomeBase, usados);
+
+      var wsDinamica = criarWorksheetTabelaDinamicaPdde(linhasPivot, campos);
+      adicionarAbaUnica(wb, wsDinamica, 'Resumo ' + nomeBase, usados);
+    });
+
+    // 3) Aba de conferência: mostra exatamente quais linhas da base entraram em cada soma.
+    var wsConferencia = criarWorksheetConferenciaPdde(estadoPdde.agregado, campos);
+    adicionarAbaUnica(wb, wsConferencia, 'Conferência dos cálculos', usados);
+
+    // 4) Aba complementar com resumo para facilitar conferência no sistema.
+    var wsResumo = criarWorksheetResumoPdde(acoes, campos);
+    adicionarAbaUnica(wb, wsResumo, 'Resumo', usados);
+
+    var agora = new Date();
+    var nomeArquivo = 'relatorio_pdde_modelo_recurso_instituicao_' + agora.toISOString().slice(0,10) + '.xlsx';
+    XLSX.writeFile(wb, nomeArquivo, { bookType: 'xlsx' });
+  }
+
+  function criarWorksheetBasePdde(linhas, campos) {
+    var headers = ['Instituição', 'Instituição'].concat(campos).concat(['OBSERVAÇÃO']);
+    var matriz = [headers];
+    (linhas || []).forEach(function(l){
+      var row = [l['Ação'] || '', l['Instituição'] || ''];
+      campos.forEach(function(c){ row.push(Number(brNumero(l[c])) || 0); });
+      row.push(obterObservacaoPdde(l));
+      matriz.push(row);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'base', colunasMoedaInicio: 2 });
+    return ws;
+  }
+
+  function criarWorksheetTabelaDinamicaPdde(linhas, campos) {
+    var headers = ['Instituição', 'Instituição'].concat(campos).concat(['OBSERVAÇÃO']);
+    var matriz = [headers];
+
+    var ordenadas = (linhas || []).slice().sort(function(a,b){ return String(a['Instituição'] || '').localeCompare(String(b['Instituição'] || ''), 'pt-BR'); });
+    ordenadas.forEach(function(l){
+      var row = [l['Ação'] || '', l['Instituição'] || ''];
+      campos.forEach(function(c){ row.push(Number(l[c]) || 0); });
+      row.push(l['OBSERVAÇÃO'] || '');
+      matriz.push(row);
+    });
+
+    var total = ['Total geral', ''];
+    campos.forEach(function(c){ total.push(totalCampo(ordenadas, c)); });
+    total.push('');
+    matriz.push(total);
+
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'pivot', colunasMoedaInicio: 2, totalRow: matriz.length });
+    return ws;
+  }
+
+  function criarWorksheetConferenciaPdde(linhas, campos) {
+    var headers = ['Ação', 'Instituição', 'Linhas fonte no Excel', 'Qtde linhas usadas'].concat(campos);
+    var matriz = [headers];
+
+    var ordenadas = (linhas || []).slice().sort(function(a,b){
+      var aa = String(a['Ação'] || '').localeCompare(String(b['Ação'] || ''), 'pt-BR');
+      if (aa !== 0) return aa;
+      return String(a['Instituição'] || '').localeCompare(String(b['Instituição'] || ''), 'pt-BR');
+    });
+
+    ordenadas.forEach(function(l){
+      var row = [
+        l['Ação'] || '',
+        l['Instituição'] || '',
+        (l['__linhasOrigem'] || []).join(', '),
+        l['__linhas'] || 0
+      ];
+      campos.forEach(function(c){ row.push(Number(l[c]) || 0); });
+      matriz.push(row);
+    });
+
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'conferencia', colunasMoedaInicio: 4, totalRow: 0 });
+    return ws;
+  }
+
+  function criarWorksheetResumoPdde(acoes, campos) {
+    var matriz = [
+      ['Relatório PDDE', 'Modelo com base consolidada, bases por ação e resumos por instituição'],
+      ['Arquivo processado', estadoPdde.nomeArquivo || ''],
+      ['Último salvamento no sistema', estadoPdde.salvoEm ? formatarDataHoraPdde(estadoPdde.salvoEm) : ''],
+      ['Salvo por', estadoPdde.salvoPor || ''],
+      ['Gerado em', new Date().toLocaleString('pt-BR')],
+      ['Total de ações', acoes.length],
+      ['Total de registros da base', estadoPdde.bruto.length],
+      [],
+      ['Ação', 'Instituições'].concat(campos)
+    ];
+
+    acoes.forEach(function(acao){
+      var linhas = estadoPdde.agregado.filter(function(l){ return l['Ação'] === acao; });
+      var row = [acao, linhas.length];
+      campos.forEach(function(c){ row.push(totalCampo(linhas, c)); });
+      matriz.push(row);
+    });
+
+    var total = ['Total geral', estadoPdde.agregado.length];
+    campos.forEach(function(c){ total.push(totalCampo(estadoPdde.agregado, c)); });
+    matriz.push(total);
+
+    var ws = XLSX.utils.aoa_to_sheet(matriz);
+    aplicarFormatoModeloPdde(ws, { tipo: 'resumo', colunasMoedaInicio: 2, totalRow: matriz.length });
+    return ws;
+  }
+
+  function aplicarFormatoModeloPdde(ws, opt) {
+    opt = opt || {};
+    var range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+    ws['!autofilter'] = { ref: ws['!ref'] };
+    ws['!cols'] = [];
+
+    for (var c = range.s.c; c <= range.e.c; c++) {
+      if (opt.tipo === 'pivot') ws['!cols'][c] = { wch: c === 0 ? 34 : (c === 1 ? 46 : 16) };
+      else if (opt.tipo === 'resumo') ws['!cols'][c] = { wch: c === 0 ? 34 : (c === 1 ? 18 : 16) };
+      else ws['!cols'][c] = { wch: c === 0 ? 34 : (c === 1 ? 46 : 16) };
+    }
+
+    var inicioMoeda = opt.colunasMoedaInicio === undefined ? 2 : opt.colunasMoedaInicio;
+    for (var r = range.s.r; r <= range.e.r; r++) {
+      for (var col = range.s.c; col <= range.e.c; col++) {
+        var ref = XLSX.utils.encode_cell({ r: r, c: col });
+        var cell = ws[ref];
+        if (!cell) continue;
+        if (r === 0 || r + 1 === opt.totalRow) {
+          cell.s = cell.s || {};
+          cell.s.font = { bold: true };
+        }
+        if (col >= inicioMoeda && typeof cell.v === 'number') {
+          cell.t = 'n';
+          cell.z = '#,##0.00';
+        }
+      }
+    }
+  }
+
+  function adicionarAbaUnica(wb, ws, nomeBase, usados) {
+    var nome = nomeAbaXlsx(nomeBase);
+    var base = nome;
+    var contador = 2;
+    while (usados[nome]) {
+      var sufixo = ' ' + contador;
+      nome = nomeAbaXlsx(base.substring(0, 31 - sufixo.length) + sufixo);
+      contador++;
+    }
+    usados[nome] = true;
+    XLSX.utils.book_append_sheet(wb, ws, nome);
+  }
+
+  function nomeBaseAcaoPdde(acao) {
+    var s = String(acao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    if (s.indexOf('QUALIDADE') > -1) return 'PDDE Qualidade';
+    if (s.indexOf('ESTRUTURA') > -1) return 'PDDE Estrutura';
+    if (s.indexOf('SUSTENT') > -1) return 'PDDE Sustentavel';
+    if (s.indexOf('MAIS EDUCACAO') > -1 || s.indexOf('MAIS EDUCA') > -1) return 'PDDE Mais Educação';
+    if (s.indexOf('PDDE') > -1) return 'PDDE Básico';
+    return nomeAbaXlsx(String(acao || 'PDDE').replace(/^Ação\s*/i, 'PDDE '));
+  }
+
+  function slugArquivo(s) {
+    return String(s || 'relatorio')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'relatorio';
+  }
+
+  function nomeAbaXlsx(s) {
+    var nome = String(s || 'Relatorio')
+      .replace(/[\\\/\?\*\[\]:]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!nome) nome = 'Relatorio';
+    return nome.substring(0, 31);
+  }
+
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return esc(s).replace(/"/g,'&quot;'); }
+  function jsStr(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, ''); }
+</script>
+</body>
+</html>
