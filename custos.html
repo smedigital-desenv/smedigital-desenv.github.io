@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custo Médio das Refeições</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1117;--surface:#1a1d27;--surface2:#20242f;--border:#2a2d3a;
+      --accent:#4f8ef7;--accent2:#7c3aed;--success:#22c55e;--warn:#f59e0b;--danger:#ef4444;
+      --text:#e8eaf0;--muted:#6b7280;--radius:14px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 90px;}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(79,142,247,.07) 0%,transparent 70%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(124,58,237,.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
+    .wrap{width:100%;max-width:980px;margin:0 auto;position:relative;z-index:1;}
+
+    .head{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+    .logo-icon{width:48px;height:48px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(79,142,247,.25);}
+    .logo-icon svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .head h1{font-size:21px;font-weight:700;line-height:1.2;}
+    .head p{font-size:13px;color:var(--muted);margin-top:3px;}
+
+    /* Seletor de público */
+    .tipo-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+    .tipo-row .lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;}
+    .chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer;transition:.15s;}
+    .chip:hover{color:var(--text);border-color:var(--accent);}
+    .chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
+
+    /* Cards por refeição */
+    .meals{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px;}
+    .meal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;animation:fadeUp .3s ease both;}
+    .meal::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+    .meal.almoco::after{background:var(--accent);}
+    .meal.tarde::after{background:var(--accent2);}
+    .meal.manha::after{background:var(--warn);}
+    .meal .lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+    .meal .val{font-size:30px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
+    .meal .per{font-size:12px;color:var(--muted);margin-top:8px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    .total{background:linear-gradient(135deg,rgba(79,142,247,.12),rgba(124,58,237,.12));border:1px solid rgba(79,142,247,.3);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+    .total .lbl{font-size:12px;font-weight:600;color:#93c5fd;text-transform:uppercase;letter-spacing:.8px;}
+    .total .val{font-size:26px;font-weight:700;font-family:'DM Mono',monospace;}
+    .total .hint{font-size:12px;color:var(--muted);}
+
+    /* Toolbar tabela */
+    .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
+    .toolbar h2{font-size:15px;font-weight:700;}
+    .toolbar h2 span{color:var(--muted);font-weight:500;font-size:13px;}
+    .rgroup{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .search{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;min-width:170px;transition:.2s;}
+    .search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.15);}
+    .minichips{display:flex;gap:5px;}
+    .minichip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+    .minichip:hover{color:var(--text);}
+    .minichip.on{background:var(--surface2);color:var(--text);border-color:var(--accent);}
+
+    /* Tabela */
+    .tablecard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+    .tscroll{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px;}
+    thead th{text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:13px 16px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;background:var(--surface2);}
+    thead th:hover{color:var(--text);}
+    thead th.num,tbody td.num{text-align:right;}
+    thead th .arw{opacity:.6;font-size:9px;margin-left:2px;}
+    tbody td{padding:11px 16px;border-bottom:1px solid rgba(42,45,58,.5);vertical-align:middle;}
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover{background:rgba(79,142,247,.05);}
+    .prato{font-weight:600;}
+    .badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.3px;white-space:nowrap;}
+    .b-almoco{background:rgba(79,142,247,.14);color:#93c5fd;}
+    .b-tarde{background:rgba(124,58,237,.16);color:#c4b5fd;}
+    .b-manha{background:rgba(245,158,11,.14);color:#fcd34d;}
+    .mono{font-family:'DM Mono',monospace;}
+    .freq{font-family:'DM Mono',monospace;color:var(--muted);}
+    .freq b{color:var(--text);font-weight:600;}
+    .contrib{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+    .contrib .bar{height:7px;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));min-width:2px;max-width:110px;}
+    .contrib .n{font-family:'DM Mono',monospace;font-weight:600;min-width:62px;text-align:right;}
+    .zero{color:var(--muted);opacity:.45;}
+    .empty{padding:40px;text-align:center;color:var(--muted);font-size:14px;}
+
+    .note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+    .note b{color:var(--text);font-weight:600;}
+    .note code{font-family:'DM Mono',monospace;background:var(--bg);padding:2px 6px;border-radius:5px;color:#93c5fd;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 002-2V2M5 2v20M13 2v20M18 2c-1.7 0-3 2.2-3 5s1.3 5 3 5m0 0v10"/></svg>
+    </div>
+    <div>
+      <h1>Custo Médio das Refeições</h1>
+      <p>Custo médio diário por refeição, ponderado pela frequência ao longo de 200 dias letivos</p>
+    </div>
+  </div>
+
+  <div class="tipo-row">
+    <span class="lbl">Público</span>
+    <div class="chips" id="chips-tipo"></div>
+  </div>
+
+  <div class="meals" id="meals"></div>
+
+  <div class="total">
+    <div>
+      <div class="lbl">Custo médio do dia (todas as refeições)</div>
+      <div class="hint">Soma do custo médio de café da manhã, almoço e lanche da tarde por criança/dia</div>
+    </div>
+    <div class="val" id="total-dia">—</div>
+  </div>
+
+  <div class="toolbar">
+    <h2>Detalhe por preparação <span>— contribuição de cada item no custo do dia</span></h2>
+    <div class="rgroup">
+      <div class="minichips" id="chips-momento"></div>
+      <input class="search" id="busca" type="text" placeholder="Buscar preparação...">
+    </div>
+  </div>
+
+  <div class="tablecard">
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="prato">Preparação <span class="arw"></span></th>
+            <th data-sort="momento">Refeição <span class="arw"></span></th>
+            <th class="num" data-sort="freq">Frequência <span class="arw"></span></th>
+            <th class="num" data-sort="porcao">Custo / porção <span class="arw"></span></th>
+            <th class="num" data-sort="contrib">Custo médio / dia <span class="arw">▼</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Como o custo é calculado.</b>
+    Custo da porção = soma de <code>per capita (kg) × preço do insumo</code> por ingrediente.
+    A coluna <b>Frequência</b> é o nº de dias (de 200) em que a preparação é servida — arroz e feijão entram todo dia (200),
+    a tilápia apenas 10. O <b>custo médio/dia</b> de cada item é <code>frequência × custo da porção ÷ 200</code>,
+    e a soma desses valores dentro de cada refeição dá o <b>custo médio daquela refeição por dia</b>.
+    O público (<b>CEI</b> creche, <b>EMEI</b> pré-escola, <b>EMEF</b> fundamental) muda os per capitas; <b>Média</b> considera os públicos onde o item é servido.
+    Valores por criança, sem perdas, gás ou mão de obra.
+  </div>
+
+</div>
+
+<script>
+const DADOS = [
+  {"momento":"Almoço","prato":"Arroz","freq":200,"cei":0.2592,"emei":0.2939,"emef":0.2952,"media":0.2828},
+  {"momento":"Almoço","prato":"Carne bovina refogada","freq":10,"cei":0.9929,"emei":1.3768,"emef":1.4162,"media":1.2620},
+  {"momento":"Almoço","prato":"Farofa de abobrinha barsileira","freq":10,"cei":0.1446,"emei":0.1446,"emef":0.2030,"media":0.1641},
+  {"momento":"Almoço","prato":"Feijão carioca","freq":200,"cei":0.2702,"emei":0.3023,"emef":0.4701,"media":0.3475},
+  {"momento":"Almoço","prato":"Feijão preto","freq":10,"cei":0.2757,"emei":0.3100,"emef":0.4867,"media":0.3574},
+  {"momento":"Almoço","prato":"Filé suíno refogado","freq":20,"cei":1.0292,"emei":1.6566,"emef":1.6960,"media":1.4606},
+  {"momento":"Almoço","prato":"Frango assado (coxa e sobrecoxa)","freq":20,"cei":0.8692,"emei":1.0383,"emef":1.4160,"media":1.1079},
+  {"momento":"Almoço","prato":"Frango refogado (peito)","freq":20,"cei":1.0124,"emei":1.2173,"emef":1.7485,"media":1.3261},
+  {"momento":"Almoço","prato":"Frango refogado (sassami)","freq":20,"cei":1.0124,"emei":1.2173,"emef":1.6665,"media":1.2988},
+  {"momento":"Almoço","prato":"Macarrão ao sugo com carne tiras","freq":10,"cei":1.2471,"emei":1.6311,"emef":1.7327,"media":1.5370},
+  {"momento":"Almoço","prato":"Pernil suíno acebolado","freq":20,"cei":0.9997,"emei":0.6568,"emef":1.1802,"media":0.9456},
+  {"momento":"Almoço","prato":"Pernil suíno refogado","freq":20,"cei":0.9997,"emei":0.6568,"emef":1.1802,"media":0.9456},
+  {"momento":"Almoço","prato":"Polenta","freq":10,"cei":0.2234,"emei":0.2276,"emef":0.2671,"media":0.2394},
+  {"momento":"Almoço","prato":"Porção FRUTA","freq":200,"cei":0.2250,"emei":0.3750,"emef":0.4500,"media":0.3500},
+  {"momento":"Almoço","prato":"Porção LEGUMES","freq":200,"cei":0.1376,"emei":0.2064,"emef":0.2752,"media":0.2064},
+  {"momento":"Almoço","prato":"Strogonoff Carne bovina","freq":5,"cei":1.1917,"emei":1.5757,"emef":1.6151,"media":1.4608},
+  {"momento":"Almoço","prato":"Strogonoff de frango","freq":5,"cei":1.2113,"emei":1.4162,"emef":1.8654,"media":1.4976},
+  {"momento":"Almoço","prato":"Tilápia assada","freq":10,"cei":1.5098,"emei":1.5098,"emef":1.8582,"media":1.6260},
+  {"momento":"Lanche da Tarde","prato":"Biscoito de polvilho","freq":10,"cei":0.4592,"emei":0.4592,"emef":0.6942,"media":0.5375},
+  {"momento":"Lanche da Tarde","prato":"Biscoito doce/salgado","freq":10,"cei":0.0000,"emei":0.2935,"emef":0.4696,"media":0.3816},
+  {"momento":"Lanche da Tarde","prato":"Bolinha caseira de batata","freq":10,"cei":0.5148,"emei":0.5148,"emef":0.4215,"media":0.4837},
+  {"momento":"Lanche da Tarde","prato":"Bolo de cenoura (TARDE)","freq":4,"cei":0.7464,"emei":0.9164,"emef":1.3480,"media":1.0036},
+  {"momento":"Lanche da Tarde","prato":"Bolo de chocolate (TARDE)","freq":4,"cei":0.7052,"emei":0.9824,"emef":1.4140,"media":1.0339},
+  {"momento":"Lanche da Tarde","prato":"Bolo fofo (tarde)","freq":5,"cei":0.7052,"emei":0.8387,"emef":1.2703,"media":0.9380},
+  {"momento":"Lanche da Tarde","prato":"Bolo fubá (TARDE)","freq":4,"cei":0.7388,"emei":0.8765,"emef":1.3081,"media":0.9744},
+  {"momento":"Lanche da Tarde","prato":"Chocolate quente","freq":2,"cei":0.6877,"emei":0.7369,"emef":1.0612,"media":0.8286},
+  {"momento":"Lanche da Tarde","prato":"Frapê de chocolate (TARDE)","freq":10,"cei":0.3942,"emei":0.4443,"emef":0.6986,"media":0.5124},
+  {"momento":"Lanche da Tarde","prato":"Frapê de chocolate c/ banana e aveia","freq":10,"cei":0.8158,"emei":0.7996,"emef":1.1349,"media":0.9168},
+  {"momento":"Lanche da Tarde","prato":"Leite com cacau em pó","freq":86,"cei":0.6877,"emei":0.7185,"emef":1.0428,"media":0.8163},
+  {"momento":"Lanche da Tarde","prato":"Omelete com legumes refogados (TARDE)","freq":10,"cei":0.0784,"emei":0.1107,"emef":0.4465,"media":0.2119},
+  {"momento":"Lanche da Tarde","prato":"Pão bisnaga com requeijão caseiro","freq":10,"cei":0.2338,"emei":0.2338,"emef":0.3179,"media":0.2618},
+  {"momento":"Lanche da Tarde","prato":"Pão francês 25g com manteiga","freq":80,"cei":0.2083,"emei":0.2083,"emef":0.2182,"media":0.2116},
+  {"momento":"Lanche da Tarde","prato":"Pão francês com pernil (TARDE)","freq":10,"cei":1.3559,"emei":1.0131,"emef":1.6085,"media":1.3258},
+  {"momento":"Lanche da Tarde","prato":"Pipoca","freq":20,"cei":0.0000,"emei":0.0000,"emef":0.1866,"media":0.1866},
+  {"momento":"Lanche da Tarde","prato":"Quibe (TARDE)","freq":10,"cei":1.5164,"emei":1.6029,"emef":2.1313,"media":1.7502},
+  {"momento":"Lanche da Tarde","prato":"Torta de frango (TARDE)","freq":10,"cei":1.1350,"emei":1.2377,"emef":1.8245,"media":1.3991},
+  {"momento":"Lanche Manhã","prato":"Biscoito doce/salgado","freq":10,"cei":0.0000,"emei":0.2770,"emef":0.4432,"media":0.3601},
+  {"momento":"Lanche Manhã","prato":"Leite com cacau em pó","freq":86,"cei":0.6877,"emei":0.7185,"emef":1.0428,"media":0.8163},
+  {"momento":"Lanche Manhã","prato":"Ovos mexidos","freq":80,"cei":0.4295,"emei":0.5322,"emef":0.8245,"media":0.5954},
+  {"momento":"Lanche Manhã","prato":"Pão de hot dog com manteiga","freq":86,"cei":0.1995,"emei":0.1995,"emef":0.2008,"media":0.1999},
+  {"momento":"Lanche Manhã","prato":"Quibe (MANHÃ)","freq":10,"cei":0.0000,"emei":0.0000,"emef":1.7745,"media":1.7745},
+  {"momento":"Lanche Manhã","prato":"Torta de frango (MANHÃ)","freq":10,"cei":0.0000,"emei":0.0000,"emef":1.1539,"media":1.1539}
+];
+
+const DIAS = 200;
+const MOMENTOS = ["Almoço","Lanche Manhã","Lanche da Tarde"];
+const TIPOS = [{k:"media",lbl:"Média"},{k:"cei",lbl:"CEI"},{k:"emei",lbl:"EMEI"},{k:"emef",lbl:"EMEF"}];
+const META = {
+  "Almoço":{cls:"almoco",badge:"b-almoco"},
+  "Lanche da Tarde":{cls:"tarde",badge:"b-tarde"},
+  "Lanche Manhã":{cls:"manha",badge:"b-manha"},
+};
+
+let fTipo = "media";
+let fMomento = "Todas";
+let fBusca = "";
+let sortKey = "contrib";
+let sortDir = -1;
+
+const brl = v => "R$ " + v.toFixed(2).replace(".", ",");
+// custo médio/dia de um item = freq * custo da porção / 200
+const contribOf = d => (d.freq * d[fTipo]) / DIAS;
+
+function mediaPorMomento(){
+  const acc = {};
+  MOMENTOS.forEach(m=>acc[m]=0);
+  DADOS.forEach(d=> acc[d.momento] += contribOf(d));
+  return acc;
+}
+
+function renderTipo(){
+  document.getElementById("chips-tipo").innerHTML = TIPOS.map(t=>
+    `<button class="chip ${t.k===fTipo?'on':''}" data-t="${t.k}">${t.lbl}</button>`).join("");
+  document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{fTipo=b.dataset.t;render();});
+}
+
+function renderMeals(){
+  const acc = mediaPorMomento();
+  document.getElementById("meals").innerHTML = MOMENTOS.map(m=>{
+    const meta = META[m];
+    return `<div class="meal ${meta.cls}">
+      <div class="lbl">${m}</div>
+      <div class="val">${brl(acc[m])}</div>
+      <div class="per">por criança / dia</div>
+    </div>`;
+  }).join("");
+  const total = MOMENTOS.reduce((s,m)=>s+acc[m],0);
+  document.getElementById("total-dia").textContent = brl(total);
+}
+
+function renderMomentoFilter(){
+  const opts = ["Todas",...MOMENTOS];
+  document.getElementById("chips-momento").innerHTML = opts.map(m=>
+    `<button class="minichip ${m===fMomento?'on':''}" data-mm="${m}">${m==="Todas"?"Todas":m.replace("Lanche ","")}</button>`).join("");
+  document.querySelectorAll("[data-mm]").forEach(b=>b.onclick=()=>{fMomento=b.dataset.mm;render();});
+}
+
+function linhasFiltradas(){
+  let arr = DADOS.filter(d=>{
+    if(fMomento!=="Todas" && d.momento!==fMomento) return false;
+    if(fBusca && !d.prato.toLowerCase().includes(fBusca)) return false;
+    return true;
+  }).map(d=>({...d, porcao:d[fTipo], contrib:contribOf(d)}));
+  arr.sort((a,b)=>{
+    let x,y;
+    if(sortKey==="prato"||sortKey==="momento"){x=(a[sortKey]||"").toLowerCase();y=(b[sortKey]||"").toLowerCase();}
+    else {x=a[sortKey];y=b[sortKey];}
+    if(x<y)return -1*sortDir; if(x>y)return 1*sortDir; return 0;
+  });
+  return arr;
+}
+
+function renderTable(){
+  const arr = linhasFiltradas();
+  const tbody = document.getElementById("tbody");
+  if(!arr.length){ tbody.innerHTML = `<tr><td colspan="5" class="empty">Nenhuma preparação encontrada.</td></tr>`; return; }
+  const max = Math.max(...arr.map(d=>d.contrib), 0.001);
+  tbody.innerHTML = arr.map(d=>{
+    const meta = META[d.momento];
+    const zeroP = d.porcao<=0;
+    const pct = Math.max(2,(d.contrib/max)*100);
+    return `<tr>
+      <td class="prato">${d.prato}</td>
+      <td><span class="badge ${meta.badge}">${d.momento}</span></td>
+      <td class="num freq"><b>${d.freq}</b>/200</td>
+      <td class="num mono ${zeroP?'zero':''}">${zeroP?'—':brl(d.porcao)}</td>
+      <td class="num">
+        <div class="contrib">
+          <span class="n ${d.contrib<=0?'zero':''}">${d.contrib<=0?'—':brl(d.contrib)}</span>
+          <span class="bar" style="width:${d.contrib<=0?0:pct}px"></span>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("thead th").forEach(th=>{
+    const arw = th.querySelector(".arw"); if(!arw) return;
+    arw.textContent = th.dataset.sort===sortKey ? (sortDir===-1?"▼":"▲") : "";
+  });
+}
+
+function render(){
+  renderTipo();
+  renderMeals();
+  renderMomentoFilter();
+  renderTable();
+}
+
+document.querySelectorAll("thead th").forEach(th=>{
+  th.onclick=()=>{
+    const k=th.dataset.sort;
+    if(sortKey===k) sortDir*=-1;
+    else { sortKey=k; sortDir=(k==="prato"||k==="momento")?1:-1; }
+    renderTable();
+  };
+});
+document.getElementById("busca").oninput = e=>{ fBusca=e.target.value.trim().toLowerCase(); renderTable(); };
+
+render();
+</script>
+</body>
+</html>
