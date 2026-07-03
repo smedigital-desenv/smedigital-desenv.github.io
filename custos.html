@@ -87,6 +87,36 @@
     .note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
     .note b{color:var(--text);font-weight:600;}
     .note code{font-family:'DM Mono',monospace;background:var(--bg);padding:2px 6px;border-radius:5px;color:#93c5fd;}
+
+    /* Seção anual por modalidade */
+    .section{margin-bottom:14px;}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;}
+    .btn-export{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--success),#16a34a);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;box-shadow:0 4px 14px rgba(34,197,94,.25);white-space:nowrap;}
+    .btn-export:hover{opacity:.92;}
+    .btn-export:active{transform:scale(.97);}
+    .section.mt{margin-top:38px;padding-top:22px;border-top:1px solid var(--border);}
+    .section h2{font-size:17px;font-weight:700;}
+    .section p{font-size:13px;color:var(--muted);margin-top:4px;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px;}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;animation:fadeUp .3s ease both;}
+    .stat::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+    .stat.cei::after{background:var(--accent);}
+    .stat.emei::after{background:var(--accent2);}
+    .stat.emef::after{background:var(--warn);}
+    .stat .lbl{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;}
+    .stat .val{font-size:21px;font-weight:700;font-family:'DM Mono',monospace;}
+    .stat .sub{font-size:12px;color:var(--muted);margin-top:5px;}
+    table.anual{min-width:660px;}
+    table.anual th{cursor:default;}
+    .modcell{font-weight:700;background:var(--surface2);white-space:nowrap;vertical-align:middle;}
+    .pubtag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-right:8px;}
+    .pub-cei{background:rgba(79,142,247,.16);color:#93c5fd;}
+    .pub-emei{background:rgba(124,58,237,.18);color:#c4b5fd;}
+    .pub-emef{background:rgba(245,158,11,.16);color:#fcd34d;}
+    tr.subrow td{background:rgba(79,142,247,.05);font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+    tr.subrow td.num{color:var(--text);font-size:14px;font-family:'DM Mono',monospace;}
+    tfoot .grandrow td{background:linear-gradient(135deg,rgba(79,142,247,.14),rgba(124,58,237,.14));font-weight:700;font-size:14px;border-top:1px solid var(--border);}
+    tfoot .grandrow td.num{font-size:17px;color:#93c5fd;}
   </style>
 </head>
 <body>
@@ -100,6 +130,62 @@
       <h1>Custo Médio das Refeições</h1>
       <p>Custo médio diário por refeição, ponderado pela frequência ao longo de 200 dias letivos</p>
     </div>
+  </div>
+
+  <div class="section section-head">
+    <div>
+      <h2>Custo anual estimado por modalidade</h2>
+      <p>Quantidade servida (por dia e por ano) &times; custo unitário da refeição &middot; sem desjejum e sem PAPA</p>
+    </div>
+    <button class="btn-export" id="btn-xls" type="button">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Exportar XLS
+    </button>
+  </div>
+
+  <div class="cards" id="cards-modalidade"></div>
+
+  <div class="total">
+    <div>
+      <div class="lbl">Total geral estimado / ano</div>
+      <div class="hint">Soma de todas as modalidades e refeições (exceto desjejum e PAPA)</div>
+    </div>
+    <div class="val" id="grand-total-card">—</div>
+  </div>
+
+  <div class="tablecard" style="margin-top:14px;">
+    <div class="tscroll">
+      <table class="anual">
+        <thead>
+          <tr>
+            <th>Modalidade</th>
+            <th>Refeição</th>
+            <th class="num">Qtd / Dia</th>
+            <th class="num">Qtd / Ano</th>
+            <th class="num">R$ Unit</th>
+            <th class="num">R$ Total</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-anual"></tbody>
+        <tfoot>
+          <tr class="grandrow"><td colspan="5">Total geral estimado / ano</td><td class="num mono" id="grand-total">—</td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>R$ Total = Qtd Ano × R$ Unit.</b> As quantidades vêm da planilha de atendimento; o <b>R$ Unit</b> é o custo médio
+    da refeição por criança (tabela abaixo), conforme o público de cada modalidade — <b>Creche → CEI</b>,
+    <b>Pré-Escola → EMEI</b>, <b>Fundamental → EMEF</b>. Excluídos <b>Desjejum</b> e <b>Almoço - PAPA</b>.
+    Sobremesa e Fruta da tarde usam o custo da <b>porção de fruta</b>.
+    <b>Atenção:</b> no cálculo do almoço a porção de fruta já está embutida — se Sobremesa/Fruta forem servidas
+    como item adicional, há sobreposição; me avise se prefere descontar a fruta do valor do almoço.
+  </div>
+
+  <div class="section mt">
+    <h2>Custo unitário por refeição <span style="color:var(--muted);font-weight:500;font-size:14px;">— base do R$ Unit</span></h2>
+    <p>Custo médio diário de cada refeição, ponderado pela frequência ao longo de 200 dias letivos</p>
   </div>
 
   <div class="tipo-row">
@@ -200,6 +286,60 @@ const DADOS = [
   {"momento":"Lanche Manhã","prato":"Torta de frango (MANHÃ)","freq":10,"cei":0.0000,"emei":0.0000,"emef":1.1539,"media":1.1539}
 ];
 
+// Quantidades servidas (por dia e por ano) e custo unitário da refeição.
+// R$ Unit vem do custo médio diário por refeição/público calculado abaixo.
+const MODALIDADES = [
+  {mod:"Creche Integral", pub:"CEI", refs:[
+    {r:"Lanche Manhã",  dia:4542, ano:908306, unit:0.5533},
+    {r:"Almoço",        dia:4641, ano:928190, unit:1.7640},
+    {r:"Sobremesa",     dia:4613, ano:922645, unit:0.2250},
+    {r:"Lanche Tarde",  dia:4513, ano:902555, unit:0.7725},
+  ]},
+  {mod:"Pré-Escola Parcial", pub:"EMEI", refs:[
+    {r:"Lanche - Manhã", dia:2899, ano:579753,  unit:0.6215},
+    {r:"Almoço",         dia:5034, ano:1006854, unit:2.1567},
+    {r:"Lanche - Tarde", dia:3137, ano:627457,  unit:0.8116},
+  ]},
+  {mod:"Pré-Escola Integral", pub:"EMEI", refs:[
+    {r:"Lanche Manhã", dia:718, ano:143568, unit:0.6215},
+    {r:"Almoço",       dia:723, ano:144652, unit:2.1567},
+    {r:"Lanche Tarde", dia:721, ano:144158, unit:0.8116},
+  ]},
+  {mod:"Fundamental Parcial", pub:"EMEF", refs:[
+    {r:"Lanche da manhã", dia:8427,  ano:1685327, unit:1.0331},
+    {r:"Almoço",          dia:13201, ano:2640166, unit:2.7644},
+    {r:"Lanche da tarde", dia:7564,  ano:1512756, unit:1.1655},
+    {r:"Fruta da tarde",  dia:7228,  ano:1445684, unit:0.4500},
+  ]},
+];
+
+const fmtBRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const fmtInt = new Intl.NumberFormat('pt-BR');
+
+function renderAnual(){
+  let html=''; let grand=0; const subs=[];
+  MODALIDADES.forEach(g=>{
+    let sub=0;
+    g.refs.forEach((it,i)=>{
+      const tot = it.ano*it.unit; sub+=tot;
+      html += '<tr>';
+      if(i===0) html += `<td class="modcell" rowspan="${g.refs.length+1}"><span class="pubtag pub-${g.pub.toLowerCase()}">${g.pub}</span>${g.mod}</td>`;
+      html += `<td>${it.r}</td>
+               <td class="num mono">${fmtInt.format(it.dia)}</td>
+               <td class="num mono">${fmtInt.format(it.ano)}</td>
+               <td class="num mono">${fmtBRL.format(it.unit)}</td>
+               <td class="num mono">${fmtBRL.format(tot)}</td></tr>`;
+    });
+    html += `<tr class="subrow"><td colspan="4">Subtotal ${g.mod}</td><td class="num">${fmtBRL.format(sub)}</td></tr>`;
+    grand += sub; subs.push({mod:g.mod, pub:g.pub, sub});
+  });
+  document.getElementById('tbody-anual').innerHTML = html;
+  document.getElementById('grand-total').textContent = fmtBRL.format(grand);
+  document.getElementById('grand-total-card').textContent = fmtBRL.format(grand);
+  document.getElementById('cards-modalidade').innerHTML = subs.map(s=>
+    `<div class="stat ${s.pub.toLowerCase()}"><div class="lbl">${s.mod}</div><div class="val">${fmtBRL.format(s.sub)}</div><div class="sub">${s.pub} &middot; por ano</div></div>`).join('');
+}
+
 const DIAS = 200;
 const MOMENTOS = ["Almoço","Lanche Manhã","Lanche da Tarde"];
 const TIPOS = [{k:"media",lbl:"Média"},{k:"cei",lbl:"CEI"},{k:"emei",lbl:"EMEI"},{k:"emef",lbl:"EMEF"}];
@@ -297,6 +437,7 @@ function renderTable(){
 }
 
 function render(){
+  renderAnual();
   renderTipo();
   renderMeals();
   renderMomentoFilter();
@@ -312,6 +453,65 @@ document.querySelectorAll("thead th").forEach(th=>{
   };
 });
 document.getElementById("busca").oninput = e=>{ fBusca=e.target.value.trim().toLowerCase(); renderTable(); };
+
+/* ---------- Exportar XLS (SpreadsheetML — abre no Excel com números/moeda) ---------- */
+function xmlEsc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function cStr(v,style){ return `<Cell${style?` ss:StyleID="${style}"`:''}><Data ss:Type="String">${xmlEsc(v)}</Data></Cell>`; }
+function cNum(v,style){ return `<Cell${style?` ss:StyleID="${style}"`:''}><Data ss:Type="Number">${v}</Data></Cell>`; }
+function cMerge(v,n,style){ return `<Cell${style?` ss:StyleID="${style}"`:''} ss:MergeAcross="${n}"><Data ss:Type="String">${xmlEsc(v)}</Data></Cell>`; }
+
+function buildXLS(){
+  // Aba 1 — Custo por modalidade
+  let r1 = '';
+  r1 += `<Row>${cStr('Modalidade','hdr')}${cStr('Refeição','hdr')}${cStr('Qtd / Dia','hdr')}${cStr('Qtd / Ano','hdr')}${cStr('R$ Unit','hdr')}${cStr('R$ Total','hdr')}</Row>`;
+  let grand=0;
+  MODALIDADES.forEach(g=>{
+    let sub=0;
+    g.refs.forEach((it,i)=>{
+      const tot=it.ano*it.unit; sub+=tot; grand+=tot;
+      r1 += `<Row>${cStr(i===0?(g.pub+' — '+g.mod):'', i===0?'mod':'')}${cStr(it.r)}${cNum(it.dia,'int')}${cNum(it.ano,'int')}${cNum(it.unit,'cur')}${cNum(tot,'cur')}</Row>`;
+    });
+    r1 += `<Row>${cMerge('Subtotal '+g.mod,4,'sub')}${cNum(sub,'subcur')}</Row>`;
+  });
+  r1 += `<Row>${cMerge('TOTAL GERAL ESTIMADO / ANO',4,'grand')}${cNum(grand,'grandcur')}</Row>`;
+
+  // Aba 2 — Custo unitário por preparação
+  let r2 = `<Row>${cStr('Refeição','hdr')}${cStr('Preparação','hdr')}${cStr('Frequência (dias/200)','hdr')}${cStr('Custo porção CEI','hdr')}${cStr('Custo porção EMEI','hdr')}${cStr('Custo porção EMEF','hdr')}${cStr('Custo porção Média','hdr')}</Row>`;
+  DADOS.forEach(d=>{
+    r2 += `<Row>${cStr(d.momento)}${cStr(d.prato)}${cNum(d.freq,'int')}${cNum(d.cei,'cur')}${cNum(d.emei,'cur')}${cNum(d.emef,'cur')}${cNum(d.media,'cur')}</Row>`;
+  });
+
+  const cols6 = '<Column ss:Width="150"/><Column ss:Width="150"/><Column ss:Width="70"/><Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="90"/>';
+  const cols7 = '<Column ss:Width="110"/><Column ss:Width="230"/><Column ss:Width="120"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="100"/><Column ss:Width="100"/>';
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="hdr"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#2A2D3A" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>
+  <Style ss:ID="mod"><Font ss:Bold="1"/></Style>
+  <Style ss:ID="int"><NumberFormat ss:Format="#,##0"/></Style>
+  <Style ss:ID="cur"><NumberFormat ss:Format="&quot;R$&quot;\\ #,##0.00"/></Style>
+  <Style ss:ID="sub"><Font ss:Bold="1"/><Interior ss:Color="#EEF3FF" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="subcur"><Font ss:Bold="1"/><Interior ss:Color="#EEF3FF" ss:Pattern="Solid"/><NumberFormat ss:Format="&quot;R$&quot;\\ #,##0.00"/></Style>
+  <Style ss:ID="grand"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#4F8EF7" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="grandcur"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#4F8EF7" ss:Pattern="Solid"/><NumberFormat ss:Format="&quot;R$&quot;\\ #,##0.00"/></Style>
+ </Styles>
+ <Worksheet ss:Name="Custo por Modalidade"><Table>${cols6}${r1}</Table></Worksheet>
+ <Worksheet ss:Name="Custo Unitário"><Table>${cols7}${r2}</Table></Worksheet>
+</Workbook>`;
+}
+
+function exportXLS(){
+  const xml = buildXLS();
+  const blob = new Blob(["﻿"+xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'custo-refeicoes.xls';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+document.getElementById('btn-xls').onclick = exportXLS;
 
 render();
 </script>
