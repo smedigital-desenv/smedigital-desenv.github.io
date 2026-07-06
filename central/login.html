@@ -61,9 +61,17 @@
 
     document.getElementById('btn-google').addEventListener('click', async () => {
       document.getElementById('msg').className = 'msg';
+      // O token OAuth precisa voltar para ESTA página (login.html), que carrega o
+      // cliente Supabase, para a sessão ser CONSUMIDA e PERSISTIDA antes de seguir.
+      // Se mandarmos o redirectTo direto ao portal (index.html renderizado do
+      // README, sem cliente Supabase), o #access_token nunca é consumido e a
+      // sessão SSO não é salva — todos os sistemas voltam ao login em loop.
+      // Após o retorno, as linhas do getSession() acima levam ao destino().
+      const next = new URLSearchParams(location.search).get('next');
+      const redirectTo = location.origin + location.pathname + (next ? '?next=' + encodeURIComponent(next) : '');
       const { error } = await SB.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: destino(), queryParams: { prompt: 'select_account' } }
+        options: { redirectTo, queryParams: { prompt: 'select_account' } }
       });
       if (error) msg('Erro ao entrar: ' + error.message, 'erro');
     });
