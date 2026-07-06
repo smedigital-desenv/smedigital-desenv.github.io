@@ -36,7 +36,14 @@
   var SISTEMA_SLUG = window.ACESSO_SISTEMA || 'central';
   var CACHE_KEY = 'ACESSO_PERMS_v1';
   var SIMULA_KEY = 'ACESSO_SIMULA';   // e-mail que o super admin está simulando
-  var LOGIN_PAGE = window.ACESSO_LOGIN || 'login.html';
+  // Base do central deduzida do próprio <script src> (funciona de qualquer sistema).
+  var _self = document.currentScript || (function () {
+    var ss = document.getElementsByTagName('script');
+    for (var i = ss.length - 1; i >= 0; i--) { if (/acesso-sme\.js/.test(ss[i].src)) return ss[i]; }
+    return null;
+  })();
+  var CENTRAL_BASE = _self ? _self.src.replace(/[^/]*$/, '') : '/central/';
+  var LOGIN_PAGE = window.ACESSO_LOGIN || (CENTRAL_BASE + 'login.html');
 
   function telaAtual() {
     var f = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '');
@@ -61,7 +68,8 @@
   }
 
   function irParaLogin() {
-    var aqui = (location.pathname.split('/').pop() || 'index.html') + location.search + location.hash;
+    // caminho completo (mesma origem) p/ o central devolver o usuário à página certa
+    var aqui = location.pathname + location.search + location.hash;
     location.replace(LOGIN_PAGE + '?next=' + encodeURIComponent(aqui));
   }
 

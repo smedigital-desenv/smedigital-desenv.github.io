@@ -48,8 +48,13 @@
     function destino() {
       const params = new URLSearchParams(location.search);
       const next = params.get('next');
-      if (next && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
-        return new URL(next, location.href).href;           // relativo a /central/
+      // aceita caminho da MESMA origem terminando em .html (ex.: /gom-sme/triagem.html),
+      // permitindo o retorno a qualquer sistema após o login. Evita open-redirect.
+      if (next) {
+        try {
+          const u = new URL(next, location.origin);
+          if (u.origin === location.origin && /\.html(\?.*)?$/i.test(u.pathname)) return u.href;
+        } catch (e) {}
       }
       return new URL('../index.html', location.href).href;  // padrão: portal raiz
     }
