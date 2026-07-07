@@ -77,7 +77,13 @@
           <button class="btn btn-azul" data-bs-toggle="modal" data-bs-target="#modalUser"><i class="bi bi-plus-lg"></i> Novo usuário</button>
         </div>
         <div class="panel">
-          <input id="us-busca" class="form-control mb-3" placeholder="Buscar por nome ou e-mail…" />
+          <div class="d-flex gap-2 mb-3 flex-wrap">
+            <input id="us-busca" class="form-control" style="flex:1;min-width:220px" placeholder="Buscar por nome ou e-mail…" />
+            <select id="us-sistema" class="form-select" style="max-width:260px" title="Filtrar por sistema">
+              <option value="">Todos os sistemas</option>
+            </select>
+          </div>
+          <div id="us-ctx" class="muted mb-2" style="font-size:.85rem"></div>
           <div id="us-tabela"><div class="loading">Carregando…</div></div>
         </div>
       </section>

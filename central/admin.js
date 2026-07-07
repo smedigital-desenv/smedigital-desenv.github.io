@@ -53,7 +53,7 @@
     $('app').classList.remove('hidden');
 
     bindNav();
-    await Promise.all([carregarPerfis(), carregarSistemas()]);
+    await Promise.all([carregarPerfis(), carregarSistemas(), carregarAcessos()]);
     initAcessos();
     initUsuarios();
     initEscolas();
@@ -85,6 +85,38 @@
     var r = await SB.from('sistemas').select('id,slug,nome,url,icone,cor,ordem,ativo').order('ordem');
     if (r.error) return erro(r.error);
     cacheSistemas = r.data || [];
+  }
+
+  // Mapa perfil_id -> Set(sistema_id) a partir de perfil_papeis (papel por
+  // sistema) e perfil_tela (liberação direta). Usado para filtrar/mostrar quem
+  // acessa cada sistema. Super admin acessa todos (tratado à parte).
+  var cacheAcessoPerfil = {};
+  async function carregarAcessos() {
+    cacheAcessoPerfil = {};
+    function add(pid, sid) {
+      if (pid == null || sid == null) return;
+      (cacheAcessoPerfil[pid] = cacheAcessoPerfil[pid] || new Set()).add(Number(sid));
+    }
+    var rp = await SB.from('perfil_papeis').select('perfil_id, papeis(sistema_id)');
+    if (rp.error) { console.warn('[admin] perfil_papeis:', rp.error.message); }
+    else (rp.data || []).forEach(function (x) { add(x.perfil_id, x.papeis && x.papeis.sistema_id); });
+
+    var rt = await SB.from('perfil_tela').select('perfil_id, telas(sistema_id)');
+    if (rt.error) { console.warn('[admin] perfil_tela:', rt.error.message); }
+    else (rt.data || []).forEach(function (x) { add(x.perfil_id, x.telas && x.telas.sistema_id); });
+  }
+
+  function sistemasDoPerfil(p) {
+    if (p.is_super_admin) return cacheSistemas.slice();
+    var set = cacheAcessoPerfil[p.id];
+    if (!set) return [];
+    return cacheSistemas.filter(function (s) { return set.has(Number(s.id)); });
+  }
+  function badgesSistemas(p) {
+    if (p.is_super_admin) return '<span class="pill super">todos</span>';
+    var sis = sistemasDoPerfil(p);
+    if (!sis.length) return '<span class="muted">—</span>';
+    return sis.map(function (s) { return '<span class="pill tipo">' + esc(s.slug) + '</span>'; }).join(' ');
   }
   function optsPerfis(sel, includeBlank) {
     sel.innerHTML = (includeBlank ? '<option value="">— selecione —</option>' : '');
@@ -223,6 +255,13 @@
      SEÇÃO 2 — USUÁRIOS (perfis)
      ========================================================================== */
   function initUsuarios() {
+    var selSis = $('us-sistema');
+    if (selSis) {
+      cacheSistemas.forEach(function (s) {
+        selSis.appendChild(el('option', { value: s.id }, esc(s.nome)));
+      });
+      selSis.addEventListener('change', renderUsuarios);
+    }
     $('us-busca').addEventListener('input', renderUsuarios);
     $('nu-salvar').addEventListener('click', salvarNovoUsuario);
     renderUsuarios();
@@ -230,18 +269,36 @@
 
   function renderUsuarios() {
     var q = ($('us-busca').value || '').toLowerCase().trim();
+    var sisId = ($('us-sistema') && $('us-sistema').value) || '';
     var lista = cachePerfis.filter(function (p) {
-      return !q || (p.nome || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
+      if (q && !((p.nome || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q))) return false;
+      if (sisId) {
+        if (p.is_super_admin) return true;                  // super admin acessa todos
+        var set = cacheAcessoPerfil[p.id];
+        if (!set || !set.has(Number(sisId))) return false;
+      }
+      return true;
     });
     var box = $('us-tabela');
+
+    // Contexto do filtro (quantos e qual sistema)
+    var ctx = $('us-ctx');
+    if (ctx) {
+      var sisNome = sisId ? (cacheSistemas.find(function (s) { return String(s.id) === String(sisId); }) || {}).nome : '';
+      ctx.textContent = sisId
+        ? (lista.length + ' usuário(s) com acesso a ' + (sisNome || ''))
+        : (lista.length + ' usuário(s)');
+    }
+
     if (!lista.length) { box.innerHTML = '<div class="empty">Nenhum usuário.</div>'; return; }
 
     var tbl = el('table');
-    tbl.innerHTML = '<thead><tr><th>Nome / E-mail</th><th>Tipo</th><th>Status</th><th>Super</th><th></th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Nome / E-mail</th><th>Sistemas</th><th>Tipo</th><th>Status</th><th>Super</th><th></th></tr></thead>';
     var tb = el('tbody');
     lista.forEach(function (p) {
       var tr = el('tr');
       tr.appendChild(el('td', null, '<b>' + esc(p.nome || '—') + '</b><br><span class="muted">' + esc(p.email) + '</span>'));
+      tr.appendChild(el('td', null, badgesSistemas(p)));
       tr.appendChild(el('td', null, '<span class="pill tipo">' + esc(p.tipo) + '</span>'));
       tr.appendChild(el('td', null, p.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
       tr.appendChild(el('td', null, p.is_super_admin ? '<span class="pill super">super</span>' : '<span class="muted">—</span>'));
