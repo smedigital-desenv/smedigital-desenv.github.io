@@ -217,8 +217,15 @@
 
     function montarUsuario(perms, session) {
       const nome = (perms.perfil && (perms.perfil.nome || perms.perfil.email)) || (session.user && session.user.email) || '';
+      const isSuper = !!(perms.perfil && perms.perfil.is_super_admin);
       const box = document.querySelector('.mg-user');
+      // Configurações (controle de acesso) — SOMENTE super admin. O próprio
+      // admin.html/admin.js também barra quem não é super admin (defesa dupla).
+      const btnConfig = isSuper
+        ? '<a class="mg-nav-btn" href="central/admin.html" title="Controle de acesso"><i class="bi bi-gear-fill"></i> Configurações</a>'
+        : '';
       box.innerHTML = '<span class="mg-quem"><i class="bi bi-person-circle"></i> ' + esc(nome) + '</span>'
+        + btnConfig
         + '<button class="mg-nav-btn" id="btn-sair"><i class="bi bi-box-arrow-right"></i> Sair</button>';
       document.getElementById('btn-sair').addEventListener('click', function () {
         SB.auth.signOut().then(irLogin).catch(irLogin);
