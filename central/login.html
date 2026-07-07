@@ -25,6 +25,26 @@
 
       <div id="msg" class="msg"></div>
 
+      <!-- Empresas / fornecedores externos: entram por e-mail + senha (não usam
+           conta Google). O acesso é cadastrado e governado pelo central. -->
+      <div style="margin:18px 0 6px;text-align:center">
+        <button id="btn-empresa-toggle" type="button"
+                style="background:none;border:0;color:#0369a1;font-size:.85rem;font-weight:700;cursor:pointer;text-decoration:underline">
+          <i class="bi bi-briefcase"></i> Sou empresa / fornecedor
+        </button>
+      </div>
+
+      <form id="form-empresa" style="display:none;margin-top:6px">
+        <input type="email" id="emp-email" placeholder="E-mail de acesso" autocomplete="username"
+               style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;border-radius:10px;font-size:.9rem" />
+        <input type="password" id="emp-senha" placeholder="Senha" autocomplete="current-password"
+               style="width:100%;padding:10px 12px;margin-bottom:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.9rem" />
+        <button type="submit" id="btn-empresa"
+                style="width:100%;padding:11px;border:0;border-radius:10px;background:#075f82;color:#fff;font-weight:800;font-size:.92rem;cursor:pointer">
+          <i class="bi bi-box-arrow-in-right"></i> Entrar
+        </button>
+      </form>
+
       <div class="foot"><i class="bi bi-info-circle"></i> Use sua conta <b id="dom"></b></div>
     </div>
   </div>
@@ -43,15 +63,16 @@
     }
 
     // Para onde ir depois de logar.
-    //  - sem ?next  -> PORTAL (menu de sistemas na raiz: index.html)
-    //  - com ?next  -> uma página .html da pasta /central/ (ex.: admin.html)
+    //  - com ?next válido (uma página .html do /central/, ex.: admin.html) -> essa página
+    //  - caso contrário -> PORTAL de sistemas (index-preview.html na raiz)
+    // 'index.html' é ignorado de propósito (é o README, não o portal).
     function destino() {
       const params = new URLSearchParams(location.search);
       const next = params.get('next');
-      if (next && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
-        return new URL(next, location.href).href;           // relativo a /central/
+      if (next && next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
+        return new URL(next, location.href).href;             // relativo a /central/
       }
-      return new URL('../index.html', location.href).href;  // padrão: portal raiz
+      return new URL('../index-preview.html', location.href).href;  // portal de sistemas
     }
 
     // Já logado? Vai direto ao destino.
@@ -59,14 +80,14 @@
       if (data.session) location.replace(destino());
     });
 
+    // ── Institucional (Google) ────────────────────────────────────────────────
     document.getElementById('btn-google').addEventListener('click', async () => {
       document.getElementById('msg').className = 'msg';
       // O token OAuth precisa voltar para ESTA página (login.html), que carrega o
       // cliente Supabase, para a sessão ser CONSUMIDA e PERSISTIDA antes de seguir.
-      // Se mandarmos o redirectTo direto ao portal (index.html renderizado do
-      // README, sem cliente Supabase), o #access_token nunca é consumido e a
-      // sessão SSO não é salva — todos os sistemas voltam ao login em loop.
-      // Após o retorno, as linhas do getSession() acima levam ao destino().
+      // Se mandarmos o redirectTo direto ao portal (sem cliente Supabase), o
+      // #access_token nunca é consumido e a sessão SSO não é salva.
+      // Após o retorno, o getSession() acima leva ao destino().
       const next = new URLSearchParams(location.search).get('next');
       const redirectTo = location.origin + location.pathname + (next ? '?next=' + encodeURIComponent(next) : '');
       const { error } = await SB.auth.signInWithOAuth({
@@ -74,6 +95,32 @@
         options: { redirectTo, queryParams: { prompt: 'select_account' } }
       });
       if (error) msg('Erro ao entrar: ' + error.message, 'erro');
+    });
+
+    // ── Empresa / fornecedor (e-mail + senha) ─────────────────────────────────
+    document.getElementById('btn-empresa-toggle').addEventListener('click', () => {
+      const f = document.getElementById('form-empresa');
+      const mostrar = f.style.display === 'none';
+      f.style.display = mostrar ? 'block' : 'none';
+      if (mostrar) document.getElementById('emp-email').focus();
+    });
+
+    document.getElementById('form-empresa').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('emp-email').value || '').trim().toLowerCase();
+      const senha = document.getElementById('emp-senha').value || '';
+      if (!email || !senha) { msg('Informe e-mail e senha.', 'erro'); return; }
+      const btn = document.getElementById('btn-empresa');
+      btn.disabled = true;
+      msg('Entrando…', 'info');
+      const { error } = await SB.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        btn.disabled = false;
+        msg('E-mail ou senha inválidos.', 'erro');
+        return;
+      }
+      // Sessão criada e persistida pelo cliente; segue ao portal (ou ?next).
+      location.replace(destino());
     });
   </script>
 </body>
