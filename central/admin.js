@@ -22,6 +22,14 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
+  // Papéis: ordem fixa, cor e rótulo curto (fallback p/ papéis de outros sistemas).
+  var PAPEL_ORDEM = { admin_gom: 1, admin: 1, secretaria: 2, empresa: 3, escola: 4 };
+  var PAPEL_COR   = { admin_gom: '#7c3aed', admin: '#7c3aed', secretaria: '#0369a1', empresa: '#b45309', escola: '#047857' };
+  var PAPEL_LABEL = { admin_gom: 'Admin', admin: 'Admin', secretaria: 'Secretaria', empresa: 'Empresa', escola: 'Escola' };
+  function ordemPapel(slug) { return PAPEL_ORDEM[slug] != null ? PAPEL_ORDEM[slug] : 99; }
+  function corPapel(slug) { return PAPEL_COR[slug] || '#475569'; }
+  function labelPapel(pp) { return PAPEL_LABEL[pp.slug] || pp.nome || pp.slug; }
+
   var toastT;
   function toast(msg, err) {
     var t = $('toast'); t.textContent = msg; t.className = 'toast-box show' + (err ? ' err' : '');
@@ -248,7 +256,9 @@
     // os atalhos "Liberar como papel" (Secretaria / Empresa / Escola / Admin).
     var permsByPapel = {}, telaBadges = {}, papeis = [];
     var rpa = await SB.from('papeis').select('id,slug,nome').eq('sistema_id', sistemaId).order('id');
-    if (!rpa.error) papeis = rpa.data || [];
+    if (!rpa.error) papeis = (rpa.data || []).sort(function (a, b) {
+      return (ordemPapel(a.slug) - ordemPapel(b.slug)) || String(a.nome || '').localeCompare(String(b.nome || ''));
+    });
     if (papeis.length) {
       var papelById = {}; papeis.forEach(function (p) { papelById[p.id] = p; });
       var rpp = await SB.from('papel_permissoes').select('papel_id,tela_id,pode_ver,pode_editar,pode_exportar')
@@ -284,7 +294,8 @@
     if (papeis.length) {
       toolbar.appendChild(el('span', { class: 'muted', style: 'font-size:.85rem;margin-right:.3rem' }, '<i class="bi bi-magic"></i> Liberar como papel:'));
       papeis.forEach(function (pa) {
-        var b = el('button', { class: 'btn btn-sm btn-outline-primary', type: 'button' }, esc(pa.nome));
+        var c = corPapel(pa.slug);
+        var b = el('button', { class: 'btn btn-sm', type: 'button', style: 'border:1px solid ' + c + ';color:' + c + ';background:' + c + '14;font-weight:700' }, esc(pa.nome));
         b.addEventListener('click', function () { aplicaPapel(pa.id, permsByPapel); toast('Telas do papel “' + pa.nome + '” marcadas. Revise e salve.'); });
         toolbar.appendChild(b);
       });
@@ -300,7 +311,9 @@
     telas.forEach(function (t) {
       var a = atual[t.id] || {};
       var tr = el('tr');
-      var badges = (telaBadges[t.id] || []).map(function (pp) { return '<span class="pill tipo">' + esc(pp.slug) + '</span>'; }).join(' ');
+      var badges = (telaBadges[t.id] || []).slice()
+        .sort(function (a, b) { return ordemPapel(a.slug) - ordemPapel(b.slug); })
+        .map(function (pp) { var c = corPapel(pp.slug); return '<span class="pill" style="background:' + c + '1a;color:' + c + ';border:1px solid ' + c + '55;font-weight:700">' + esc(labelPapel(pp)) + '</span>'; }).join(' ');
       tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'
         + (badges ? '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">' + badges + '</div>' : '')));
       ['ver', 'editar', 'exportar'].forEach(function (acao) {
