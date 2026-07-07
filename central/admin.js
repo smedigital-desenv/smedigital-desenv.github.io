@@ -425,8 +425,21 @@
       selSis.addEventListener('change', renderUsuarios);
     }
     $('us-busca').addEventListener('input', renderUsuarios);
-    $('nu-salvar').addEventListener('click', salvarNovoUsuario);
+    $('nu-salvar').addEventListener('click', salvarUsuario);
+    var bNovo = $('us-novo');
+    if (bNovo) bNovo.addEventListener('click', function () { abrirModalUsuario(null); });
     renderUsuarios();
+  }
+
+  var editandoId = null;
+  function abrirModalUsuario(p) {
+    editandoId = p ? p.id : null;
+    $('modalUserTitle').textContent = p ? 'Editar usuário' : 'Novo usuário';
+    $('nu-email').value = p ? (p.email || '') : '';
+    $('nu-nome').value = p ? (p.nome || '') : '';
+    $('nu-tipo').value = p ? (p.tipo || 'escola') : 'escola';
+    $('nu-super').checked = p ? !!p.is_super_admin : false;
+    bootstrap.Modal.getOrCreateInstance($('modalUser')).show();
   }
 
   function renderUsuarios() {
@@ -481,7 +494,11 @@
         if (p.email === EU.email && p.is_super_admin) { toast('Você não pode remover seu próprio super admin.', true); return; }
         patchPerfil(p, { is_super_admin: !p.is_super_admin });
       });
-      acts.appendChild(bAtivo); acts.appendChild(bSuper);
+      var bEdit = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Editar' }, '<i class="bi bi-pencil"></i>');
+      bEdit.addEventListener('click', function () { abrirModalUsuario(p); });
+      var bDel = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Excluir' }, '<i class="bi bi-trash text-danger"></i>');
+      bDel.addEventListener('click', function () { excluirUsuario(p); });
+      acts.appendChild(bAtivo); acts.appendChild(bSuper); acts.appendChild(bEdit); acts.appendChild(bDel);
       tr.appendChild(acts);
       tb.appendChild(tr);
     });
@@ -497,26 +514,48 @@
     toast('Usuário atualizado.');
   }
 
-  async function salvarNovoUsuario() {
+  async function salvarUsuario() {
     var email = ($('nu-email').value || '').trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Informe um e-mail válido.', true); return; }
-    var novo = {
+    var dados = {
       email: email,
       nome: ($('nu-nome').value || '').trim() || null,
       tipo: $('nu-tipo').value,
-      is_super_admin: $('nu-super').checked,
-      ativo: true
+      is_super_admin: $('nu-super').checked
     };
-    var r = await SB.from('perfis').insert(novo).select().single();
+    try {
+      if (editandoId) {
+        var up = await SB.from('perfis').update(dados).eq('id', editandoId).select().single();
+        if (up.error) throw up.error;
+        var i = cachePerfis.findIndex(function (x) { return x.id === editandoId; });
+        if (i >= 0) cachePerfis[i] = up.data;
+      } else {
+        dados.ativo = true;
+        var ins = await SB.from('perfis').insert(dados).select().single();
+        if (ins.error) throw ins.error;
+        cachePerfis.push(ins.data);
+      }
+      cachePerfis.sort(function (a, b) { return (a.nome || a.email).localeCompare(b.nome || b.email); });
+      renderUsuarios();
+      optsPerfis($('ac-perfil'), true);
+      optsPerfis($('vc-perfil'), true);
+      bootstrap.Modal.getInstance($('modalUser')).hide();
+      toast(editandoId ? 'Usuário atualizado.' : 'Usuário cadastrado.');
+      editandoId = null;
+    } catch (e) { erro(e); }
+  }
+
+  async function excluirUsuario(p) {
+    if (p.email === EU.email) { toast('Você não pode excluir a si mesmo.', true); return; }
+    if (!confirm('Excluir o usuário "' + (p.nome || p.email) + '"?\n\nRemove o acesso dele (papéis, telas e vínculos de escola). A conta Google/Auth não é afetada.')) return;
+    var r = await SB.from('perfis').delete().eq('id', p.id);
     if (r.error) return erro(r.error);
-    cachePerfis.push(r.data);
-    cachePerfis.sort(function (a, b) { return (a.nome || a.email).localeCompare(b.nome || b.email); });
+    cachePerfis = cachePerfis.filter(function (x) { return x.id !== p.id; });
+    delete cacheAcessoPerfil[p.id];
     renderUsuarios();
     optsPerfis($('ac-perfil'), true);
     optsPerfis($('vc-perfil'), true);
-    $('nu-email').value = ''; $('nu-nome').value = ''; $('nu-super').checked = false;
-    bootstrap.Modal.getInstance($('modalUser')).hide();
-    toast('Usuário cadastrado.');
+    toast('Usuário excluído.');
   }
 
   /* ==========================================================================
