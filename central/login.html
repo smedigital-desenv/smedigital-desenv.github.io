@@ -64,15 +64,15 @@
 
     // Para onde ir depois de logar.
     //  - com ?next válido (uma página .html do /central/, ex.: admin.html) -> essa página
-    //  - caso contrário -> PORTAL de sistemas (index-preview.html na raiz)
-    // 'index.html' é ignorado de propósito (é o README, não o portal).
+    //  - caso contrário -> PORTAL de sistemas (raiz do domínio)
+    // 'index.html' como next é ignorado (o portal é a própria raiz).
     function destino() {
       const params = new URLSearchParams(location.search);
       const next = params.get('next');
       if (next && next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
-        return new URL(next, location.href).href;             // relativo a /central/
+        return new URL(next, location.href).href;    // relativo a /central/
       }
-      return new URL('../index-preview.html', location.href).href;  // portal de sistemas
+      return new URL('../', location.href).href;      // portal de sistemas (raiz)
     }
 
     // Já logado? Vai direto ao destino.

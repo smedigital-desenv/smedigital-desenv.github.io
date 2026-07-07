@@ -5,323 +5,270 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SME Digital — Portal de Sistemas | SME Ribeirão Preto</title>
   <meta name="description" content="Portal de sistemas da Secretaria Municipal de Educação de Ribeirão Preto." />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="central/estilo.css" rel="stylesheet" />
+  <!-- Enquanto o acesso não é verificado, o conteúdo fica oculto (evita flash). -->
+  <style id="portalGate">.wrap,.mg-user{visibility:hidden}</style>
   <style>
+    /* ===== Portal escuro e moderno, harmonizado ao padrão da rede (marinho + neon) ===== */
     :root {
-      --bg-1:#0f1117; --bg-2:#1a1f2e; --surface:#171b27; --surface-2:#1f2533;
-      --text:#e4e6eb; --muted:#a8adbf; --faint:#6e7693;
-      --accent:#4f8ef7; --accent2:#7c3aed;
-      --border:#2a2f3e; --radius:16px;
+      --bg-1:#091022; --bg-2:#0e1c38; --surface:#101d36; --surface-2:#15243f;
+      --txt:#e6ebf5; --mut:#9fb0c9; --fnt:#6b7a98;
+      --navy:#002b5e; --azul:#4f8ef7; --neon:#00e5ff;
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body {
-      font-family:'DM Sans',sans-serif;
-      background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 100%);
-      color:var(--text); min-height:100vh; min-height:100dvh;
-      display:flex; flex-direction:column;
-      -webkit-font-smoothing:antialiased;
-    }
-    body::before {
-      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    body { background:linear-gradient(160deg,var(--bg-1),var(--bg-2)); color:var(--txt);
+      min-height:100vh; padding-bottom:0; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
       background:
-        radial-gradient(ellipse 50% 40% at 15% 10%,rgba(79,142,247,.10) 0%,transparent 70%),
-        radial-gradient(ellipse 50% 50% at 85% 90%,rgba(124,58,237,.10) 0%,transparent 70%);
-    }
-    .wrap { width:100%; max-width:1200px; margin:0 auto; padding:0 20px; position:relative; z-index:1; flex:1; }
+        radial-gradient(ellipse 50% 40% at 12% 8%, rgba(0,229,255,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 88% 92%, rgba(0,43,94,.35) 0%, transparent 70%); }
+    .wrap { position:relative; z-index:1; }
 
-    /* Hero Section */
-    .hero {
-      background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
-      border:1px solid rgba(79,142,247,.25); border-radius:var(--radius);
-      padding:3.5rem 2rem; text-align:center; margin:3rem 0 3.5rem;
-      position:relative; overflow:hidden;
-    }
-    .hero::before {
-      content:''; position:absolute; top:-50%; right:-15%;
-      width:400px; height:400px; background:radial-gradient(circle,rgba(79,142,247,.15) 0%,transparent 70%);
-      border-radius:50%;
-    }
-    .hero-content { position:relative; z-index:1; }
-    .hero h1 { font-size:2.8rem; font-weight:700; margin-bottom:0.8rem; letter-spacing:-.02em; }
-    .hero .sub { color:var(--muted); font-size:1.1rem; margin-bottom:1.5rem; }
-    .hero-cta {
-      display:inline-block; padding:0.75rem 2rem; background:rgba(79,142,247,.2);
-      border:1px solid rgba(79,142,247,.4); border-radius:999px; color:var(--accent);
-      font-weight:600; cursor:pointer; transition:all .2s ease;
-      font-family:inherit; font-size:1rem;
-    }
-    .hero-cta:hover { background:rgba(79,142,247,.3); border-color:rgba(79,142,247,.6); }
+    .portal-loading { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+      color:var(--mut); font-weight:700; gap:.6rem; }
 
-    /* Section Title */
-    .section-title {
-      font-size:1.4rem; font-weight:600; margin:2.5rem 0 1.5rem; color:var(--text);
-      display:flex; align-items:center; gap:0.75rem;
-    }
-    .section-icon { font-size:1.4rem; }
-
-    /* Featured Grid */
-    .featured-grid {
-      display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.5rem;
-      margin-bottom:3rem;
-    }
-    .featured-card {
-      position:relative; background:linear-gradient(135deg,rgba(79,142,247,.08) 0%,rgba(124,58,237,.08) 100%);
-      border:1px solid rgba(79,142,247,.2); border-radius:var(--radius); padding:2rem;
-      text-decoration:none; color:inherit; overflow:hidden; transition:all .3s ease;
-    }
-    .featured-card::before {
-      content:''; position:absolute; top:0; left:0; right:0; height:3px;
-      background:linear-gradient(90deg,var(--accent),var(--accent2));
-    }
-    .featured-card:hover {
-      background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
-      border-color:rgba(79,142,247,.4); transform:translateY(-3px);
-      box-shadow:0 12px 32px rgba(0,0,0,.25);
-    }
-    .featured-icon { font-size:2.2rem; margin-bottom:1rem; }
-    .featured-badge {
-      display:inline-block; background:rgba(79,142,247,.15); color:var(--accent);
-      padding:0.35rem 0.75rem; border-radius:6px; font-size:.7rem; font-weight:600;
-      text-transform:uppercase; letter-spacing:.1em; margin-bottom:0.8rem;
-    }
-    .featured-card h3 { font-size:1.4rem; font-weight:600; margin-bottom:0.5rem; }
-    .featured-card p { color:var(--muted); line-height:1.6; margin-bottom:1.2rem; }
-    .featured-go {
-      display:inline-flex; align-items:center; gap:6px; font-size:.9rem;
-      font-weight:600; color:var(--accent);
-    }
-    .featured-go svg { width:16px; height:16px; transition:transform .2s ease; }
-    .featured-card:hover .featured-go svg { transform:translateX(4px); }
-
-    /* Category Grid */
-    .category-grid {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1rem;
-      margin-bottom:2rem;
-    }
-    .category-card {
-      position:relative; background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--radius); padding:1.5rem; text-decoration:none; color:inherit;
-      transition:all .2s ease; overflow:hidden;
-    }
-    .category-card::after {
-      content:''; position:absolute; inset:0 0 auto 0; height:2px;
-      background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:0;
-      transition:opacity .2s ease;
-    }
-    .category-card:hover {
-      transform:translateY(-2px); background:var(--surface-2);
-      border-color:rgba(79,142,247,.35); box-shadow:0 8px 20px rgba(0,0,0,.2);
-    }
-    .category-card:hover::after { opacity:1; }
-    .category-icon { font-size:1.8rem; margin-bottom:0.75rem; }
-    .category-card h4 { font-size:1rem; font-weight:600; margin-bottom:0.35rem; }
-    .category-card p {
-      color:var(--muted); font-size:.85rem; line-height:1.5;
-    }
-
-    /* Development Badge */
-    .dev-badge {
-      position:absolute; top:12px; right:12px; background:rgba(220,100,50,.2);
-      color:rgba(220,100,50,.9); padding:4px 8px; border-radius:4px;
-      font-size:.65rem; font-weight:600; text-transform:uppercase;
-    }
-
-    /* Footer */
-    .footer { text-align:center; padding:2rem 20px; color:var(--faint); font-size:.82rem;
-      position:relative; z-index:1; border-top:1px solid var(--border); margin-top:3rem;
-    }
-    .footer span { font-family:'DM Mono',monospace; }
-
-    @keyframes fade { from{opacity:0} to{opacity:1} }
-    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .hero { animation:slideUp .5s ease both; background:none; border:none; padding:0; margin:2rem 0 3rem; }
-    .hero-image { display:block; width:100%; height:auto; border-radius:var(--radius); }
+    /* Hero — banner com borda neon */
+    .hero { margin:0 0 2.6rem; border-radius:18px; overflow:hidden; position:relative;
+      box-shadow:0 16px 40px rgba(0,0,0,.45); border-bottom:4px solid var(--neon); }
+    .hero-image { display:block; width:100%; height:auto; }
     .hero-content { display:none; }
-    .featured-card { animation:slideUp .5s ease both; }
-    .featured-card:nth-child(1) { animation-delay:.1s; }
-    .featured-card:nth-child(2) { animation-delay:.15s; }
-    .featured-card:nth-child(3) { animation-delay:.2s; }
-    .category-card { animation:slideUp .4s ease both; }
-    @media (max-width:768px) {
-      .hero { background:linear-gradient(135deg,rgba(79,142,247,.12) 0%,rgba(124,58,237,.12) 100%);
-        border:1px solid rgba(79,142,247,.25); padding:3.5rem 2rem; margin:2rem 0 3rem; }
-      .hero-image { display:none !important; }
-      .hero-content { display:block; text-align:center; }
-      .hero h1 { font-size:2rem; font-weight:700; }
-      .hero .sub { font-size:0.95rem; color:var(--muted); }
+    @media (max-width:768px){
+      .hero { padding:2.4rem 1.6rem; text-align:center; background:linear-gradient(135deg,#002b5e,#0146a6); }
+      .hero-image { display:none; }
+      .hero-content { display:block; }
+      .hero-content h1 { font-weight:900; font-size:2rem; margin:0; }
+      .hero-content .sub { color:rgba(255,255,255,.85); font-size:.95rem; margin-top:.4rem; }
+      .hero-content .tag { color:var(--neon); font-weight:800; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; display:block; margin-top:.6rem; }
     }
-    @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+
+    .section-title { font-size:1.2rem; font-weight:800; color:#fff; letter-spacing:.01em;
+      margin:2rem 0 1.2rem; display:flex; align-items:center; gap:.6rem; }
+    .section-icon { font-size:1.3rem; }
+
+    .featured-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.4rem; margin-bottom:2.6rem; }
+    .featured-card, .category-card { position:relative; background:linear-gradient(160deg,var(--surface),var(--surface-2));
+      border:1px solid rgba(79,142,247,.18); border-radius:16px; text-decoration:none; color:inherit; overflow:hidden;
+      transition:transform .2s, box-shadow .2s, border-color .2s; }
+    .featured-card { padding:1.8rem; }
+    .featured-card::before, .category-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:linear-gradient(90deg,var(--navy),var(--neon)); }
+    .featured-card:hover, .category-card:hover { transform:translateY(-3px); border-color:rgba(0,229,255,.45);
+      box-shadow:0 14px 34px rgba(0,0,0,.45); }
+    .featured-icon { font-size:2.2rem; margin-bottom:.8rem; }
+    .featured-badge { display:inline-block; background:rgba(79,142,247,.16); color:#9cc4ff;
+      padding:.32rem .7rem; border-radius:6px; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.7rem; }
+    .featured-card h3 { font-size:1.35rem; font-weight:800; color:#fff; margin:0 0 .4rem; }
+    .featured-card p { color:var(--mut); line-height:1.6; margin-bottom:1.1rem; font-size:.9rem; }
+
+    .featured-go, .category-go { display:inline-flex; align-items:center; gap:8px; font-size:.88rem; font-weight:800; color:#dff3ff;
+      background:rgba(79,142,247,.14); border:1px solid rgba(0,229,255,.35); padding:.55rem 1.25rem; border-radius:10px;
+      transition:background .2s, border-color .2s, box-shadow .2s, color .2s, transform .2s; }
+    .featured-card:hover .featured-go, .category-card:hover .category-go {
+      background:rgba(0,229,255,.16); border-color:rgba(0,229,255,.7); color:#fff; box-shadow:0 0 18px rgba(0,229,255,.28); transform:translateY(-1px); }
+    .featured-go svg, .category-go svg { width:16px; height:16px; transition:transform .2s ease; }
+    .featured-card:hover .featured-go svg, .category-card:hover .category-go svg { transform:translateX(4px); }
+    .category-go { font-size:.82rem; padding:.45rem 1.05rem; }
+
+    .category-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1rem; margin-bottom:1.4rem; }
+    .category-card { padding:1.4rem; }
+    .category-icon { font-size:1.8rem; margin-bottom:.6rem; }
+    .category-card h4 { font-size:1.02rem; font-weight:800; color:#fff; margin:0 0 .3rem; }
+    .category-card p { color:var(--mut); font-size:.84rem; line-height:1.5; margin:0 0 .9rem; }
+    .category-go { font-size:.82rem; }
+
+    .dev-badge { position:absolute; top:12px; right:12px; background:rgba(180,83,9,.2); color:#fdba74;
+      border:1px solid rgba(253,186,116,.35); padding:3px 9px; border-radius:999px; font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .em-breve { display:inline-flex; align-items:center; gap:6px; font-size:.8rem; font-weight:700; color:#fdba74; }
+    .featured-card[aria-disabled], .category-card[aria-disabled] { opacity:.62; pointer-events:none; }
+
+    .portal-vazio { background:linear-gradient(160deg,var(--surface),var(--surface-2)); border:1px solid rgba(79,142,247,.18);
+      border-radius:16px; padding:2rem; text-align:center; color:var(--mut); }
+    .mg-user span.mg-quem { color:#cbd5e1; font-size:.85rem; margin-right:.7rem; }
+
+    .foot { text-align:center; color:var(--fnt); font-size:.8rem; padding:1.8rem 0; border-top:1px solid rgba(79,142,247,.14); margin-top:2.6rem; }
+    .foot span { color:var(--neon); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- Hero Section -->
+  <!-- Cabeçalho padrão da rede (igual MAPA/GOM) -->
+  <header class="mg-header">
+    <div class="mg-brand">
+      <div class="mg-brand-icon"><i class="bi bi-grid-1x2-fill"></i></div>
+      <div>
+        <h4>SME Digital</h4>
+        <div class="mg-brand-sub">Portal de Sistemas</div>
+      </div>
+    </div>
+    <div class="mg-nav"></div>
+    <div class="mg-user"></div>
+  </header>
+
+  <div class="portal-loading" id="portal-loading"><span class="spinner-border spinner-border-sm"></span> Verificando acesso…</div>
+
+  <main class="wrap">
     <section class="hero" id="hero-section">
       <img src="images/hero-banner.png" alt="SME Digital - Plataforma de Inteligência e Gestão Educacional" class="hero-image">
       <div class="hero-content">
         <h1>SME Digital</h1>
         <p class="sub">Plataforma de Inteligência e Gestão Educacional</p>
-        <p class="tag" style="display:block; margin-top:12px;">Secretaria Municipal da Educação de Ribeirão Preto</p>
+        <p class="tag">Secretaria Municipal da Educação de Ribeirão Preto</p>
       </div>
     </section>
 
-    <!-- Featured Systems -->
     <section id="featured-section"></section>
-
-    <!-- Categories -->
     <main id="main"></main>
-  </div>
 
-  <footer class="footer">
-    <p>Secretaria Municipal de Educação — Ribeirão Preto, SP · <span>SME Digital</span></p>
-  </footer>
+    <div class="foot">Secretaria Municipal de Educação — Ribeirão Preto, SP · <span>SME Digital</span></div>
+  </main>
 
+  <!-- Controle de Acesso CENTRAL: portal exige login e mostra só os sistemas
+       que o usuário tem acesso (via minhas_permissoes()). -->
+  <script src="central/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    const CFG = window.ACESSO_CFG || {};
+    const SB = window.ACESSO_SB || window.supabase.createClient(CFG.url, CFG.anonKey);
+    window.ACESSO_SB = SB;
+
+    // Catálogo dos sistemas (metadados ricos). O 'slug' casa com o central.
     const sistemas = [
-      {
-        nome: 'MAPA',
-        badge: 'Monitoramento',
-        category: 'Monitoramento',
-        desc: 'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.',
-        icon: '🗺️',
-        url: '/mapa-sme/',
-        featured: true,
-        status: 'active'
-      },
-      {
-        nome: 'GOM',
-        badge: 'Obras e Manutenção',
-        category: 'Serviços',
-        desc: 'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.',
-        icon: '🔧',
-        url: '/gom-sme/',
-        featured: true,
-        status: 'active'
-      },
-      {
-        nome: 'SATE',
-        badge: 'Transporte Escolar',
-        category: 'Serviços',
-        desc: 'Sistema de Agendamento do Transporte Escolar e abertura de chamados.',
-        icon: '🚌',
-        url: '/sate-sme/',
-        featured: false,
-        status: 'active'
-      },
-      {
-        nome: 'Roçadas',
-        badge: 'Serviços',
-        category: 'Serviços',
-        desc: 'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.',
-        icon: '🌿',
-        url: '/rocada/',
-        featured: false,
-        status: 'active'
-      },
-      {
-        nome: 'Repositório Pedagógico',
-        badge: 'Pedagógico',
-        category: 'Pedagógico',
-        desc: 'Repositório Pedagógico Municipal com materiais e recursos para a rede.',
-        icon: '📚',
-        url: '/repositorio/',
-        featured: false,
-        status: 'development'
-      },
-      {
-        nome: 'Portfólio MAG',
-        badge: 'Revista',
-        category: 'Pedagógico',
-        desc: 'Portfólio e revista digital com produções e registros da rede municipal.',
-        icon: '📖',
-        url: '/revista/',
-        featured: false,
-        status: 'development'
-      },
-      {
-        nome: 'Validação de Presença',
-        badge: 'Eventos',
-        category: 'Eventos',
-        desc: 'Inscrição, emissão de QR Code e validação de presença em eventos e formações.',
-        icon: '✅',
-        url: '/presenca/',
-        featured: false,
-        status: 'active'
-      },
+      { slug:'mapa',       nome:'MAPA', badge:'Monitoramento', category:'Monitoramento', desc:'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.', icon:'🗺️', url:'/mapa-sme/', featured:true, status:'active' },
+      { slug:'gom',        nome:'GOM', badge:'Obras e Manutenção', category:'Serviços', desc:'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.', icon:'🔧', url:'/gom-sme/', featured:true, status:'active' },
+      { slug:'sate',       nome:'SATE', badge:'Transporte Escolar', category:'Serviços', desc:'Sistema de Agendamento do Transporte Escolar e abertura de chamados.', icon:'🚌', url:'/sate-sme/', featured:false, status:'active' },
+      { slug:'rocada',     nome:'Roçadas', badge:'Serviços', category:'Serviços', desc:'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.', icon:'🌿', url:'/rocada/', featured:false, status:'active' },
+      { slug:'repositorio',nome:'Repositório Pedagógico', badge:'Pedagógico', category:'Pedagógico', desc:'Repositório Pedagógico Municipal com materiais e recursos para a rede.', icon:'📚', url:'/repositorio/', featured:false, status:'development' },
+      { slug:'revista',    nome:'Portfólio MAG', badge:'Revista', category:'Pedagógico', desc:'Portfólio e revista digital com produções e registros da rede municipal.', icon:'📖', url:'/revista/', featured:false, status:'development' },
+      { slug:'presenca',   nome:'Validação de Presença', badge:'Eventos', category:'Eventos', desc:'Inscrição, emissão de QR Code e validação de presença em eventos e formações.', icon:'✅', url:'/presenca/', featured:false, status:'active' },
     ];
 
     const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
 
+    function go(s, cls) {
+      return s.status === 'active'
+        ? '<span class="' + cls + '">Acessar ' + arrow + '</span>'
+        : '<span class="em-breve"><i class="bi bi-cone-striped"></i> Em breve</span>';
+    }
+    function esc(t){ var d=document.createElement('div'); d.textContent=String(t==null?'':t); return d.innerHTML; }
+
     function renderFeaturedCard(s) {
       const a = document.createElement('a');
       a.className = 'featured-card';
-      if (s.status === 'active') a.href = s.url;
-      else a.style.pointerEvents = 'none';
+      if (s.status === 'active') a.href = s.url; else a.setAttribute('aria-disabled', 'true');
       a.setAttribute('aria-label', 'Acessar ' + s.nome);
-
-      let devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
-
+      const devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
       a.innerHTML = devBadge +
         '<div class="featured-icon">' + s.icon + '</div>' +
-        '<span class="featured-badge">' + s.badge + '</span>' +
-        '<h3>' + s.nome + '</h3>' +
-        '<p>' + s.desc + '</p>' +
-        '<span class="featured-go">Acessar ' + arrow + '</span>';
+        '<span class="featured-badge">' + esc(s.badge) + '</span>' +
+        '<h3>' + esc(s.nome) + '</h3>' +
+        '<p>' + esc(s.desc) + '</p>' + go(s, 'featured-go');
       return a;
     }
-
     function renderCategoryCard(s) {
       const a = document.createElement('a');
       a.className = 'category-card';
-      if (s.status === 'active') a.href = s.url;
-      else a.style.pointerEvents = 'none';
+      if (s.status === 'active') a.href = s.url; else a.setAttribute('aria-disabled', 'true');
       a.setAttribute('aria-label', 'Acessar ' + s.nome);
-
-      let devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
-
+      const devBadge = s.status === 'development' ? '<div class="dev-badge">Em desenvolvimento</div>' : '';
       a.innerHTML = devBadge +
         '<div class="category-icon">' + s.icon + '</div>' +
-        '<h4>' + s.nome + '</h4>' +
-        '<p>' + s.desc + '</p>';
+        '<h4>' + esc(s.nome) + '</h4>' +
+        '<p>' + esc(s.desc) + '</p>' + go(s, 'category-go');
       return a;
     }
 
-    const featured = sistemas.filter(s => s.featured);
-    const mainEl = document.getElementById('main');
-    const featuredSection = document.getElementById('featured-section');
+    function renderPortal(visiveis) {
+      const featuredSection = document.getElementById('featured-section');
+      const mainEl = document.getElementById('main');
+      featuredSection.innerHTML = '';
+      mainEl.innerHTML = '';
 
-    if (featured.length > 0) {
-      const title = document.createElement('div');
-      title.className = 'section-title';
-      title.innerHTML = '<span class="section-icon">⭐</span>Sistemas em Destaque';
-      featuredSection.appendChild(title);
+      if (!visiveis.length) {
+        mainEl.innerHTML = '<div class="portal-vazio"><i class="bi bi-shield-lock" style="font-size:1.6rem"></i>'
+          + '<p style="margin:.6rem 0 0">Nenhum sistema liberado para o seu acesso ainda. Procure a administração.</p></div>';
+        return;
+      }
 
-      const grid = document.createElement('div');
-      grid.className = 'featured-grid';
-      featured.forEach(s => grid.appendChild(renderFeaturedCard(s)));
-      featuredSection.appendChild(grid);
+      const featured = visiveis.filter(s => s.featured);
+      if (featured.length) {
+        const title = document.createElement('div');
+        title.className = 'section-title';
+        title.innerHTML = '<span class="section-icon">⭐</span>Sistemas em Destaque';
+        featuredSection.appendChild(title);
+        const grid = document.createElement('div');
+        grid.className = 'featured-grid';
+        featured.forEach(s => grid.appendChild(renderFeaturedCard(s)));
+        featuredSection.appendChild(grid);
+      }
+
+      [...new Set(visiveis.map(s => s.category))].forEach(cat => {
+        const itens = visiveis.filter(s => s.category === cat && !s.featured);
+        if (!itens.length) return;
+        const title = document.createElement('div');
+        title.className = 'section-title';
+        title.textContent = cat;
+        mainEl.appendChild(title);
+        const grid = document.createElement('div');
+        grid.className = 'category-grid';
+        itens.forEach(s => grid.appendChild(renderCategoryCard(s)));
+        mainEl.appendChild(grid);
+      });
     }
 
-    const categories = [...new Set(sistemas.map(s => s.category))];
-    categories.forEach(cat => {
-      const catSistemas = sistemas.filter(s => s.category === cat && !s.featured);
-      if (catSistemas.length === 0) return;
+    function montarUsuario(perms, session) {
+      const nome = (perms.perfil && (perms.perfil.nome || perms.perfil.email)) || (session.user && session.user.email) || '';
+      const box = document.querySelector('.mg-user');
+      box.innerHTML = '<span class="mg-quem"><i class="bi bi-person-circle"></i> ' + esc(nome) + '</span>'
+        + '<button class="mg-nav-btn" id="btn-sair"><i class="bi bi-box-arrow-right"></i> Sair</button>';
+      document.getElementById('btn-sair').addEventListener('click', function () {
+        SB.auth.signOut().then(irLogin).catch(irLogin);
+      });
+    }
 
-      const title = document.createElement('div');
-      title.className = 'section-title';
-      title.textContent = cat;
-      mainEl.appendChild(title);
+    function revelar() {
+      var g = document.getElementById('portalGate'); if (g) g.remove();
+      var l = document.getElementById('portal-loading'); if (l) l.remove();
+    }
+    function irLogin() { location.replace('central/login.html'); }
+    function mostrarMensagem(html) {
+      document.getElementById('featured-section').innerHTML = '';
+      document.getElementById('main').innerHTML = '<div class="portal-vazio">' + html + '</div>';
+      revelar();
+    }
 
-      const grid = document.createElement('div');
-      grid.className = 'category-grid';
-      catSistemas.forEach(s => grid.appendChild(renderCategoryCard(s)));
-      mainEl.appendChild(grid);
-    });
+    (async function () {
+      try {
+        if (!CFG.url) { mostrarMensagem('Configuração do acesso central ausente.'); return; }
+        const { data: { session } } = await SB.auth.getSession();
+        if (!session) { irLogin(); return; }
+
+        const r = await SB.rpc('minhas_permissoes');
+        if (r.error) { mostrarMensagem('Erro ao verificar seu acesso: ' + esc(r.error.message)); return; }
+        const perms = r.data;
+        if (!perms || !perms.autorizado) {
+          mostrarMensagem('<i class="bi bi-shield-exclamation" style="font-size:1.6rem"></i>'
+            + '<p style="margin:.6rem 0 .9rem">A conta <b>' + esc((session.user && session.user.email) || '') + '</b> ainda não foi autorizada pela secretaria.</p>'
+            + '<button class="mg-nav-btn" onclick="(function(){window.ACESSO_SB.auth.signOut().then(()=>location.replace(\'central/login.html\'));})()">Trocar de conta</button>');
+          montarUsuario(perms || {}, session);
+          return;
+        }
+
+        montarUsuario(perms, session);
+
+        // Filtra o catálogo pelos sistemas liberados (super admin vê todos).
+        var visiveis;
+        if (perms.perfil && perms.perfil.is_super_admin) {
+          visiveis = sistemas.slice();
+        } else {
+          var liberados = new Set((perms.sistemas || []).map(function (s) { return s.slug; }));
+          visiveis = sistemas.filter(function (s) { return liberados.has(s.slug); });
+        }
+        renderPortal(visiveis);
+        revelar();
+      } catch (e) {
+        mostrarMensagem('Não foi possível carregar o portal. Atualize a página e tente novamente.');
+      }
+    })();
   </script>
 </body>
 </html>
