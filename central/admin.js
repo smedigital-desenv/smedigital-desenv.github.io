@@ -137,12 +137,79 @@
      ========================================================================== */
   function initAcessos() {
     optsSistemas($('ac-sistema'));
-    optsPerfis($('ac-perfil'), true);
-    $('ac-sistema').addEventListener('change', renderMatriz);
-    $('ac-perfil').addEventListener('change', renderMatriz);
+    optsPerfis($('ac-perfil'), true);     // <select> oculto = fonte do id selecionado
+    initPerfilCombo();
+    $('ac-sistema').addEventListener('change', function () {
+      if (window.__acComboRefresh) window.__acComboRefresh();
+      renderMatriz();
+    });
     $('ac-reload').addEventListener('click', renderMatriz);
     $('ac-salvar').addEventListener('click', salvarAcessos);
     renderMatriz();
+  }
+
+  // Campo de busca (type-to-search) do usuário — substitui o <select> gigante.
+  function initPerfilCombo() {
+    var inp = $('ac-perfil-busca');
+    var list = $('ac-perfil-list');
+    var soChk = $('ac-perfil-so-sistema');
+    if (!inp || !list) return;
+    var atuais = [];
+
+    function baseFiltrada() {
+      var soSis = soChk && soChk.checked;
+      var sisId = $('ac-sistema').value;
+      return cachePerfis.filter(function (p) {
+        if (soSis && sisId) {
+          if (p.is_super_admin) return true;
+          var set = cacheAcessoPerfil[p.id];
+          if (!set || !set.has(Number(sisId))) return false;
+        }
+        return true;
+      });
+    }
+    function fechar() { list.style.display = 'none'; inp.setAttribute('aria-expanded', 'false'); }
+    function selecionar(p) {
+      $('ac-perfil').value = p ? p.id : '';
+      inp.value = p ? (p.nome || p.email) : '';
+      fechar();
+      renderMatriz();
+    }
+    function render() {
+      var q = (inp.value || '').toLowerCase().trim();
+      var base = baseFiltrada().filter(function (p) {
+        return !q || (p.nome || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
+      });
+      atuais = base.slice(0, 50);
+      list.innerHTML = '';
+      if (!atuais.length) {
+        list.appendChild(el('div', { class: 'combo-item muted' }, 'Nenhum usuário encontrado.'));
+      } else {
+        atuais.forEach(function (p) {
+          var it = el('div', { class: 'combo-item' }, '<b>' + esc(p.nome || p.email) + '</b><small>' + esc(p.email) + '</small>');
+          it.addEventListener('mousedown', function (e) { e.preventDefault(); selecionar(p); });
+          list.appendChild(it);
+        });
+        if (base.length > atuais.length) {
+          list.appendChild(el('div', { class: 'combo-item muted' }, 'Mostrando 50 de ' + base.length + '. Refine a busca…'));
+        }
+      }
+      list.style.display = 'block';
+      inp.setAttribute('aria-expanded', 'true');
+    }
+
+    inp.addEventListener('input', function () { $('ac-perfil').value = ''; render(); });
+    inp.addEventListener('focus', render);
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') fechar();
+      else if (e.key === 'Enter') { e.preventDefault(); if (atuais.length) selecionar(atuais[0]); }
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target !== inp && !list.contains(e.target)) fechar();
+    });
+    if (soChk) soChk.addEventListener('change', function () { if (list.style.display === 'block') render(); });
+
+    window.__acComboRefresh = function () { if (list.style.display === 'block') render(); };
   }
 
   async function renderMatriz() {
