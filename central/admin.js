@@ -244,6 +244,35 @@
     var atual = {};
     (rp.data || []).forEach(function (x) { atual[x.tela_id] = x; });
 
+    // Papéis do sistema + o que cada papel libera — para as badges por tela e
+    // os atalhos "Liberar como papel" (Secretaria / Empresa / Escola / Admin).
+    var permsByPapel = {}, telaBadges = {}, papeis = [];
+    var rpa = await SB.from('papeis').select('id,slug,nome').eq('sistema_id', sistemaId).order('id');
+    if (!rpa.error) papeis = rpa.data || [];
+    if (papeis.length) {
+      var papelById = {}; papeis.forEach(function (p) { papelById[p.id] = p; });
+      var rpp = await SB.from('papel_permissoes').select('papel_id,tela_id,pode_ver,pode_editar,pode_exportar')
+        .in('papel_id', papeis.map(function (p) { return p.id; }));
+      if (!rpp.error) (rpp.data || []).forEach(function (x) {
+        (permsByPapel[x.papel_id] = permsByPapel[x.papel_id] || {})[x.tela_id] = x;
+        if (x.pode_ver) (telaBadges[x.tela_id] = telaBadges[x.tela_id] || []).push(papelById[x.papel_id]);
+      });
+    }
+
+    // Barra de atalhos por papel (aditivo: marca as telas do papel; "Limpar" zera).
+    var toolbar = el('div', { class: 'mb-3 d-flex flex-wrap align-items-center gap-1' });
+    if (papeis.length) {
+      toolbar.appendChild(el('span', { class: 'muted', style: 'font-size:.85rem;margin-right:.3rem' }, '<i class="bi bi-magic"></i> Liberar como papel:'));
+      papeis.forEach(function (pa) {
+        var b = el('button', { class: 'btn btn-sm btn-outline-primary', type: 'button' }, esc(pa.nome));
+        b.addEventListener('click', function () { aplicaPapel(pa.id, permsByPapel); toast('Telas do papel “' + pa.nome + '” marcadas. Revise e salve.'); });
+        toolbar.appendChild(b);
+      });
+      var bl = el('button', { class: 'btn btn-sm btn-light', type: 'button' }, '<i class="bi bi-eraser"></i> Limpar');
+      bl.addEventListener('click', limparTudo);
+      toolbar.appendChild(bl);
+    }
+
     var tbl = el('table');
     tbl.innerHTML =
       '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th><th class="chk-col">Exportar</th></tr></thead>';
@@ -251,7 +280,9 @@
     telas.forEach(function (t) {
       var a = atual[t.id] || {};
       var tr = el('tr');
-      tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'));
+      var badges = (telaBadges[t.id] || []).map(function (pp) { return '<span class="pill tipo">' + esc(pp.slug) + '</span>'; }).join(' ');
+      tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'
+        + (badges ? '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">' + badges + '</div>' : '')));
       ['ver', 'editar', 'exportar'].forEach(function (acao) {
         var td = el('td', { class: 'chk-col' });
         var chk = el('input', { type: 'checkbox', class: 'form-check-input', 'data-tela': t.id, 'data-acao': acao });
@@ -264,8 +295,33 @@
     });
     tbl.appendChild(tb);
     box.innerHTML = '';
+    if (papeis.length) box.appendChild(toolbar);
     box.appendChild(tbl);
     $('ac-salvar').disabled = false;
+  }
+
+  // Marca (aditivo) as telas do papel escolhido, conforme papel_permissoes.
+  function aplicaPapel(papelId, permsByPapel) {
+    var mapa = permsByPapel[papelId] || {};
+    document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
+      var vch = tr.querySelector('[data-acao="ver"]');
+      var telaId = Number(vch.getAttribute('data-tela'));
+      var perm = mapa[telaId];
+      if (!perm) return; // papel não inclui esta tela -> não mexe (aditivo)
+      if (perm.pode_ver) vch.checked = true;
+      if (perm.pode_editar) tr.querySelector('[data-acao="editar"]').checked = true;
+      if (perm.pode_exportar) tr.querySelector('[data-acao="exportar"]').checked = true;
+      syncRow(tr);
+    });
+  }
+
+  function limparTudo() {
+    document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
+      tr.querySelector('[data-acao="ver"]').checked = false;
+      tr.querySelector('[data-acao="editar"]').checked = false;
+      tr.querySelector('[data-acao="exportar"]').checked = false;
+      syncRow(tr);
+    });
   }
 
   // editar/exportar dependem de "ver"
