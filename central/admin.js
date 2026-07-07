@@ -259,6 +259,26 @@
       });
     }
 
+    // Papel deste usuário NESTE sistema (perfil_papeis). É o que define o perfil
+    // (escola/secretaria/empresa/admin) e as telas padrão. Trocar aqui muda o
+    // "tipo de perfil" do usuário no sistema — grava na hora.
+    var papelBox = el('div', { class: 'mb-3', style: 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.7rem .9rem' });
+    if (papeis.length) {
+      var papelAtual = '';
+      var rap = await SB.from('perfil_papeis').select('papel_id').eq('perfil_id', perfilId)
+        .in('papel_id', papeis.map(function (p) { return p.id; }));
+      if (!rap.error && rap.data && rap.data.length) papelAtual = rap.data[0].papel_id;
+
+      papelBox.appendChild(el('div', { class: 'muted', style: 'font-size:.85rem;margin-bottom:.4rem' },
+        '<i class="bi bi-person-badge"></i> Papel deste usuário no sistema (define o perfil e as telas padrão):'));
+      var selP = el('select', { class: 'form-select form-select-sm', style: 'max-width:300px' });
+      selP.appendChild(el('option', { value: '' }, '— nenhum —'));
+      papeis.forEach(function (pa) { selP.appendChild(el('option', { value: pa.id }, esc(pa.nome))); });
+      selP.value = papelAtual ? String(papelAtual) : '';
+      selP.addEventListener('change', function () { salvarPapelSistema(perfilId, papeis, selP.value); });
+      papelBox.appendChild(selP);
+    }
+
     // Barra de atalhos por papel (aditivo: marca as telas do papel; "Limpar" zera).
     var toolbar = el('div', { class: 'mb-3 d-flex flex-wrap align-items-center gap-1' });
     if (papeis.length) {
@@ -295,9 +315,28 @@
     });
     tbl.appendChild(tb);
     box.innerHTML = '';
+    if (papeis.length) box.appendChild(papelBox);
     if (papeis.length) box.appendChild(toolbar);
     box.appendChild(tbl);
     $('ac-salvar').disabled = false;
+  }
+
+  // Troca o papel do usuário NESTE sistema: remove os papéis atuais dele nas
+  // roles deste sistema e grava o novo (perfil_papeis). Sem escola (escola_id null).
+  async function salvarPapelSistema(perfilId, papeisSistema, novoPapelId) {
+    perfilId = Number(perfilId);
+    var ids = papeisSistema.map(function (p) { return p.id; });
+    try {
+      var d = await SB.from('perfil_papeis').delete().eq('perfil_id', perfilId).in('papel_id', ids);
+      if (d.error) throw d.error;
+      if (novoPapelId) {
+        var ins = await SB.from('perfil_papeis').insert({ perfil_id: perfilId, papel_id: Number(novoPapelId) });
+        if (ins.error) throw ins.error;
+      }
+      await carregarAcessos();                 // atualiza filtro/coluna de sistemas
+      if (typeof renderUsuarios === 'function') renderUsuarios();
+      toast('Papel atualizado. (o usuário vê na próxima entrada)');
+    } catch (e) { erro(e); }
   }
 
   // Marca (aditivo) as telas do papel escolhido, conforme papel_permissoes.
@@ -422,7 +461,13 @@
       var tr = el('tr');
       tr.appendChild(el('td', null, '<b>' + esc(p.nome || '—') + '</b><br><span class="muted">' + esc(p.email) + '</span>'));
       tr.appendChild(el('td', null, badgesSistemas(p)));
-      tr.appendChild(el('td', null, '<span class="pill tipo">' + esc(p.tipo) + '</span>'));
+      var tdTipo = el('td');
+      var selT = el('select', { class: 'form-select form-select-sm', style: 'min-width:118px' });
+      ['secretaria', 'escola', 'externo'].forEach(function (tp) { selT.appendChild(el('option', { value: tp }, tp)); });
+      selT.value = p.tipo || 'escola';
+      selT.addEventListener('change', function () { patchPerfil(p, { tipo: selT.value }); });
+      tdTipo.appendChild(selT);
+      tr.appendChild(tdTipo);
       tr.appendChild(el('td', null, p.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
       tr.appendChild(el('td', null, p.is_super_admin ? '<span class="pill super">super</span>' : '<span class="muted">—</span>'));
 
