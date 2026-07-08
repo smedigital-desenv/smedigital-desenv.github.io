@@ -693,7 +693,125 @@
   function initCatalogo() {
     $('ns-salvar').addEventListener('click', salvarNovoSistema);
     $('t-add').addEventListener('click', adicionarTela);
+    $('pa-add').addEventListener('click', adicionarPapel);
     renderCatSistemas();
+    renderCatPapeis();
+  }
+
+  // ---- Catálogo: PAPÉIS do sistema (papeis + papel_permissoes) --------------
+  async function renderCatPapeis() {
+    var box = $('cat-papeis');
+    $('cat-papel-ctx').textContent = '';
+    $('cat-papel-telas').innerHTML = '';
+    if (!catSistemaId) { box.innerHTML = '<div class="empty">Selecione um sistema.</div>'; return; }
+    var sis = cacheSistemas.find(function (s) { return String(s.id) === String(catSistemaId); });
+    $('cat-papel-ctx').textContent = sis ? ('— ' + sis.nome) : '';
+    box.innerHTML = '<div class="loading">Carregando…</div>';
+    var r = await SB.from('papeis').select('id,slug,nome').eq('sistema_id', catSistemaId).order('id');
+    if (r.error) return erro(r.error);
+    var papeis = (r.data || []).sort(function (a, b) {
+      return (ordemPapel(a.slug) - ordemPapel(b.slug)) || String(a.nome || '').localeCompare(String(b.nome || ''));
+    });
+    if (!papeis.length) { box.innerHTML = '<div class="empty">Nenhum papel. Adicione acima (ex.: secretaria, empresa, escola).</div>'; return; }
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Papel</th><th>Slug</th><th></th></tr></thead>';
+    var tb = el('tbody');
+    papeis.forEach(function (pa) {
+      var c = corPapel(pa.slug);
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<span class="pill" style="background:' + c + '1a;color:' + c + ';border:1px solid ' + c + '55;font-weight:700">' + esc(pa.nome) + '</span>'));
+      tr.appendChild(el('td', null, '<span class="muted">' + esc(pa.slug) + '</span>'));
+      var td = el('td');
+      var bEdit = el('button', { class: 'btn btn-sm btn-light', title: 'Editar telas do papel' }, '<i class="bi bi-toggles"></i> Telas');
+      bEdit.addEventListener('click', function () { renderPapelTelas(pa); });
+      var bDel = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Excluir papel' }, '<i class="bi bi-trash text-danger"></i>');
+      bDel.addEventListener('click', function () { excluirPapel(pa); });
+      td.appendChild(bEdit); td.appendChild(bDel); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  async function adicionarPapel() {
+    if (!catSistemaId) { toast('Selecione um sistema primeiro.', true); return; }
+    var slug = ($('pa-slug').value || '').trim().toLowerCase();
+    var nome = ($('pa-nome').value || '').trim();
+    if (!slug || !nome) { toast('Informe slug e nome do papel.', true); return; }
+    var r = await SB.from('papeis').insert({ sistema_id: catSistemaId, slug: slug, nome: nome });
+    if (r.error) return erro(r.error);
+    $('pa-slug').value = ''; $('pa-nome').value = '';
+    renderCatPapeis();
+    toast('Papel adicionado.');
+  }
+
+  async function excluirPapel(pa) {
+    if (!confirm('Excluir o papel "' + pa.nome + '"?\nAs telas dele (papel_permissoes) e as atribuições a usuários serão removidas.')) return;
+    var r = await SB.from('papeis').delete().eq('id', pa.id);
+    if (r.error) return erro(r.error);
+    renderCatPapeis();
+    toast('Papel excluído.');
+  }
+
+  async function renderPapelTelas(pa) {
+    var box = $('cat-papel-telas');
+    box.innerHTML = '<div class="loading">Carregando telas…</div>';
+    var rt = await SB.from('telas').select('id,slug,nome,ordem').eq('sistema_id', catSistemaId).order('ordem');
+    if (rt.error) return erro(rt.error);
+    var telas = rt.data || [];
+    if (!telas.length) { box.innerHTML = '<div class="empty">Cadastre telas deste sistema primeiro (acima).</div>'; return; }
+    var rp = await SB.from('papel_permissoes').select('tela_id,pode_ver,pode_editar,pode_exportar').eq('papel_id', pa.id);
+    if (rp.error) return erro(rp.error);
+    var atual = {}; (rp.data || []).forEach(function (x) { atual[x.tela_id] = x; });
+
+    var c = corPapel(pa.slug);
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th><th class="chk-col">Exportar</th></tr></thead>';
+    var tb = el('tbody');
+    telas.forEach(function (t) {
+      var a = atual[t.id] || {};
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'));
+      ['ver', 'editar', 'exportar'].forEach(function (acao) {
+        var td = el('td', { class: 'chk-col' });
+        var chk = el('input', { type: 'checkbox', class: 'form-check-input', 'data-tela': t.id, 'data-acao': acao });
+        if (a['pode_' + acao]) chk.checked = true;
+        chk.addEventListener('change', function () { onChkChange(tr); });
+        td.appendChild(chk); tr.appendChild(td);
+      });
+      tb.appendChild(tr); syncRow(tr);
+    });
+    tbl.appendChild(tb);
+    var head = el('div', { class: 'mb-2' }, '<b style="color:' + c + '">Telas do papel: ' + esc(pa.nome) + '</b> <span class="muted">(' + esc(pa.slug) + ')</span>');
+    var save = el('button', { class: 'btn btn-roxo mt-2' }, '<i class="bi bi-check-lg"></i> Salvar telas do papel');
+    save.addEventListener('click', function () { salvarPapelTelas(pa, tb); });
+    box.innerHTML = ''; box.appendChild(head); box.appendChild(tbl); box.appendChild(save);
+  }
+
+  async function salvarPapelTelas(pa, tbody) {
+    var upserts = [], deletes = [];
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+      var telaId = Number(tr.querySelector('[data-acao="ver"]').getAttribute('data-tela'));
+      var ver = tr.querySelector('[data-acao="ver"]').checked;
+      if (ver) {
+        upserts.push({
+          papel_id: pa.id, tela_id: telaId, pode_ver: true,
+          pode_editar: tr.querySelector('[data-acao="editar"]').checked,
+          pode_exportar: tr.querySelector('[data-acao="exportar"]').checked
+        });
+      } else { deletes.push(telaId); }
+    });
+    try {
+      if (upserts.length) {
+        var u = await SB.from('papel_permissoes').upsert(upserts, { onConflict: 'papel_id,tela_id' });
+        if (u.error) throw u.error;
+      }
+      if (deletes.length) {
+        var d = await SB.from('papel_permissoes').delete().eq('papel_id', pa.id).in('tela_id', deletes);
+        if (d.error) throw d.error;
+      }
+      toast('Telas do papel salvas. (vale para as próximas liberações “como papel”)');
+    } catch (e) { erro(e); }
   }
 
   function renderCatSistemas() {
@@ -707,7 +825,7 @@
       tr.appendChild(el('td', null, '<i class="bi ' + esc(s.icone || 'bi-app') + '" style="color:' + esc(s.cor || '#64748b') + '"></i> <b>' + esc(s.nome) + '</b>'));
       tr.appendChild(el('td', null, '<span class="muted">' + esc(s.slug) + '</span>'));
       tr.appendChild(el('td', null, s.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
-      tr.addEventListener('click', function () { catSistemaId = s.id; renderCatSistemas(); renderCatTelas(); });
+      tr.addEventListener('click', function () { catSistemaId = s.id; renderCatSistemas(); renderCatTelas(); renderCatPapeis(); });
       tb.appendChild(tr);
     });
     tbl.appendChild(tb);
