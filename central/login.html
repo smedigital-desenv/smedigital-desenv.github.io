@@ -5,127 +5,202 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Entrar — Acesso SME</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet" />
-  <link href="estilo.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --cor:#4f46e5; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:'Inter',system-ui,Segoe UI,sans-serif; min-height:100vh; color:#0f172a; }
+    .lg-bg{ position:fixed; inset:0; z-index:-1; background:var(--cor); }
+    .lg-bg::after{ content:''; position:absolute; inset:0;
+      background:radial-gradient(900px 500px at 12% 6%, rgba(255,255,255,.10), transparent 60%),
+                 linear-gradient(135deg, rgba(0,0,0,.10), rgba(10,8,30,.80)); }
+    .lg-wrap{ display:flex; gap:48px; max-width:1080px; margin:0 auto; min-height:100vh;
+      align-items:center; padding:44px 24px; }
+    .lg-left{ flex:1.1; color:#fff; min-width:0; }
+    .lg-brand{ display:flex; align-items:center; gap:12px; margin-bottom:26px; }
+    .lg-avatar{ width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,.16);
+      display:grid; place-items:center; font-weight:900; font-size:1rem; overflow:hidden; }
+    .lg-avatar img{ width:100%; height:100%; object-fit:cover; }
+    .lg-marca{ font-weight:800; letter-spacing:.02em; font-size:.82rem; text-transform:uppercase; color:#e9e7ff; }
+    .lg-sub{ font-size:.82rem; color:rgba(255,255,255,.72); }
+    .lg-titulo{ font-weight:900; font-size:2.5rem; line-height:1.08; margin:0 0 14px; letter-spacing:-.02em; }
+    .lg-tagline{ font-size:1.02rem; color:rgba(255,255,255,.82); line-height:1.5; margin:0 0 26px; max-width:520px; }
+    .lg-features{ list-style:none; padding:0; margin:0 0 24px; display:flex; flex-direction:column; gap:16px; }
+    .lg-features li{ display:flex; gap:14px; align-items:flex-start; }
+    .fi{ flex:none; width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.12);
+      display:grid; place-items:center; color:#fff; font-size:1.05rem; }
+    .lg-features b{ display:block; font-weight:700; font-size:.96rem; }
+    .lg-features span{ color:rgba(255,255,255,.72); font-size:.88rem; line-height:1.4; }
+    .lg-foot{ font-weight:700; font-size:.9rem; color:#c7f9e5; display:flex; align-items:center; gap:8px; }
+
+    .lg-card{ width:392px; background:#fff; border-radius:20px; padding:34px 32px;
+      box-shadow:0 30px 70px rgba(0,0,0,.35); }
+    .lg-card-t{ font-weight:900; font-size:1.5rem; margin:0 0 4px; color:#0f172a; }
+    .lg-card-s{ color:#64748b; font-size:.92rem; margin:0 0 20px; }
+    .lg-google{ width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+      background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:13px; font-weight:700;
+      font-size:1rem; cursor:pointer; transition:border-color .15s, box-shadow .15s; color:#0f172a; }
+    .lg-google:hover{ border-color:var(--cor); box-shadow:0 6px 18px rgba(0,0,0,.08); }
+    .lg-google img{ width:20px; }
+    .lg-hint{ text-align:center; color:#94a3b8; font-size:.82rem; margin:14px 0 0; }
+    .msg{ display:none; margin:0 0 12px; border-radius:10px; padding:10px 12px; font-size:.86rem; }
+    .msg.erro{ display:block; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
+    .msg.info{ display:block; background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; }
+    .lg-sec{ width:100%; background:none; border:0; color:var(--cor); font-weight:700; font-size:.86rem;
+      cursor:pointer; margin-top:16px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    #form-empresa{ margin-top:12px; }
+    #form-empresa input{ width:100%; padding:11px 12px; margin-bottom:9px; border:1px solid #cbd5e1;
+      border-radius:10px; font-size:.92rem; }
+    #form-empresa button{ width:100%; padding:12px; border:0; border-radius:10px; background:var(--cor);
+      color:#fff; font-weight:800; font-size:.94rem; cursor:pointer; }
+
+    @media (max-width:840px){
+      .lg-wrap{ flex-direction:column; gap:26px; padding:32px 18px; }
+      .lg-left{ width:100%; }
+      .lg-titulo{ font-size:2rem; }
+      .lg-card{ width:100%; }
+    }
+  </style>
 </head>
-<body class="login-body">
-  <div class="card-login">
-    <div class="topo">
-      <div class="ic"><i class="bi bi-shield-lock-fill"></i></div>
-      <h3>ACESSO SME</h3>
-      <div class="sub">Rede Municipal de Educação</div>
-    </div>
-    <div class="corpo">
-      <p style="color:#475569;font-size:.9rem;margin-bottom:1.2rem">Entre com sua conta institucional para acessar os sistemas da rede.</p>
-
-      <button id="btn-google" class="btn-google">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" />
-        Entrar com Google
-      </button>
-
-      <div id="msg" class="msg"></div>
-
-      <!-- Empresas / fornecedores externos: entram por e-mail + senha (não usam
-           conta Google). O acesso é cadastrado e governado pelo central. -->
-      <div style="margin:18px 0 6px;text-align:center">
-        <button id="btn-empresa-toggle" type="button"
-                style="background:none;border:0;color:#0369a1;font-size:.85rem;font-weight:700;cursor:pointer;text-decoration:underline">
-          <i class="bi bi-briefcase"></i> Sou empresa / fornecedor
-        </button>
+<body>
+  <div class="lg-bg"></div>
+  <main class="lg-wrap">
+    <section class="lg-left">
+      <div class="lg-brand">
+        <div class="lg-avatar" id="lg-avatar"></div>
+        <div><div class="lg-marca" id="lg-marca"></div><div class="lg-sub" id="lg-sub"></div></div>
       </div>
+      <h1 class="lg-titulo" id="lg-titulo"></h1>
+      <p class="lg-tagline" id="lg-tagline"></p>
+      <ul class="lg-features" id="lg-features"></ul>
+      <div class="lg-foot"><i class="bi bi-check2-circle"></i> Acesso institucional pela rede SME.</div>
+    </section>
 
-      <form id="form-empresa" style="display:none;margin-top:6px">
-        <input type="email" id="emp-email" placeholder="E-mail de acesso" autocomplete="username"
-               style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;border-radius:10px;font-size:.9rem" />
-        <input type="password" id="emp-senha" placeholder="Senha" autocomplete="current-password"
-               style="width:100%;padding:10px 12px;margin-bottom:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.9rem" />
-        <button type="submit" id="btn-empresa"
-                style="width:100%;padding:11px;border:0;border-radius:10px;background:#075f82;color:#fff;font-weight:800;font-size:.92rem;cursor:pointer">
-          <i class="bi bi-box-arrow-in-right"></i> Entrar
-        </button>
-      </form>
-
-      <div class="foot"><i class="bi bi-info-circle"></i> Use sua conta <b id="dom"></b></div>
-    </div>
-  </div>
+    <aside class="lg-card">
+      <h2 class="lg-card-t" id="lg-cta">Entrar</h2>
+      <p class="lg-card-s">Use sua conta institucional para entrar.</p>
+      <div id="msg" class="msg"></div>
+      <button id="btn-google" class="lg-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" /> Entrar com Google
+      </button>
+      <p class="lg-hint">Acesso institucional <b id="dom"></b></p>
+      <div id="emp-wrap" style="display:none">
+        <button id="emp-toggle" class="lg-sec" type="button">Acesso da empresa / fornecedor <i class="bi bi-chevron-down"></i></button>
+        <form id="form-empresa" style="display:none">
+          <input type="email" id="emp-email" placeholder="E-mail de acesso" autocomplete="username" />
+          <input type="password" id="emp-senha" placeholder="Senha" autocomplete="current-password" />
+          <button type="submit" id="emp-btn"><i class="bi bi-box-arrow-in-right"></i> Entrar</button>
+        </form>
+      </div>
+    </aside>
+  </main>
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const CFG = window.ACESSO_CFG;
-    document.getElementById('dom').textContent = CFG.dominio || '';
+    const CFG = window.ACESSO_CFG || {};
     const SB = window.ACESSO_SB || window.supabase.createClient(CFG.url, CFG.anonKey);
     window.ACESSO_SB = SB;
+    const $ = function (id) { return document.getElementById(id); };
+    $('dom').textContent = CFG.dominio || '';
 
-    function msg(texto, tipo) {
-      const m = document.getElementById('msg');
-      m.textContent = texto; m.className = 'msg ' + (tipo || 'info');
+    // ── Sistema de origem (a partir do next) ──────────────────────────────────
+    const PATH2SLUG = { 'gom-sme':'gom','mapa-sme':'mapa','sate-sme':'sate','rocada':'rocada',
+                        'repositorio':'repositorio','revista':'revista','presenca':'presenca','central':'central' };
+    function slugDoNext(next){
+      if(!next) return 'central';
+      var seg = String(next).replace(/^\/+/,'').split(/[\/?#]/)[0];
+      return PATH2SLUG[seg] || 'central';
     }
+    const NEXT = new URLSearchParams(location.search).get('next');
+    const SLUG = slugDoNext(NEXT);
 
-    // Para onde ir depois de logar.
-    //  - com ?next válido (uma página .html do /central/, ex.: admin.html) -> essa página
-    //  - caso contrário -> PORTAL de sistemas (raiz do domínio)
-    // 'index.html' como next é ignorado (o portal é a própria raiz).
-    function destino() {
-      const params = new URLSearchParams(location.search);
-      const next = params.get('next');
-      if (next) {
-        // Caminho ABSOLUTO do mesmo domínio (ex.: /gom-sme/teste/) — volta à origem.
-        // Só aceita se começar com uma única "/" (anti open-redirect: rejeita //host e esquemas).
-        if (/^\/(?!\/)/.test(next)) return new URL(next, location.origin).href;
-        // Página interna do /central/ (ex.: admin.html).
-        if (next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
-          return new URL(next, location.href).href;
-        }
-      }
-      return new URL('../', location.href).href;      // padrão: portal de sistemas (raiz)
-    }
+    // Conteúdo padrão embutido (funciona mesmo sem o SQL/edições) — genérico.
+    const DEFAULTS = {
+      central: { marca:'Acesso SME', sub:'Rede Municipal de Educação', titulo:'O acesso aos sistemas da rede.',
+        tagline:'Entre com sua conta institucional para acessar as ferramentas da Secretaria Municipal de Educação.',
+        cta:'Entrar', cor:'#4f46e5', mostra_empresa:false, features:[
+          {icon:'bi-shield-lock',titulo:'Acesso seguro',desc:'Login único com a sua conta institucional.'},
+          {icon:'bi-grid-1x2',titulo:'Tudo num lugar',desc:'Seus sistemas reunidos em um portal.'},
+          {icon:'bi-people',titulo:'Acesso por função',desc:'Cada um vê apenas o que precisa.'}]},
+      gom: { marca:'GOM', sub:'Obras e Manutenção · SME', titulo:'A manutenção das escolas, sob controle.',
+        tagline:'Registre e acompanhe os chamados de obras e manutenção das unidades escolares.',
+        cta:'Entrar no GOM', cor:'#b45309', mostra_empresa:true, features:[
+          {icon:'bi-journal-plus',titulo:'Chamados',desc:'Abra e acompanhe as solicitações.'},
+          {icon:'bi-geo-alt',titulo:'Visitas',desc:'Acompanhe o atendimento em campo.'},
+          {icon:'bi-clipboard-check',titulo:'Execução',desc:'Do orçamento à conclusão do serviço.'}]}
+    };
 
-    // Já logado? Vai direto ao destino.
-    SB.auth.getSession().then(({ data }) => {
-      if (data.session) location.replace(destino());
-    });
-
-    // ── Institucional (Google) ────────────────────────────────────────────────
-    document.getElementById('btn-google').addEventListener('click', async () => {
-      document.getElementById('msg').className = 'msg';
-      // O token OAuth precisa voltar para ESTA página (login.html), que carrega o
-      // cliente Supabase, para a sessão ser CONSUMIDA e PERSISTIDA antes de seguir.
-      // Se mandarmos o redirectTo direto ao portal (sem cliente Supabase), o
-      // #access_token nunca é consumido e a sessão SSO não é salva.
-      // Após o retorno, o getSession() acima leva ao destino().
-      const next = new URLSearchParams(location.search).get('next');
-      const redirectTo = location.origin + location.pathname + (next ? '?next=' + encodeURIComponent(next) : '');
-      const { error } = await SB.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo, queryParams: { prompt: 'select_account' } }
+    function aplicarLanding(d){
+      d = d || {};
+      var base = DEFAULTS[SLUG] || DEFAULTS.central;
+      var L = Object.assign({}, base, {});
+      ['marca','sub','titulo','tagline','cta','cor','imagem_url','mostra_empresa'].forEach(function(k){
+        if (d[k] !== undefined && d[k] !== null && d[k] !== '') L[k] = d[k];
       });
-      if (error) msg('Erro ao entrar: ' + error.message, 'erro');
-    });
+      if (Array.isArray(d.features) && d.features.length) L.features = d.features;
 
-    // ── Empresa / fornecedor (e-mail + senha) ─────────────────────────────────
-    document.getElementById('btn-empresa-toggle').addEventListener('click', () => {
-      const f = document.getElementById('form-empresa');
-      const mostrar = f.style.display === 'none';
-      f.style.display = mostrar ? 'block' : 'none';
-      if (mostrar) document.getElementById('emp-email').focus();
-    });
+      document.documentElement.style.setProperty('--cor', L.cor || '#4f46e5');
+      $('lg-marca').textContent = L.marca || '';
+      $('lg-sub').textContent = L.sub || '';
+      $('lg-titulo').textContent = L.titulo || '';
+      $('lg-tagline').textContent = L.tagline || '';
+      $('lg-cta').textContent = L.cta || 'Entrar';
+      var av = $('lg-avatar');
+      if (L.imagem_url) { av.innerHTML = '<img src="' + String(L.imagem_url).replace(/"/g,'') + '" alt="">'; }
+      else { av.textContent = (L.marca || 'SME').replace(/[^A-Za-zÀ-ÿ0-9]/g,' ').trim().split(/\s+/).slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase() || 'SME'; }
+      var ul = $('lg-features'); ul.innerHTML = '';
+      (L.features || []).slice(0,5).forEach(function(f){
+        var li = document.createElement('li');
+        var sp = document.createElement('span'); sp.className='fi'; sp.innerHTML='<i class="bi ' + String(f.icon||'bi-dot').replace(/"/g,'') + '"></i>';
+        var dv = document.createElement('div');
+        var b = document.createElement('b'); b.textContent = f.titulo || '';
+        var s = document.createElement('span'); s.textContent = f.desc || '';
+        dv.appendChild(b); dv.appendChild(s); li.appendChild(sp); li.appendChild(dv); ul.appendChild(li);
+      });
+      $('emp-wrap').style.display = L.mostra_empresa ? '' : 'none';
+    }
 
-    document.getElementById('form-empresa').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = (document.getElementById('emp-email').value || '').trim().toLowerCase();
-      const senha = document.getElementById('emp-senha').value || '';
-      if (!email || !senha) { msg('Informe e-mail e senha.', 'erro'); return; }
-      const btn = document.getElementById('btn-empresa');
-      btn.disabled = true;
-      msg('Entrando…', 'info');
-      const { error } = await SB.auth.signInWithPassword({ email, password: senha });
-      if (error) {
-        btn.disabled = false;
-        msg('E-mail ou senha inválidos.', 'erro');
-        return;
+    // Renderiza o padrão já e tenta enriquecer com o banco (leitura anon).
+    aplicarLanding(null);
+    SB.from('sistema_landing').select('marca,sub,titulo,tagline,cta,cor,imagem_url,features,mostra_empresa')
+      .eq('slug', SLUG).maybeSingle()
+      .then(function(r){ if (r && !r.error && r.data) aplicarLanding(r.data); })
+      .catch(function(){});
+
+    // ── AUTENTICAÇÃO ──────────────────────────────────────────────────────────
+    function msg(t, tipo){ var m=$('msg'); m.textContent=t; m.className='msg '+(tipo||'info'); }
+
+    function destino(){
+      var next = new URLSearchParams(location.search).get('next');
+      if (next){
+        if (/^\/(?!\/)/.test(next)) return new URL(next, location.origin).href;   // caminho absoluto do domínio
+        if (next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) return new URL(next, location.href).href;
       }
-      // Sessão criada e persistida pelo cliente; segue ao portal (ou ?next).
+      return new URL('../', location.href).href;   // portal
+    }
+
+    SB.auth.getSession().then(function(r){ if (r.data && r.data.session) location.replace(destino()); });
+
+    $('btn-google').addEventListener('click', async function(){
+      $('msg').className = 'msg';
+      var next = new URLSearchParams(location.search).get('next');
+      var redirectTo = location.origin + location.pathname + (next ? '?next=' + encodeURIComponent(next) : '');
+      var r = await SB.auth.signInWithOAuth({ provider:'google', options:{ redirectTo:redirectTo, queryParams:{ prompt:'select_account' } } });
+      if (r && r.error) msg('Erro ao entrar: ' + r.error.message, 'erro');
+    });
+
+    $('emp-toggle').addEventListener('click', function(){
+      var f=$('form-empresa'); var open=f.style.display==='none'; f.style.display=open?'block':'none';
+      if(open) $('emp-email').focus();
+    });
+    $('form-empresa').addEventListener('submit', async function(e){
+      e.preventDefault();
+      var email=($('emp-email').value||'').trim().toLowerCase(), senha=$('emp-senha').value||'';
+      if(!email||!senha){ msg('Informe e-mail e senha.','erro'); return; }
+      $('emp-btn').disabled=true; msg('Entrando…','info');
+      var r = await SB.auth.signInWithPassword({ email:email, password:senha });
+      if (r && r.error){ $('emp-btn').disabled=false; msg('E-mail ou senha inválidos.','erro'); return; }
       location.replace(destino());
     });
   </script>

@@ -68,6 +68,7 @@
     initUsuarios();
     initEscolas();
     initCatalogo();
+    initLanding();
     initSimular();
   });
 
@@ -78,7 +79,7 @@
         document.querySelectorAll('.nav-item').forEach(function (i) { i.classList.remove('active'); });
         item.classList.add('active');
         var sec = item.getAttribute('data-sec');
-        ['acessos', 'usuarios', 'escolas', 'catalogo', 'simular'].forEach(function (s) {
+        ['acessos', 'usuarios', 'escolas', 'catalogo', 'landing', 'simular'].forEach(function (s) {
           $('sec-' + s).classList.toggle('hidden', s !== sec);
         });
       });
@@ -933,7 +934,139 @@
   }
 
   /* ==========================================================================
-     SEÇÃO 5 — VER COMO (permissoes_de)
+     SEÇÃO 5 — TELAS DE ACESSO (sistema_landing): textos/cor/imagem do login
+     ========================================================================== */
+  var ldSistemaId = null;      // sistema selecionado
+  var cacheLanding = {};       // sistema_id -> registro de sistema_landing
+  var landingOk = true;        // vira false se a tabela ainda não existir
+
+  function initLanding() {
+    carregarLanding();
+  }
+
+  async function carregarLanding() {
+    cacheLanding = {};
+    var r = await SB.from('sistema_landing').select('*');
+    if (r.error) {
+      // tabela ainda não criada — mostra aviso, não quebra o painel
+      landingOk = false;
+      console.warn('[admin] sistema_landing:', r.error.message);
+    } else {
+      landingOk = true;
+      (r.data || []).forEach(function (x) { cacheLanding[x.sistema_id] = x; });
+    }
+    renderLdSistemas();
+  }
+
+  function renderLdSistemas() {
+    var box = $('ld-sistemas');
+    if (!box) return;
+    if (!landingOk) {
+      box.innerHTML = '<div class="empty" style="text-align:left"><i class="bi bi-exclamation-triangle text-warning"></i> A tabela <span class="code">sistema_landing</span> ainda não existe. Rode <span class="code">central/sql/sistema_landing.sql</span> no Supabase e recarregue.</div>';
+      $('ld-form').innerHTML = '<div class="empty">Indisponível até rodar o SQL.</div>';
+      return;
+    }
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Sistema</th><th>Login</th></tr></thead>';
+    var tb = el('tbody');
+    cacheSistemas.forEach(function (s) {
+      var tr = el('tr', { style: 'cursor:pointer' });
+      if (String(s.id) === String(ldSistemaId)) tr.style.background = '#eef2ff';
+      tr.appendChild(el('td', null, '<i class="bi ' + esc(s.icone || 'bi-app') + '" style="color:' + esc(s.cor || '#64748b') + '"></i> <b>' + esc(s.nome) + '</b><br><span class="muted">' + esc(s.slug) + '</span>'));
+      var tem = !!cacheLanding[s.id];
+      tr.appendChild(el('td', null, tem ? '<span class="pill on">personalizado</span>' : '<span class="pill off">padrão</span>'));
+      tr.addEventListener('click', function () { ldSistemaId = s.id; renderLdSistemas(); renderLandingForm(); });
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.innerHTML = ''; box.appendChild(tbl);
+  }
+
+  function renderLandingForm() {
+    var box = $('ld-form');
+    var sis = cacheSistemas.find(function (s) { return String(s.id) === String(ldSistemaId); });
+    $('ld-ctx').textContent = sis ? ('— ' + sis.nome) : '';
+    if (!sis) { box.innerHTML = '<div class="empty">Selecione um sistema à esquerda.</div>'; return; }
+    var d = cacheLanding[sis.id] || {};
+    var feats = [];
+    try { feats = Array.isArray(d.features) ? d.features : (d.features ? JSON.parse(d.features) : []); } catch (e) { feats = []; }
+    var featsTxt = feats.map(function (f) {
+      return [(f.icon || ''), (f.titulo || ''), (f.desc || '')].join(' | ');
+    }).join('\n');
+
+    box.innerHTML =
+      '<div class="row g-3">' +
+        '<div class="col-md-6"><label class="lbl">Marca (nome curto)</label><input id="ld-marca" class="form-control" placeholder="ex.: GOM" /></div>' +
+        '<div class="col-md-6"><label class="lbl">Linha de apoio</label><input id="ld-sub" class="form-control" placeholder="ex.: Obras e Manutenção · SME" /></div>' +
+        '<div class="col-12"><label class="lbl">Título (headline)</label><input id="ld-titulo" class="form-control" placeholder="ex.: A manutenção das escolas, sob controle." /></div>' +
+        '<div class="col-12"><label class="lbl">Parágrafo</label><textarea id="ld-tagline" class="form-control" rows="2" placeholder="Frase curta e discreta sobre o sistema."></textarea></div>' +
+        '<div class="col-md-6"><label class="lbl">Texto do botão / card (CTA)</label><input id="ld-cta" class="form-control" placeholder="ex.: Entrar no GOM" /></div>' +
+        '<div class="col-md-3"><label class="lbl">Cor de destaque</label><input id="ld-cor" type="color" class="form-control form-control-color" style="width:100%" /></div>' +
+        '<div class="col-md-3 d-flex align-items-end"><div class="form-check"><input id="ld-empresa" class="form-check-input" type="checkbox" /><label class="form-check-label" for="ld-empresa">Opção empresa/fornecedor</label></div></div>' +
+        '<div class="col-12"><label class="lbl">Imagem / logo (URL — opcional)</label><input id="ld-imagem" class="form-control" placeholder="https://…" /></div>' +
+        '<div class="col-12"><label class="lbl">Destaques (um por linha: <span class="code">icone | título | descrição</span>)</label>' +
+          '<textarea id="ld-features" class="form-control" rows="5" placeholder="bi-journal-plus | Chamados | Abra e acompanhe as solicitações."></textarea>' +
+          '<div class="muted" style="font-size:.8rem;margin-top:4px">Ícones: nomes do Bootstrap Icons (ex.: <span class="code">bi-shield-lock</span>). Deixe em branco para nenhum destaque.</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="d-flex justify-content-between align-items-center mt-3">' +
+        '<span class="muted" style="font-size:.85rem"><i class="bi bi-eye"></i> Conteúdo público (aparece deslogado). Não coloque informação interna.</span>' +
+        '<div><button id="ld-preview" class="btn btn-light me-1"><i class="bi bi-box-arrow-up-right"></i> Ver login</button>' +
+        '<button id="ld-salvar" class="btn btn-azul"><i class="bi bi-check-lg"></i> Salvar</button></div>' +
+      '</div>';
+
+    $('ld-marca').value = d.marca || '';
+    $('ld-sub').value = d.sub || '';
+    $('ld-titulo').value = d.titulo || '';
+    $('ld-tagline').value = d.tagline || '';
+    $('ld-cta').value = d.cta || '';
+    $('ld-cor').value = /^#[0-9a-fA-F]{6}$/.test(d.cor || '') ? d.cor : (sis.cor && /^#[0-9a-fA-F]{6}$/.test(sis.cor) ? sis.cor : '#4f46e5');
+    $('ld-empresa').checked = !!d.mostra_empresa;
+    $('ld-imagem').value = d.imagem_url || '';
+    $('ld-features').value = featsTxt;
+
+    $('ld-salvar').addEventListener('click', function () { salvarLanding(sis); });
+    $('ld-preview').addEventListener('click', function () {
+      window.open('login.html?next=' + encodeURIComponent((sis.url || '/') ), '_blank');
+    });
+  }
+
+  function parseFeatures(txt) {
+    return (txt || '').split('\n').map(function (ln) {
+      var t = ln.trim();
+      if (!t) return null;
+      var parts = t.split('|').map(function (x) { return x.trim(); });
+      return { icon: parts[0] || '', titulo: parts[1] || '', desc: parts[2] || '' };
+    }).filter(Boolean);
+  }
+
+  async function salvarLanding(sis) {
+    var reg = {
+      sistema_id: sis.id,
+      slug: sis.slug,
+      marca: ($('ld-marca').value || '').trim() || null,
+      sub: ($('ld-sub').value || '').trim() || null,
+      titulo: ($('ld-titulo').value || '').trim() || null,
+      tagline: ($('ld-tagline').value || '').trim() || null,
+      cta: ($('ld-cta').value || '').trim() || null,
+      cor: ($('ld-cor').value || '').trim() || null,
+      imagem_url: ($('ld-imagem').value || '').trim() || null,
+      features: parseFeatures($('ld-features').value),
+      mostra_empresa: $('ld-empresa').checked
+    };
+    var btn = $('ld-salvar'); if (btn) btn.disabled = true;
+    try {
+      var r = await SB.from('sistema_landing').upsert(reg, { onConflict: 'sistema_id' }).select().single();
+      if (r.error) throw r.error;
+      cacheLanding[sis.id] = r.data;
+      renderLdSistemas();
+      toast('Tela de acesso salva. (aparece no login deste sistema)');
+    } catch (e) { erro(e); }
+    if (btn) btn.disabled = false;
+  }
+
+  /* ==========================================================================
+     SEÇÃO 6 — VER COMO (permissoes_de)
      ========================================================================== */
   function initSimular() {
     $('sm-ver').addEventListener('click', consultarSimulacao);
