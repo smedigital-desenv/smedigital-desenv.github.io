@@ -158,7 +158,10 @@
         var s = document.createElement('span'); s.textContent = f.desc || '';
         dv.appendChild(b); dv.appendChild(s); li.appendChild(sp); li.appendChild(dv); ul.appendChild(li);
       });
-      $('emp-wrap').style.display = L.mostra_empresa ? '' : 'none';
+      // No painel (central) o acesso de empresa/fornecedor é sempre exibido —
+      // é o hub por onde a empresa entra. Nos demais sistemas, respeita o banco.
+      var mostraEmp = (SLUG === 'central') ? true : !!L.mostra_empresa;
+      $('emp-wrap').style.display = mostraEmp ? '' : 'none';
     }
 
     // Renderiza o padrão já e tenta enriquecer com o banco (leitura anon).
