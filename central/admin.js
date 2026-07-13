@@ -85,7 +85,10 @@
 
   // ---- dados base ----------------------------------------------------------
   async function carregarPerfis() {
-    var r = await SB.from('perfis').select('id,email,nome,tipo,is_super_admin,ativo').order('nome');
+    // Tenta com is_viewer; se a coluna ainda não existe (SQL não rodado), usa o
+    // conjunto antigo — o painel continua funcionando.
+    var r = await SB.from('perfis').select('id,email,nome,tipo,is_super_admin,is_viewer,ativo').order('nome');
+    if (r.error) r = await SB.from('perfis').select('id,email,nome,tipo,is_super_admin,ativo').order('nome');
     if (r.error) return erro(r.error);
     cachePerfis = r.data || [];
   }
@@ -240,6 +243,10 @@
 
     if (perfil && perfil.is_super_admin) {
       box.innerHTML = '<div class="empty"><i class="bi bi-stars"></i> Este usuário é <b>super admin</b>: já tem acesso a tudo, não precisa liberar tela a tela.</div>';
+      return;
+    }
+    if (perfil && perfil.is_viewer) {
+      box.innerHTML = '<div class="empty"><i class="bi bi-eye"></i> Este usuário é <b>visualizador</b>: vê todas as telas (somente leitura), não precisa liberar tela a tela.</div>';
       return;
     }
     if (!telas.length) {
@@ -452,6 +459,7 @@
     $('nu-nome').value = p ? (p.nome || '') : '';
     $('nu-tipo').value = p ? (p.tipo || 'escola') : 'escola';
     $('nu-super').checked = p ? !!p.is_super_admin : false;
+    if ($('nu-viewer')) $('nu-viewer').checked = p ? !!p.is_viewer : false;
     bootstrap.Modal.getOrCreateInstance($('modalUser')).show();
   }
 
@@ -481,7 +489,7 @@
     if (!lista.length) { box.innerHTML = '<div class="empty">Nenhum usuário.</div>'; return; }
 
     var tbl = el('table');
-    tbl.innerHTML = '<thead><tr><th>Nome / E-mail</th><th>Sistemas</th><th>Tipo</th><th>Status</th><th>Super</th><th></th></tr></thead>';
+    tbl.innerHTML = '<thead><tr><th>Nome / E-mail</th><th>Sistemas</th><th>Tipo</th><th>Status</th><th>Super / Visual.</th><th></th></tr></thead>';
     var tb = el('tbody');
     lista.forEach(function (p) {
       var tr = el('tr');
@@ -495,7 +503,10 @@
       tdTipo.appendChild(selT);
       tr.appendChild(tdTipo);
       tr.appendChild(el('td', null, p.ativo ? '<span class="pill on">ativo</span>' : '<span class="pill off">inativo</span>'));
-      tr.appendChild(el('td', null, p.is_super_admin ? '<span class="pill super">super</span>' : '<span class="muted">—</span>'));
+      var flags = '';
+      if (p.is_super_admin) flags += '<span class="pill super">super</span> ';
+      if (p.is_viewer) flags += '<span class="pill" style="background:#0891b21a;color:#0891b2;border:1px solid #0891b255;font-weight:700">visualizador</span>';
+      tr.appendChild(el('td', null, flags || '<span class="muted">—</span>'));
 
       var acts = el('td');
       var bAtivo = el('button', { class: 'btn btn-sm btn-light', title: p.ativo ? 'Desativar' : 'Ativar' },
@@ -536,6 +547,7 @@
       tipo: $('nu-tipo').value,
       is_super_admin: $('nu-super').checked
     };
+    if ($('nu-viewer')) dados.is_viewer = $('nu-viewer').checked;
     try {
       if (editandoId) {
         var up = await SB.from('perfis').update(dados).eq('id', editandoId).select().single();
