@@ -61,7 +61,9 @@
   }
 
   function irParaLogin() {
-    var aqui = (location.pathname.split('/').pop() || 'index.html') + location.search + location.hash;
+    // Guarda o caminho COMPLETO de origem (ex.: /gom-sme/teste/) para o login
+    // devolver o usuário exatamente onde ele estava, em vez de cair no portal.
+    var aqui = location.pathname + location.search + location.hash;
     location.replace(LOGIN_PAGE + '?next=' + encodeURIComponent(aqui));
   }
 

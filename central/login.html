@@ -69,10 +69,16 @@
     function destino() {
       const params = new URLSearchParams(location.search);
       const next = params.get('next');
-      if (next && next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
-        return new URL(next, location.href).href;    // relativo a /central/
+      if (next) {
+        // Caminho ABSOLUTO do mesmo domínio (ex.: /gom-sme/teste/) — volta à origem.
+        // Só aceita se começar com uma única "/" (anti open-redirect: rejeita //host e esquemas).
+        if (/^\/(?!\/)/.test(next)) return new URL(next, location.origin).href;
+        // Página interna do /central/ (ex.: admin.html).
+        if (next !== 'index.html' && /^[\w.\-]+\.html(\?[\w%=&.\-]*)?$/.test(next)) {
+          return new URL(next, location.href).href;
+        }
       }
-      return new URL('../', location.href).href;      // portal de sistemas (raiz)
+      return new URL('../', location.href).href;      // padrão: portal de sistemas (raiz)
     }
 
     // Já logado? Vai direto ao destino.
