@@ -26,6 +26,8 @@
   var PAPEL_ORDEM = { admin_gom: 1, admin: 1, secretaria: 2, empresa: 3, escola: 4, leitor: 5, visualizador: 6 };
   var PAPEL_COR   = { admin_gom: '#7c3aed', admin: '#7c3aed', secretaria: '#0369a1', empresa: '#b45309', escola: '#047857', leitor: '#0891b2', visualizador: '#0e7490' };
   var PAPEL_LABEL = { admin_gom: 'Admin', admin: 'Admin', secretaria: 'Secretaria', empresa: 'Empresa', escola: 'Escola', leitor: 'Leitor', visualizador: 'Visualizador' };
+  // Papéis inerentemente só-leitura: editar/exportar ficam bloqueados na UI.
+  var PAPEIS_SO_LEITURA = { visualizador: true, leitor: true };
   function ordemPapel(slug) { return PAPEL_ORDEM[slug] != null ? PAPEL_ORDEM[slug] : 99; }
   function corPapel(slug) { return PAPEL_COR[slug] || '#475569'; }
   function labelPapel(pp) { return PAPEL_LABEL[pp.slug] || pp.nome || pp.slug; }
@@ -393,9 +395,16 @@
     syncRow(tr);
   }
   function syncRow(tr) {
+    var ed = tr.querySelector('[data-acao="editar"]');
+    var ex = tr.querySelector('[data-acao="exportar"]');
+    // Papel só-leitura: editar/exportar sempre desmarcados e desabilitados.
+    if (tr.dataset && tr.dataset.soLeitura === '1') {
+      ed.checked = false; ex.checked = false; ed.disabled = true; ex.disabled = true;
+      return;
+    }
     var ver = tr.querySelector('[data-acao="ver"]').checked;
-    tr.querySelector('[data-acao="editar"]').disabled = !ver;
-    tr.querySelector('[data-acao="exportar"]').disabled = !ver;
+    ed.disabled = !ver;
+    ex.disabled = !ver;
   }
 
   async function salvarAcessos() {
@@ -777,17 +786,19 @@
     var atual = {}; (rp.data || []).forEach(function (x) { atual[x.tela_id] = x; });
 
     var c = corPapel(pa.slug);
+    var soLeitura = !!PAPEIS_SO_LEITURA[pa.slug];   // visualizador/leitor: sem editar/exportar
     var tbl = el('table');
     tbl.innerHTML = '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th><th class="chk-col">Exportar</th></tr></thead>';
     var tb = el('tbody');
     telas.forEach(function (t) {
       var a = atual[t.id] || {};
       var tr = el('tr');
+      if (soLeitura) tr.dataset.soLeitura = '1';
       tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'));
       ['ver', 'editar', 'exportar'].forEach(function (acao) {
         var td = el('td', { class: 'chk-col' });
         var chk = el('input', { type: 'checkbox', class: 'form-check-input', 'data-tela': t.id, 'data-acao': acao });
-        if (a['pode_' + acao]) chk.checked = true;
+        if (a['pode_' + acao] && !(soLeitura && acao !== 'ver')) chk.checked = true;
         chk.addEventListener('change', function () { onChkChange(tr); });
         td.appendChild(chk); tr.appendChild(td);
       });
@@ -797,10 +808,14 @@
     var head = el('div', { class: 'mb-2' }, '<b style="color:' + c + '">Telas do papel: ' + esc(pa.nome) + '</b> <span class="muted">(' + esc(pa.slug) + ')</span>');
     var save = el('button', { class: 'btn btn-roxo mt-2' }, '<i class="bi bi-check-lg"></i> Salvar telas do papel');
     save.addEventListener('click', function () { salvarPapelTelas(pa, tb); });
-    box.innerHTML = ''; box.appendChild(head); box.appendChild(tbl); box.appendChild(save);
+    box.innerHTML = ''; box.appendChild(head); box.appendChild(tbl);
+    if (soLeitura) box.appendChild(el('div', { class: 'muted', style: 'font-size:.82rem;margin:6px 0 0' },
+      '<i class="bi bi-eye"></i> Papel só-leitura: “Editar” e “Exportar” ficam bloqueados.'));
+    box.appendChild(save);
   }
 
   async function salvarPapelTelas(pa, tbody) {
+    var soLeitura = !!PAPEIS_SO_LEITURA[pa.slug];   // força editar/exportar = false
     var upserts = [], deletes = [];
     tbody.querySelectorAll('tr').forEach(function (tr) {
       var telaId = Number(tr.querySelector('[data-acao="ver"]').getAttribute('data-tela'));
@@ -808,8 +823,8 @@
       if (ver) {
         upserts.push({
           papel_id: pa.id, tela_id: telaId, pode_ver: true,
-          pode_editar: tr.querySelector('[data-acao="editar"]').checked,
-          pode_exportar: tr.querySelector('[data-acao="exportar"]').checked
+          pode_editar: soLeitura ? false : tr.querySelector('[data-acao="editar"]').checked,
+          pode_exportar: soLeitura ? false : tr.querySelector('[data-acao="exportar"]').checked
         });
       } else { deletes.push(telaId); }
     });
