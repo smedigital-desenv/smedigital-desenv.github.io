@@ -23,9 +23,9 @@
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
   // Papéis: ordem fixa, cor e rótulo curto (fallback p/ papéis de outros sistemas).
-  var PAPEL_ORDEM = { admin_gom: 1, admin: 1, secretaria: 2, empresa: 3, escola: 4, leitor: 5 };
-  var PAPEL_COR   = { admin_gom: '#7c3aed', admin: '#7c3aed', secretaria: '#0369a1', empresa: '#b45309', escola: '#047857', leitor: '#0891b2' };
-  var PAPEL_LABEL = { admin_gom: 'Admin', admin: 'Admin', secretaria: 'Secretaria', empresa: 'Empresa', escola: 'Escola', leitor: 'Leitor' };
+  var PAPEL_ORDEM = { admin_gom: 1, admin: 1, secretaria: 2, empresa: 3, escola: 4, leitor: 5, visualizador: 6 };
+  var PAPEL_COR   = { admin_gom: '#7c3aed', admin: '#7c3aed', secretaria: '#0369a1', empresa: '#b45309', escola: '#047857', leitor: '#0891b2', visualizador: '#0e7490' };
+  var PAPEL_LABEL = { admin_gom: 'Admin', admin: 'Admin', secretaria: 'Secretaria', empresa: 'Empresa', escola: 'Escola', leitor: 'Leitor', visualizador: 'Visualizador' };
   function ordemPapel(slug) { return PAPEL_ORDEM[slug] != null ? PAPEL_ORDEM[slug] : 99; }
   function corPapel(slug) { return PAPEL_COR[slug] || '#475569'; }
   function labelPapel(pp) { return PAPEL_LABEL[pp.slug] || pp.nome || pp.slug; }
