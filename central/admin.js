@@ -362,6 +362,59 @@
     } catch (e) { erro(e); }
   }
 
+  // Painel de ACESSOS do usuário: papel por sistema, tudo numa tela só.
+  // Reaproveita salvarPapelSistema() para gravar cada mudança.
+  async function abrirAcessosUsuario(p) {
+    $('acu-nome').textContent = p.nome || p.email;
+    var body = $('acu-body');
+    body.innerHTML = '<div class="loading">Carregando…</div>';
+    bootstrap.Modal.getOrCreateInstance($('modalAcessosUsuario')).show();
+
+    // Papéis de TODOS os sistemas + os papéis atuais do usuário (2 consultas).
+    var rpa = await SB.from('papeis').select('id,slug,nome,sistema_id').order('id');
+    if (rpa.error) { body.innerHTML = ''; return erro(rpa.error); }
+    var porSistema = {}, papelById = {};
+    (rpa.data || []).forEach(function (pa) {
+      (porSistema[pa.sistema_id] = porSistema[pa.sistema_id] || []).push(pa);
+      papelById[pa.id] = pa;
+    });
+    var rpp = await SB.from('perfil_papeis').select('papel_id').eq('perfil_id', p.id);
+    if (rpp.error) { body.innerHTML = ''; return erro(rpp.error); }
+    var atualPorSistema = {};   // sistema_id -> papel_id atual do usuário
+    (rpp.data || []).forEach(function (x) { var pa = papelById[x.papel_id]; if (pa) atualPorSistema[pa.sistema_id] = x.papel_id; });
+
+    body.innerHTML = '';
+    if (p.is_super_admin) body.appendChild(el('div', { class: 'mb-2', style: 'background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:.5rem .7rem;font-size:.85rem' },
+      '<i class="bi bi-stars"></i> <b>Super admin</b>: já acessa todos os sistemas — os papéis abaixo são ignorados.'));
+    else if (p.is_viewer) body.appendChild(el('div', { class: 'mb-2', style: 'background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:.5rem .7rem;font-size:.85rem' },
+      '<i class="bi bi-eye"></i> <b>Visualizador</b>: vê tudo (só leitura) — os papéis abaixo são ignorados.'));
+
+    var tbl = el('table');
+    tbl.innerHTML = '<thead><tr><th>Sistema</th><th style="width:280px">Papel</th></tr></thead>';
+    var tb = el('tbody');
+    cacheSistemas.forEach(function (s) {
+      var paps = (porSistema[s.id] || []).slice().sort(function (a, b) { return ordemPapel(a.slug) - ordemPapel(b.slug); });
+      var tr = el('tr');
+      tr.appendChild(el('td', null, '<i class="bi ' + esc(s.icone || 'bi-app') + '" style="color:' + esc(s.cor || '#64748b') + '"></i> <b>' + esc(s.nome) + '</b>'));
+      var td = el('td');
+      if (!paps.length) {
+        td.innerHTML = '<span class="muted" style="font-size:.82rem">— sem papéis cadastrados (Catálogo → Papéis) —</span>';
+      } else {
+        var sel = el('select', { class: 'form-select form-select-sm' });
+        sel.appendChild(el('option', { value: '' }, '— sem acesso —'));
+        paps.forEach(function (pa) { sel.appendChild(el('option', { value: pa.id }, esc(pa.nome))); });
+        sel.value = atualPorSistema[s.id] ? String(atualPorSistema[s.id]) : '';
+        sel.addEventListener('change', function () {
+          salvarPapelSistema(p.id, paps, sel.value);
+          atualPorSistema[s.id] = sel.value ? Number(sel.value) : undefined;
+        });
+        td.appendChild(sel);
+      }
+      tr.appendChild(td); tb.appendChild(tr);
+    });
+    tbl.appendChild(tb); body.appendChild(tbl);
+  }
+
   // Marca (aditivo) as telas do papel escolhido, conforme papel_permissoes.
   function aplicaPapel(papelId, permsByPapel) {
     var mapa = permsByPapel[papelId] || {};
@@ -528,11 +581,13 @@
         if (p.email === EU.email && p.is_super_admin) { toast('Você não pode remover seu próprio super admin.', true); return; }
         patchPerfil(p, { is_super_admin: !p.is_super_admin });
       });
+      var bAcessos = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Acessos aos sistemas' }, '<i class="bi bi-key"></i>');
+      bAcessos.addEventListener('click', function () { abrirAcessosUsuario(p); });
       var bEdit = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Editar' }, '<i class="bi bi-pencil"></i>');
       bEdit.addEventListener('click', function () { abrirModalUsuario(p); });
       var bDel = el('button', { class: 'btn btn-sm btn-light ms-1', title: 'Excluir' }, '<i class="bi bi-trash text-danger"></i>');
       bDel.addEventListener('click', function () { excluirUsuario(p); });
-      acts.appendChild(bAtivo); acts.appendChild(bSuper); acts.appendChild(bEdit); acts.appendChild(bDel);
+      acts.appendChild(bAtivo); acts.appendChild(bSuper); acts.appendChild(bAcessos); acts.appendChild(bEdit); acts.appendChild(bDel);
       tr.appendChild(acts);
       tb.appendChild(tr);
     });
