@@ -88,6 +88,41 @@
       '</div></body>';
   }
 
+  // Super admin recebe TODOS os sistemas ativos, com todas as telas liberadas.
+  //
+  // Sem isto o `can()` abaixo devolve true para qualquer tela, mas a pessoa é
+  // barrada ANTES, na checagem de acesso AO SISTEMA — que não tinha exceção
+  // para super admin. O portal contornava a incoerência no próprio index.html
+  // (`if (is_super_admin) visiveis = sistemas.slice()`); aqui ela é resolvida
+  // na origem, e vale para todos os sistemas da rede de uma vez.
+  function sistemasDoSuperAdmin(SB) {
+    return SB.from('sistemas')
+      .select('id,slug,nome,url,icone,cor,ordem').eq('ativo', true).order('ordem')
+      .then(function (rs) {
+        if (rs.error) throw rs.error;
+        return SB.from('telas').select('id,sistema_id,slug,nome,ordem').order('ordem')
+          .then(function (rt) {
+            if (rt.error) throw rt.error;
+            var porSistema = {};
+            (rt.data || []).forEach(function (t) {
+              porSistema[t.sistema_id] = porSistema[t.sistema_id] || {};
+              porSistema[t.sistema_id][t.slug] =
+                { nome: t.nome, ver: true, editar: true, exportar: true };
+            });
+            return (rs.data || []).map(function (s) {
+              return {
+                slug: s.slug, nome: s.nome, url: s.url, icone: s.icone, cor: s.cor,
+                papel: 'super_admin', telas: porSistema[s.id] || {}
+              };
+            });
+          });
+      })
+      .catch(function (e) {
+        console.error('[acesso-sme] não foi possível listar os sistemas:', e);
+        return null;                     // segue com o que a RPC devolveu
+      });
+  }
+
   function montar() {
     var SB = (window.ACESSO_SB) || window.supabase.createClient(CFG.url, CFG.anonKey);
     window.ACESSO_SB = SB;
@@ -185,6 +220,22 @@
           perms = rs.data;                 // passa a "ser" o perfil simulado
         } else {
           try { sessionStorage.removeItem(SIMULA_KEY); } catch (e) {}
+        }
+      }
+
+      // Depois da simulação de propósito: quem manda aqui é o perfil OBSERVADO.
+      // Um super admin simulando um agente tem que ver o que o agente vê.
+      if (perms.perfil && perms.perfil.is_super_admin && !perms.__todos_sistemas) {
+        var todos = await sistemasDoSuperAdmin(SB);
+        if (todos && todos.length) {
+          perms.sistemas = todos;
+          perms.__todos_sistemas = true;
+          // Não regravar o cache durante a simulação: ele guarda o perfil REAL,
+          // e sobrescrevê-lo com o simulado deixaria a pessoa presa no outro
+          // perfil mesmo depois de encerrar a simulação.
+          if (!api.simulando) {
+            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(perms)); } catch (e) {}
+          }
         }
       }
 

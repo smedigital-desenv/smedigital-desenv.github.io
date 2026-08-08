@@ -233,6 +233,34 @@
       });
     }
 
+    // Faixa fixa avisando que o portal está sendo visto por outros olhos.
+    // Mesma aparência da que o acesso-sme.js injeta nos sistemas, para a
+    // pessoa reconhecer o estado ao navegar entre o portal e os sistemas.
+    function faixaSimulacao(email) {
+      if (document.getElementById('acesso-simula-bar')) return;
+      const bar = document.createElement('div');
+      bar.id = 'acesso-simula-bar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:5000;background:#b45309;'
+        + 'color:#fff;font:700 13px Inter,sans-serif;padding:7px 14px;display:flex;'
+        + 'align-items:center;justify-content:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+      const span = document.createElement('span');
+      span.textContent = 'Simulando acesso de: ';
+      const b = document.createElement('b');
+      b.textContent = email;                       // textContent: nunca innerHTML com dado externo
+      span.appendChild(b);
+      const btn = document.createElement('button');
+      btn.textContent = 'Encerrar simulação';
+      btn.style.cssText = 'border:0;background:#fff;color:#b45309;font-weight:800;'
+        + 'border-radius:999px;padding:3px 12px;cursor:pointer';
+      btn.addEventListener('click', function () {
+        try { sessionStorage.removeItem('ACESSO_SIMULA'); } catch (e) {}
+        location.reload();
+      });
+      bar.appendChild(span); bar.appendChild(btn);
+      document.body.appendChild(bar);
+      document.body.style.paddingTop = '36px';
+    }
+
     function revelar() {
       var g = document.getElementById('portalGate'); if (g) g.remove();
       var l = document.getElementById('portal-loading'); if (l) l.remove();
@@ -252,7 +280,26 @@
 
         const r = await SB.rpc('minhas_permissoes');
         if (r.error) { mostrarMensagem('Erro ao verificar seu acesso: ' + esc(r.error.message)); return; }
-        const perms = r.data;
+        let perms = r.data;
+
+        // SIMULAÇÃO — o painel de administração grava o e-mail observado em
+        // sessionStorage e manda para cá. Só o acesso-sme.js lia essa chave, e
+        // o portal não o carrega: o botão "Abrir portal simulando este usuário"
+        // não fazia nada, e o super admin via o próprio acesso achando que via
+        // o do outro. Aqui a chave passa a valer.
+        let simulando = null;
+        try { simulando = sessionStorage.getItem('ACESSO_SIMULA'); } catch (e) {}
+        if (simulando && perms && perms.perfil && perms.perfil.is_super_admin
+            && simulando.toLowerCase() !== String(perms.perfil.email || '').toLowerCase()) {
+          const rs = await SB.rpc('permissoes_de', { p_email: simulando });
+          if (!rs.error && rs.data && rs.data.autorizado) {
+            perms = rs.data;                       // passa a "ser" o perfil observado
+            faixaSimulacao(simulando);
+          } else {
+            try { sessionStorage.removeItem('ACESSO_SIMULA'); } catch (e) {}
+            simulando = null;
+          }
+        }
         if (!perms || !perms.autorizado) {
           mostrarMensagem('<i class="bi bi-shield-exclamation" style="font-size:1.6rem"></i>'
             + '<p style="margin:.6rem 0 .9rem">A conta <b>' + esc((session.user && session.user.email) || '') + '</b> ainda não foi autorizada pela secretaria.</p>'
