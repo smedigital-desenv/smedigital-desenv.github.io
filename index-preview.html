@@ -21,9 +21,13 @@
 
 :root,
 :root[data-tema="escuro"]{
-  --fundo:#04070D;
-  --halo:14,78,140;
-  --halo-forca:.62;
+  /* O fundo da referência não é quase-preto: é um teal saturado em L 7-11%,
+     com o brilho mais forte vindo de baixo. Estes valores são a transposição
+     para azul, medidos ponto a ponto contra o herói do /nk. */
+  --fundo:#0F181F;
+  --halo:52,108,142;
+  --halo-forca:.10;
+  --halo-baixo:.58;
   --superficie:rgba(255,255,255,.045);
   --borda:rgba(255,255,255,.10);
   --borda-forte:rgba(255,255,255,.18);
@@ -39,6 +43,7 @@
   --atencao-texto:#8A6212;
   --fundo:#F4F7FA;
   --halo-forca:.07;
+  --halo-baixo:.05;
   --superficie:#FFFFFF;
   --borda:#DFE5EB;
   --borda-forte:#C4CDD6;
@@ -76,9 +81,40 @@ body{
 body::before{
   content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
   background-image:
-    radial-gradient(52% 46% at 50% 0%, rgba(var(--halo),var(--halo-forca)) 0%, rgba(var(--halo),0) 66%),
-    radial-gradient(74% 40% at 50% 100%, rgba(var(--halo),calc(var(--halo-forca) * .7)) 0%, rgba(var(--halo),0) 70%);
+    radial-gradient(58% 48% at 50% -4%, rgba(var(--halo),var(--halo-forca)) 0%, rgba(var(--halo),0) 72%),
+    radial-gradient(42% 40% at 74% 20%, rgba(var(--halo),calc(var(--halo-forca) * 1.7)) 0%, rgba(var(--halo),0) 70%),
+    radial-gradient(96% 58% at 50% 106%, rgba(var(--halo),var(--halo-baixo)) 0%, rgba(var(--halo),0) 74%);
 }
+/* Arcos pontilhados e poeira de partículas — os dois elementos que dão
+   profundidade ao fundo da referência e que faltavam aqui. Ficam atrás de
+   tudo, não recebem clique e somem no tema claro. */
+body::after{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 18% 22%, rgba(214,240,255,.55), transparent),
+    radial-gradient(1px 1px at 63% 12%, rgba(214,240,255,.40), transparent),
+    radial-gradient(1.2px 1.2px at 82% 31%, rgba(214,240,255,.34), transparent),
+    radial-gradient(1px 1px at 34% 58%, rgba(214,240,255,.30), transparent),
+    radial-gradient(1.3px 1.3px at 71% 68%, rgba(214,240,255,.36), transparent),
+    radial-gradient(1px 1px at 9% 74%, rgba(214,240,255,.26), transparent),
+    radial-gradient(1.1px 1.1px at 46% 88%, rgba(214,240,255,.30), transparent),
+    radial-gradient(1px 1px at 90% 82%, rgba(214,240,255,.24), transparent);
+  animation:cintila 7s ease-in-out infinite alternate;
+}
+@keyframes cintila{ from{ opacity:.55; } to{ opacity:1; } }
+
+.orbita{
+  position:fixed; z-index:0; pointer-events:none;
+  border-radius:50%;
+  border:1px dotted rgba(var(--halo),.42);
+}
+.orbita--1{ width:150vw; height:150vw; left:-25vw; top:-96vw; }
+.orbita--2{ width:104vw; height:104vw; left:2vw; top:-58vw; border-color:rgba(var(--halo),.30); }
+.orbita--3{ width:190vw; height:190vw; left:-45vw; top:34vw; border-color:rgba(var(--halo),.22); }
+
+:root[data-tema="claro"] body::after,
+:root[data-tema="claro"] .orbita{ display:none; }
+
 a{ color:inherit; }
 :focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 .larg{ width:100%; max-width:var(--largura); margin:0 auto; padding:0 24px; position:relative; z-index:4; }
@@ -335,6 +371,10 @@ a{ color:inherit; }
 </head>
 
 <body>
+
+<span class="orbita orbita--1" aria-hidden="true"></span>
+<span class="orbita orbita--2" aria-hidden="true"></span>
+<span class="orbita orbita--3" aria-hidden="true"></span>
 
 <div class="aviso">
   <b>PRÉVIA DO NOVO VISUAL</b>
