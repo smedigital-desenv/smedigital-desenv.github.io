@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-tema="escuro" data-acento="ciano">
+<html lang="pt-BR" data-tema="escuro" data-acento="ciano" data-fundo="medio">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,8 +33,13 @@
   --borda-forte:rgba(255,255,255,.18);
   --texto:#E6EEF4;
   --texto-2:#94A0AB;
-  --texto-3:#7E8A96;
+  --texto-3:#8996A3;
 }
+/* Três níveis de fundo. O monitor do serviço mostrou preto onde o de casa
+   mostrava azul: painéis baratos esmagam o escuro. Escolha o nível no
+   monitor pior, não no melhor. */
+:root[data-fundo="medio"]{ --fundo:#14232F; }
+:root[data-fundo="claro"]{ --fundo:#1B2E3E; }
 :root[data-tema="claro"]{
   /* Sobre fundo claro o ciano vivo não serve como cor de TEXTO: #45D6F2
      sobre branco dá ~1.9:1 e reprova no AA da WCAG/eMAG. O acento continua
@@ -85,23 +90,10 @@ body::before{
     radial-gradient(42% 40% at 74% 20%, rgba(var(--halo),calc(var(--halo-forca) * 1.7)) 0%, rgba(var(--halo),0) 70%),
     radial-gradient(96% 58% at 50% 106%, rgba(var(--halo),var(--halo-baixo)) 0%, rgba(var(--halo),0) 74%);
 }
-/* Arcos pontilhados e poeira de partículas — os dois elementos que dão
-   profundidade ao fundo da referência e que faltavam aqui. Ficam atrás de
-   tudo, não recebem clique e somem no tema claro. */
-body::after{
-  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    radial-gradient(1.4px 1.4px at 18% 22%, rgba(214,240,255,.55), transparent),
-    radial-gradient(1px 1px at 63% 12%, rgba(214,240,255,.40), transparent),
-    radial-gradient(1.2px 1.2px at 82% 31%, rgba(214,240,255,.34), transparent),
-    radial-gradient(1px 1px at 34% 58%, rgba(214,240,255,.30), transparent),
-    radial-gradient(1.3px 1.3px at 71% 68%, rgba(214,240,255,.36), transparent),
-    radial-gradient(1px 1px at 9% 74%, rgba(214,240,255,.26), transparent),
-    radial-gradient(1.1px 1.1px at 46% 88%, rgba(214,240,255,.30), transparent),
-    radial-gradient(1px 1px at 90% 82%, rgba(214,240,255,.24), transparent);
-  animation:cintila 7s ease-in-out infinite alternate;
-}
-@keyframes cintila{ from{ opacity:.55; } to{ opacity:1; } }
+/* O campo de estrelas e os riscos de luz são desenhados em canvas (#ceu),
+   logo abaixo. Em CSS ficam só os arcos, que são estáticos. */
+#ceu{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+:root[data-tema="claro"] #ceu{ display:none; }
 
 .orbita{
   position:fixed; z-index:0; pointer-events:none;
@@ -109,10 +101,11 @@ body::after{
   border:1px dotted rgba(var(--halo),.42);
 }
 .orbita--1{ width:150vw; height:150vw; left:-25vw; top:-96vw; }
-.orbita--2{ width:104vw; height:104vw; left:2vw; top:-58vw; border-color:rgba(var(--halo),.30); }
-.orbita--3{ width:190vw; height:190vw; left:-45vw; top:34vw; border-color:rgba(var(--halo),.22); }
+.orbita--2{ width:104vw; height:104vw; left:2vw; top:-58vw; border-color:rgba(var(--halo),.34); }
+.orbita--3{ width:190vw; height:190vw; left:-45vw; top:34vw; border-color:rgba(var(--halo),.26); }
+.orbita--4{ width:126vw; height:126vw; right:-38vw; top:-40vw; left:auto; border-color:rgba(var(--halo),.30); }
+.orbita--5{ width:70vw; height:70vw; right:-14vw; top:6vw; left:auto; border-style:dashed; border-color:rgba(var(--halo),.20); }
 
-:root[data-tema="claro"] body::after,
 :root[data-tema="claro"] .orbita{ display:none; }
 
 a{ color:inherit; }
@@ -335,26 +328,8 @@ a{ color:inherit; }
   background:var(--acento); box-shadow:0 0 9px 1px rgba(var(--acento-rgb),.75);
 }
 
-/* ── cometa ── */
-.cometa{
-  position:absolute; top:210px; left:-16%;
-  width:190px; height:2px; border-radius:2px; z-index:1; pointer-events:none;
-  background:linear-gradient(90deg, rgba(var(--acento-rgb),0), rgba(214,244,255,.9), rgba(var(--acento-rgb),0));
-  filter:blur(.6px);
-  box-shadow:0 0 16px 3px rgba(var(--acento-rgb),.55);
-  animation:cometa 13s linear infinite;
-}
-@keyframes cometa{
-  0%{ transform:translate3d(0,0,0) rotate(7deg); opacity:0; }
-  8%{ opacity:.95; }
-  60%{ opacity:.7; }
-  100%{ transform:translate3d(120vw,70px,0) rotate(7deg); opacity:0; }
-}
-:root[data-tema="claro"] .cometa{ display:none; }
-
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
-  .cometa{ opacity:.3; }
 }
 
 @media (max-width:720px){
@@ -372,9 +347,12 @@ a{ color:inherit; }
 
 <body>
 
+<canvas id="ceu" aria-hidden="true"></canvas>
 <span class="orbita orbita--1" aria-hidden="true"></span>
 <span class="orbita orbita--2" aria-hidden="true"></span>
 <span class="orbita orbita--3" aria-hidden="true"></span>
+<span class="orbita orbita--4" aria-hidden="true"></span>
+<span class="orbita orbita--5" aria-hidden="true"></span>
 
 <div class="aviso">
   <b>PRÉVIA DO NOVO VISUAL</b>
@@ -397,6 +375,14 @@ a{ color:inherit; }
       <button type="button" data-v="neon" aria-pressed="false">#00E5FF</button>
     </div>
   </div>
+  <div class="ctl-g">
+    <span>Fundo</span>
+    <div class="ctl-op" id="ctl-fundo">
+      <button type="button" data-v="escuro" aria-pressed="false">Escuro</button>
+      <button type="button" data-v="medio" aria-pressed="true">Médio</button>
+      <button type="button" data-v="claro" aria-pressed="false">Claro</button>
+    </div>
+  </div>
   <div class="esp"></div>
   <span class="versao"><a href="teste-componentes.html" style="text-decoration:underline;text-underline-offset:3px">comparar estilos →</a></span>
 </div>
@@ -406,8 +392,6 @@ a{ color:inherit; }
   <div class="topo-centro">portal de <b>sistemas</b></div>
   <div class="usuario" id="usuario"></div>
 </header>
-
-<span class="cometa" aria-hidden="true"></span>
 
 <div class="heroi">
   <div class="desde">Secretaria Municipal da Educação · Ribeirão Preto</div>
@@ -423,6 +407,137 @@ a{ color:inherit; }
   <span>Secretaria Municipal de Educação — Ribeirão Preto, SP</span>
   <span class="contador" id="contador"></span>
 </footer>
+
+<script>
+/* ============================================================
+   Campo de estrelas e riscos de luz — canvas atrás de tudo.
+   Substitui o risco único em CSS. Para quando a aba sai de foco,
+   e desenha um quadro parado se a pessoa pediu menos movimento.
+   ============================================================ */
+(function () {
+  "use strict";
+  var cv = document.getElementById('ceu');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+  var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var L = 0, A = 0, pontos = [], riscos = [], quadro = 0, raf = null;
+
+  function dimensionar() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    L = cv.clientWidth; A = cv.clientHeight;
+    cv.width = Math.round(L * dpr);
+    cv.height = Math.round(A * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    semear();
+  }
+
+  function semear() {
+    // densidade proporcional à área, com teto para não pesar em máquina antiga
+    var n = Math.max(40, Math.min(150, Math.round(L * A / 11000)));
+    pontos = [];
+    for (var i = 0; i < n; i++) {
+      pontos.push({
+        x: Math.random() * L,
+        y: Math.random() * A,
+        r: 0.4 + Math.random() * 1.5,
+        a: 0.14 + Math.random() * 0.5,
+        vx: (Math.random() - 0.5) * 0.05,
+        vy: -0.015 - Math.random() * 0.055,
+        f: Math.random() * 6.283,
+        vf: 0.004 + Math.random() * 0.013
+      });
+    }
+  }
+
+  function novoRisco() {
+    var desce = Math.random() < 0.72;
+    var grau = desce ? (4 + Math.random() * 10) : -(3 + Math.random() * 8);
+    riscos.push({
+      ang: grau * Math.PI / 180,
+      x: -240,
+      y: A * (0.04 + Math.random() * 0.78),
+      v: 1.6 + Math.random() * 3.4,
+      comp: 130 + Math.random() * 200,
+      esp: 0.7 + Math.random() * 1.3,
+      a: 0.30 + Math.random() * 0.5
+    });
+  }
+
+  function desenharPontos() {
+    for (var i = 0; i < pontos.length; i++) {
+      var p = pontos[i];
+      p.x += p.vx; p.y += p.vy; p.f += p.vf;
+      if (p.y < -4) { p.y = A + 4; p.x = Math.random() * L; }
+      if (p.x < -4) p.x = L + 4;
+      if (p.x > L + 4) p.x = -4;
+      var a = p.a * (0.5 + 0.5 * Math.sin(p.f));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, 6.283);
+      ctx.fillStyle = 'rgba(206,236,255,' + a.toFixed(3) + ')';
+      ctx.fill();
+    }
+  }
+
+  function desenharRiscos() {
+    for (var i = riscos.length - 1; i >= 0; i--) {
+      var s = riscos[i];
+      var dx = Math.cos(s.ang), dy = Math.sin(s.ang);
+      s.x += dx * s.v; s.y += dy * s.v;
+      var x2 = s.x - dx * s.comp, y2 = s.y - dy * s.comp;
+
+      // halo largo e fraco por baixo, depois o núcleo fino: dá brilho sem
+      // shadowBlur, que é caro
+      var g1 = ctx.createLinearGradient(s.x, s.y, x2, y2);
+      g1.addColorStop(0, 'rgba(120,205,240,' + (s.a * 0.30).toFixed(3) + ')');
+      g1.addColorStop(1, 'rgba(120,205,240,0)');
+      ctx.strokeStyle = g1; ctx.lineWidth = s.esp * 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(x2, y2); ctx.stroke();
+
+      var g2 = ctx.createLinearGradient(s.x, s.y, x2, y2);
+      g2.addColorStop(0, 'rgba(232,248,255,' + s.a.toFixed(3) + ')');
+      g2.addColorStop(0.3, 'rgba(140,215,245,' + (s.a * 0.5).toFixed(3) + ')');
+      g2.addColorStop(1, 'rgba(140,215,245,0)');
+      ctx.strokeStyle = g2; ctx.lineWidth = s.esp;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(x2, y2); ctx.stroke();
+
+      if (s.x - s.comp > L + 60) riscos.splice(i, 1);
+    }
+  }
+
+  function laco() {
+    ctx.clearRect(0, 0, L, A);
+    desenharPontos();
+    desenharRiscos();
+    quadro++;
+    // três a quatro riscos convivendo, entrando em intervalos irregulares
+    if (quadro % 42 === 0 && riscos.length < 4 && Math.random() < 0.6) novoRisco();
+    raf = requestAnimationFrame(laco);
+  }
+
+  function comecar() { if (!raf && !reduz) { raf = requestAnimationFrame(laco); } }
+  function parar() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  dimensionar();
+  if (reduz) {
+    // um quadro parado: as estrelas ficam, o movimento não
+    ctx.clearRect(0, 0, L, A);
+    desenharPontos();
+  } else {
+    for (var k = 0; k < 2; k++) novoRisco();
+    comecar();
+  }
+
+  var espera = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(espera);
+    espera = setTimeout(dimensionar, 180);
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) parar(); else comecar();
+  });
+})();
+</script>
 
 <script src="central/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -466,6 +581,7 @@ a{ color:inherit; }
   }
   controles('ctl-tema', 'data-tema');
   controles('ctl-acento', 'data-acento');
+  controles('ctl-fundo', 'data-fundo');
 
   /* ---- montagem dos cartões ---- */
   function cartao(s, destaque) {
