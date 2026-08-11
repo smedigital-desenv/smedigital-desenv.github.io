@@ -132,20 +132,25 @@ a{ color:inherit; }
 .topo-centro b{ color:var(--acento-texto); font-weight:400; font-style:italic; }
 .usuario{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .usuario .quem{
-  display:flex; align-items:center; gap:8px;
-  font-size:12.5px; color:var(--texto-2);
+  display:flex; align-items:center; gap:9px;
+  font-size:13px; color:var(--texto-2);
 }
-.usuario .quem::before{
-  content:""; width:7px; height:7px; border-radius:50%; flex:none;
-  background:var(--ok); box-shadow:0 0 8px 1px rgba(63,214,154,.6);
+.usuario .avatar{
+  width:26px; height:26px; border-radius:50%; flex:none;
+  display:grid; place-items:center;
+  border:1px solid var(--borda-forte); color:var(--texto-3);
 }
+.usuario .avatar svg{ width:15px; height:15px; }
 .btn-t{
+  display:inline-flex; align-items:center; gap:7px;
   border:1px solid var(--borda-forte); background:transparent; color:var(--texto-2);
-  font-family:var(--sans); font-size:12.5px; padding:6px 14px;
-  border-radius:999px; cursor:pointer; text-decoration:none;
-  transition:color var(--transicao), border-color var(--transicao);
+  font-family:var(--sans); font-size:13px; font-weight:500; padding:7px 15px;
+  border-radius:999px; cursor:pointer; text-decoration:none; white-space:nowrap;
+  transition:color var(--transicao), border-color var(--transicao), background var(--transicao);
 }
-.btn-t:hover{ color:var(--acento-texto); border-color:var(--acento); }
+.btn-t svg{ width:15px; height:15px; flex:none; }
+.btn-t:hover{ color:var(--acento-texto); border-color:var(--acento); background:rgba(var(--acento-rgb),.07); }
+.btn-t--sair:hover{ color:var(--critico); border-color:var(--critico); background:rgba(240,119,107,.08); }
 
 /* ── herói ── */
 .heroi{
@@ -353,7 +358,7 @@ a{ color:inherit; }
     </div>
   </div>
   <div class="esp"></div>
-  <span class="versao">prévia · sme-ui</span>
+  <span class="versao"><a href="teste-componentes.html" style="text-decoration:underline;text-underline-offset:3px">comparar estilos →</a></span>
 </div>
 
 <header class="topo">
@@ -511,15 +516,24 @@ a{ color:inherit; }
     return d;
   }
 
+  var IC_PESSOA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" stroke-linecap="round"/></svg>';
+  var IC_ENGRENAGEM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="9"/></svg>';
+  var IC_SAIR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8"/><path d="M17 15l4-3-4-3"/><path d="M21 12H10"/></svg>';
+
   function montarUsuario(perms, session) {
     var nome = (perms && perms.perfil && (perms.perfil.nome || perms.perfil.email)) ||
                (session && session.user && session.user.email) || '';
     if (!nome) {
-      elUsuario.innerHTML = '<a class="btn-t" href="central/login.html">Entrar</a>';
+      elUsuario.innerHTML = '<a class="btn-t" href="central/login.html">' + IC_PESSOA + 'Entrar</a>';
       return;
     }
-    elUsuario.innerHTML = '<span class="quem">' + esc(nome) + '</span>' +
-      '<button class="btn-t" type="button" id="sair">Sair</button>';
+    /* Configurações só para super admin — mesma regra do index.html, onde o
+       admin.html também barra quem não é (defesa dupla). */
+    var ehSuper = !!(perms && perms.perfil && perms.perfil.is_super_admin);
+    elUsuario.innerHTML =
+      '<span class="quem"><span class="avatar">' + IC_PESSOA + '</span>' + esc(nome) + '</span>' +
+      (ehSuper ? '<a class="btn-t" href="central/admin.html">' + IC_ENGRENAGEM + 'Configurações</a>' : '') +
+      '<button class="btn-t btn-t--sair" type="button" id="sair">' + IC_SAIR + 'Sair</button>';
     document.getElementById('sair').addEventListener('click', function () {
       var ir = function () { location.replace('central/login.html'); };
       try { window.ACESSO_SB.auth.signOut().then(ir, ir); } catch (e) { ir(); }

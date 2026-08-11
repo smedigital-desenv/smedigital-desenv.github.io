@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="escuro" data-acento="ciano">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Dois estilos para decidir — SME Digital</title>
+<meta name="description" content="Comparação de dois estilos de barra do usuário e dois estilos de vitrine de sistemas, para decisão. Página de validação." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   Página de decisão — autocontida, some sem deixar rastro.
+   Mesmos tokens do index-preview.html.
+   ============================================================ */
+
+:root,
+:root[data-tema="escuro"]{
+  --fundo:#04070D; --halo:14,78,140; --halo-forca:.62;
+  --superficie:rgba(255,255,255,.045);
+  --borda:rgba(255,255,255,.10); --borda-forte:rgba(255,255,255,.18);
+  --texto:#E6EEF4; --texto-2:#94A0AB; --texto-3:#7E8A96;
+}
+:root[data-tema="claro"]{
+  --acento-texto:#0A6C87; --atencao-texto:#8A6212;
+  --fundo:#F4F7FA; --halo-forca:.07;
+  --superficie:#FFFFFF;
+  --borda:#DFE5EB; --borda-forte:#C4CDD6;
+  --texto:#0E1620; --texto-2:#4A5763; --texto-3:#5F6B77;
+}
+:root{
+  --acento:#45D6F2; --acento-rgb:69,214,242; --acento-tinta:#04212B;
+  --acento-texto:var(--acento); --atencao-texto:var(--atencao);
+  --ok:#3FD69A; --atencao:#E8B54A; --critico:#F0776B;
+  --serifada:"Newsreader","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --transicao:.25s cubic-bezier(.2,.7,.3,1);
+  --largura:1180px;
+}
+:root[data-acento="neon"]{ --acento:#00E5FF; --acento-rgb:0,229,255; --acento-tinta:#00232B; }
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+body{
+  margin:0; min-height:100vh; display:flex; flex-direction:column;
+  background:var(--fundo); color:var(--texto);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(52% 46% at 50% 0%, rgba(var(--halo),var(--halo-forca)) 0%, rgba(var(--halo),0) 66%),
+    radial-gradient(74% 40% at 50% 100%, rgba(var(--halo),calc(var(--halo-forca) * .7)) 0%, rgba(var(--halo),0) 70%);
+}
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+.larg{ width:100%; max-width:var(--largura); margin:0 auto; padding:0 24px; position:relative; z-index:4; }
+
+/* ── faixa e controles ── */
+.aviso{
+  position:sticky; top:0; z-index:60;
+  display:flex; align-items:center; justify-content:center; gap:8px 14px;
+  flex-wrap:wrap; text-align:center; padding:8px 16px;
+  background:var(--atencao); color:#2A1D00;
+  font-size:12.5px; font-weight:600; line-height:1.4;
+}
+.aviso b{ font-weight:700; }
+.aviso span{ font-weight:400; opacity:.9; }
+.aviso a{ color:#2A1D00; font-weight:700; text-underline-offset:3px; }
+
+.ctl{
+  position:sticky; top:33px; z-index:59;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:9px 24px; background:var(--fundo); border-bottom:1px solid var(--borda);
+}
+.ctl-g{ display:flex; align-items:center; gap:7px; }
+.ctl-g > span{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.ctl-op{ display:flex; border:1px solid var(--borda); border-radius:999px; padding:2px; gap:2px; }
+.ctl-op button{
+  border:0; background:transparent; cursor:pointer; font-family:var(--sans);
+  font-size:12px; font-weight:500; color:var(--texto-2);
+  padding:6px 13px; border-radius:999px; transition:background .2s, color .2s;
+}
+.ctl-op button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta); font-weight:600; }
+.ctl .esp{ flex:1; }
+.ctl .versao{ font-family:var(--mono); font-size:10px; color:var(--texto-3); letter-spacing:.06em; }
+
+/* ── estrutura editorial da página ── */
+.cabeca{ padding:56px 0 0; }
+.rotulo{
+  display:flex; align-items:center; gap:10px; margin:0 0 16px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.rotulo::before{ content:""; width:18px; height:1px; flex:none; background:var(--acento); }
+.rotulo--linha::after{ content:""; flex:1; height:1px; background:var(--borda); }
+
+h1{
+  font-family:var(--serifada); font-weight:400; margin:0;
+  font-size:clamp(32px,5vw,54px); line-height:1.04; letter-spacing:-.02em;
+  max-width:19ch; text-wrap:balance;
+}
+h2{
+  font-family:var(--serifada); font-weight:400; margin:0;
+  font-size:clamp(24px,3.2vw,36px); line-height:1.08; letter-spacing:-.016em; text-wrap:balance;
+}
+h3{ font-family:var(--sans); font-size:16px; font-weight:600; margin:0; }
+p{ margin:0; }
+.apoio{ color:var(--texto-2); max-width:66ch; }
+strong{ color:var(--texto); font-weight:600; }
+code{
+  font-family:var(--mono); font-size:.86em; color:var(--acento-texto);
+  background:rgba(var(--acento-rgb),.10); padding:1px 5px; border-radius:3px;
+}
+section.bloco{ padding:64px 0 0; }
+.pilha{ display:flex; flex-direction:column; gap:26px; }
+.pilha-p{ display:flex; flex-direction:column; gap:12px; }
+
+/* ── palco de demonstração ── */
+.opcao{
+  border:1px solid var(--borda); border-radius:14px; overflow:hidden;
+  background:var(--superficie);
+}
+.opcao-cab{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:16px; flex-wrap:wrap;
+  padding:18px 22px; border-bottom:1px solid var(--borda);
+}
+.opcao-cab .tit{ font-family:var(--serifada); font-size:22px; letter-spacing:-.012em; }
+.opcao-cab .sub{ font-size:13px; color:var(--texto-2); margin-top:4px; max-width:62ch; }
+.selo{
+  font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase;
+  padding:4px 10px; border-radius:999px; border:1px solid var(--borda-forte);
+  color:var(--texto-3); white-space:nowrap; flex:none;
+}
+.selo--atual{ color:var(--acento-texto); border-color:rgba(var(--acento-rgb),.5); }
+.palco{
+  padding:26px 22px;
+  background:
+    radial-gradient(60% 90% at 50% 0%, rgba(var(--halo),.35) 0%, rgba(var(--halo),0) 70%),
+    var(--fundo);
+}
+.palco--barra{ padding:0; }
+/* o palco do menu precisa de altura para o suspenso caber: a caixa da opção
+   usa overflow:hidden por causa do canto arredondado */
+.palco--menu{ min-height:302px; }
+
+/* ══════════════════════════════════════════════════
+   BARRA DO USUÁRIO — os dois estilos
+   ══════════════════════════════════════════════════ */
+.topo{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap; padding:14px 22px;
+  border-bottom:1px solid var(--borda);
+}
+.marca{ display:flex; align-items:baseline; gap:1px; font-size:18px; font-weight:600; letter-spacing:-.01em; text-decoration:none; }
+.marca em{ font-style:normal; color:var(--acento-texto); font-weight:400; }
+.usuario{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.quem{ display:flex; align-items:center; gap:9px; font-size:13px; color:var(--texto-2); }
+.avatar{
+  width:26px; height:26px; border-radius:50%; flex:none;
+  display:grid; place-items:center;
+  border:1px solid var(--borda-forte); color:var(--texto-3);
+}
+.avatar svg{ width:15px; height:15px; }
+
+/* pílula de ação */
+.btn-p{
+  display:inline-flex; align-items:center; gap:7px;
+  border:1px solid var(--borda-forte); background:transparent; color:var(--texto-2);
+  font-family:var(--sans); font-size:13px; font-weight:500;
+  padding:7px 15px; border-radius:999px; cursor:pointer; text-decoration:none;
+  transition:color var(--transicao), border-color var(--transicao), background var(--transicao);
+  white-space:nowrap;
+}
+.btn-p svg{ width:15px; height:15px; flex:none; }
+.btn-p:hover{ color:var(--acento-texto); border-color:var(--acento); background:rgba(var(--acento-rgb),.07); }
+.btn-p--forte{
+  background:var(--acento); border-color:var(--acento); color:var(--acento-tinta); font-weight:600;
+}
+.btn-p--forte:hover{ background:var(--texto); border-color:var(--texto); color:var(--fundo); }
+.btn-p--sair:hover{ color:var(--critico); border-color:var(--critico); background:rgba(240,119,107,.08); }
+
+/* menu suspenso */
+.menu-conta{ position:relative; }
+.menu-gatilho{
+  display:inline-flex; align-items:center; gap:9px;
+  border:1px solid var(--borda-forte); background:transparent; color:var(--texto-2);
+  font-family:var(--sans); font-size:13px; padding:5px 12px 5px 6px;
+  border-radius:999px; cursor:pointer;
+  transition:border-color var(--transicao), color var(--transicao);
+}
+.menu-gatilho:hover,
+.menu-gatilho[aria-expanded="true"]{ color:var(--texto); border-color:var(--acento); }
+.menu-gatilho .seta{ width:12px; height:12px; transition:transform var(--transicao); }
+.menu-gatilho[aria-expanded="true"] .seta{ transform:rotate(180deg); }
+.menu-lista{
+  position:absolute; right:0; top:calc(100% + 8px); z-index:20;
+  min-width:212px; padding:6px;
+  border:1px solid var(--borda-forte); border-radius:11px;
+  background:var(--fundo);
+  box-shadow:0 24px 50px -24px rgba(0,0,0,.85);
+  display:none; flex-direction:column; gap:2px;
+}
+.menu-lista[data-aberto="true"]{ display:flex; }
+.menu-lista .cabecalho{
+  padding:9px 11px 10px; border-bottom:1px solid var(--borda); margin-bottom:4px;
+}
+.menu-lista .cabecalho .n{ font-size:13px; font-weight:600; color:var(--texto); }
+.menu-lista .cabecalho .e{ font-size:11px; color:var(--texto-3); margin-top:2px; }
+.menu-lista button,
+.menu-lista a{
+  display:flex; align-items:center; gap:10px; width:100%;
+  border:0; background:transparent; color:var(--texto-2);
+  font-family:var(--sans); font-size:13.5px; text-align:left; text-decoration:none;
+  padding:9px 11px; border-radius:7px; cursor:pointer;
+  transition:background var(--transicao), color var(--transicao);
+}
+.menu-lista button:hover,
+.menu-lista a:hover{ background:rgba(var(--acento-rgb),.10); color:var(--texto); }
+.menu-lista svg{ width:15px; height:15px; flex:none; color:var(--texto-3); }
+.menu-lista .sair:hover{ background:rgba(240,119,107,.10); color:var(--critico); }
+.menu-lista .sair:hover svg{ color:var(--critico); }
+
+/* ══════════════════════════════════════════════════
+   VITRINE — grade e carrossel
+   ══════════════════════════════════════════════════ */
+.grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(258px,1fr)); gap:12px; }
+.cartao{
+  position:relative; display:flex; flex-direction:column; gap:8px;
+  padding:20px; min-height:168px;
+  border:1px solid var(--borda); border-radius:9px;
+  background:var(--superficie); color:inherit; text-decoration:none;
+  transition:border-color var(--transicao), background var(--transicao),
+             box-shadow var(--transicao), transform var(--transicao);
+}
+.cartao:hover{
+  border-color:rgba(var(--acento-rgb),.55);
+  background:linear-gradient(160deg, rgba(var(--acento-rgb),.15), rgba(var(--acento-rgb),.04));
+  box-shadow:0 0 34px -10px rgba(var(--acento-rgb),.55);
+  transform:translateY(-2px);
+}
+.cartao .grupo{
+  font-family:var(--mono); font-size:9px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.cartao .nome{ font-family:var(--serifada); font-size:24px; line-height:1.1; letter-spacing:-.012em; }
+.cartao .desc{ font-size:13px; line-height:1.46; color:var(--texto-2); }
+.cartao .ir{
+  margin-top:auto; display:inline-flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:600; color:var(--acento-texto);
+}
+.cartao .ir svg{ width:15px; height:15px; transition:transform var(--transicao); }
+.cartao:hover .ir svg{ transform:translateX(4px); }
+
+/* ── carrossel ── */
+.carrossel{ position:relative; padding:8px 0 4px; }
+.carrossel-palco{ position:relative; height:300px; }
+.carrossel-trilho{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  perspective:1200px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+          mask-image:linear-gradient(90deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+}
+.carrossel-brilho{
+  position:absolute; left:50%; top:50%; width:520px; height:320px;
+  transform:translate(-50%,-50%); pointer-events:none;
+  background:radial-gradient(closest-side, rgba(var(--acento-rgb),.20), rgba(var(--acento-rgb),0) 72%);
+  filter:blur(6px);
+}
+.slide{
+  position:absolute; width:270px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  text-align:center; text-decoration:none; color:inherit;
+  transition:transform .55s cubic-bezier(.22,.7,.25,1), opacity .55s ease, filter .55s ease;
+  will-change:transform, opacity;
+}
+.slide .selo-cat{
+  font-family:var(--mono); font-size:9px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.slide .rotulo-sis{
+  font-family:var(--serifada); font-size:34px; line-height:1.05;
+  letter-spacing:-.02em; color:var(--texto);
+}
+.slide .placa{
+  position:relative; overflow:hidden;
+  width:150px; height:96px; border-radius:11px;
+  border:1px solid var(--borda-forte);
+  background:
+    radial-gradient(120% 90% at 12% 8%, rgba(var(--acento-rgb),.42), rgba(var(--acento-rgb),0) 62%),
+    linear-gradient(150deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+  box-shadow:0 18px 40px -22px rgba(0,0,0,.9);
+  transform:rotate(-7deg);
+  display:flex; align-items:flex-end; padding:11px;
+  font-size:15px; font-weight:600; letter-spacing:-.01em; color:var(--texto);
+}
+.slide .placa::after{
+  content:""; position:absolute; right:-28%; top:-52%;
+  width:110%; height:78%; border-radius:50%;
+  background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+}
+.slide .placa i{ font-style:normal; color:var(--acento-texto); }
+/* posições */
+.slide[data-pos="0"]{ transform:translateX(0) scale(1); opacity:1; z-index:5; }
+.slide[data-pos="-1"]{ transform:translateX(-250px) scale(.66); opacity:.34; z-index:3; filter:blur(1px); }
+.slide[data-pos="1"]{ transform:translateX(250px) scale(.66); opacity:.34; z-index:3; filter:blur(1px); }
+.slide[data-pos="-2"]{ transform:translateX(-420px) scale(.5); opacity:.14; z-index:2; filter:blur(2px); }
+.slide[data-pos="2"]{ transform:translateX(420px) scale(.5); opacity:.14; z-index:2; filter:blur(2px); }
+.slide[data-pos="fora"]{ transform:translateX(0) scale(.4); opacity:0; z-index:1; pointer-events:none; }
+.slide[data-pos="0"] .placa{ transform:rotate(-7deg) scale(1); }
+
+.seta{
+  position:absolute; top:50%; transform:translateY(-50%); z-index:8;
+  width:44px; height:44px; border-radius:50%;
+  border:1px solid var(--borda-forte); background:rgba(4,7,13,.55);
+  color:var(--texto-2); cursor:pointer;
+  display:grid; place-items:center;
+  transition:color var(--transicao), border-color var(--transicao), background var(--transicao);
+}
+:root[data-tema="claro"] .seta{ background:rgba(255,255,255,.75); }
+.seta:hover{
+  color:var(--acento-texto); border-color:var(--acento);
+  background:rgba(var(--acento-rgb),.12);
+  box-shadow:0 0 22px -6px rgba(var(--acento-rgb),.7);
+}
+.seta svg{ width:17px; height:17px; }
+.seta--ant{ left:6px; }
+.seta--prox{ right:6px; }
+
+.carrossel-painel{
+  max-width:560px; margin:6px auto 0; text-align:center;
+  border-top:1px solid var(--borda); padding-top:20px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.carrossel-painel .texto{ font-size:14.5px; line-height:1.6; color:var(--texto-2); min-height:70px; }
+.btn-acessar{
+  display:inline-flex; align-items:center; gap:8px;
+  border:0; border-radius:999px; padding:10px 22px;
+  background:var(--acento); color:var(--acento-tinta);
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  cursor:pointer; text-decoration:none;
+  box-shadow:0 0 26px -6px rgba(var(--acento-rgb),.55);
+  transition:background var(--transicao), transform var(--transicao);
+}
+.btn-acessar:hover{ background:var(--texto); color:var(--fundo); transform:translateY(-1px); }
+.pontos{ display:flex; gap:7px; justify-content:center; }
+.pontos button{
+  width:7px; height:7px; padding:0; border-radius:50%;
+  border:1px solid var(--borda-forte); background:transparent; cursor:pointer;
+  transition:background var(--transicao), border-color var(--transicao), width var(--transicao);
+}
+.pontos button[aria-current="true"]{
+  background:var(--acento); border-color:var(--acento); width:20px; border-radius:999px;
+}
+
+/* ── comparação escrita ── */
+.contra{ display:grid; grid-template-columns:1fr; gap:0; }
+@media (min-width:860px){ .contra{ grid-template-columns:1fr 1fr; gap:0 34px; } }
+.contra .col{ display:flex; flex-direction:column; }
+.contra .col h3{ padding-bottom:11px; border-bottom:1px solid var(--texto-3); margin-bottom:4px; }
+.contra .item{
+  display:grid; grid-template-columns:16px 1fr; gap:11px;
+  padding:11px 0; border-bottom:1px solid var(--borda);
+  font-size:14px; color:var(--texto-2); align-items:start;
+}
+.contra .item .m{ font-family:var(--mono); font-size:13px; line-height:1.5; }
+.contra .item .m.mais{ color:var(--ok); }
+.contra .item .m.menos{ color:var(--critico); }
+
+.decisao{
+  border:1px solid var(--texto-3); border-radius:14px;
+  padding:26px 28px; display:flex; flex-direction:column; gap:12px;
+}
+.decisao h3{ font-family:var(--serifada); font-weight:400; font-size:23px; letter-spacing:-.015em; }
+
+.rodape{
+  margin-top:70px; border-top:1px solid var(--borda);
+  padding:22px 0 60px; font-family:var(--mono); font-size:10px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--texto-3);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  .slide{ transition:none; }
+}
+@media (max-width:720px){
+  .ctl{ top:53px; padding:9px 16px; gap:12px; }
+  .larg{ padding:0 16px; }
+  .palco{ padding:20px 14px; }
+  .carrossel-palco{ height:250px; }
+  .slide{ width:210px; }
+  .slide .rotulo-sis{ font-size:26px; }
+  .slide[data-pos="-1"]{ transform:translateX(-160px) scale(.55); }
+  .slide[data-pos="1"]{ transform:translateX(160px) scale(.55); }
+  .slide[data-pos="-2"],.slide[data-pos="2"]{ opacity:0; }
+  .seta--ant{ left:0; } .seta--prox{ right:0; }
+  .topo{ padding:12px 14px; }
+  .palco--menu{ min-height:360px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="aviso">
+  <b>PÁGINA DE DECISÃO</b>
+  <span>Dois estilos de cada coisa, para escolher. O portal em uso continua em</span>
+  <a href="/">smedigital.com.br</a>
+</div>
+
+<div class="ctl">
+  <div class="ctl-g">
+    <span>Tema</span>
+    <div class="ctl-op" id="ctl-tema">
+      <button type="button" data-v="escuro" aria-pressed="true">Escuro</button>
+      <button type="button" data-v="claro" aria-pressed="false">Claro</button>
+    </div>
+  </div>
+  <div class="ctl-g">
+    <span>Ciano</span>
+    <div class="ctl-op" id="ctl-acento">
+      <button type="button" data-v="ciano" aria-pressed="true">#45D6F2</button>
+      <button type="button" data-v="neon" aria-pressed="false">#00E5FF</button>
+    </div>
+  </div>
+  <div class="esp"></div>
+  <span class="versao">
+    <a href="index-preview.html" style="text-decoration:underline;text-underline-offset:3px">ver a prévia do portal →</a>
+  </span>
+</div>
+
+<div class="larg cabeca">
+  <p class="rotulo">Duas decisões</p>
+  <h1>Os botões da conta, e a vitrine dos sistemas.</h1>
+  <p class="apoio" style="margin-top:20px;font-size:17px">
+    Você pediu para ver como ficariam os botões de <strong>Configurações</strong> e <strong>Sair</strong> no
+    visual novo, e mandou um carrossel para avaliar. Estão os dois aqui, cada um em duas versões
+    funcionando de verdade — clique, passe o mouse, teste no celular.
+  </p>
+</div>
+
+<!-- ══════════ 1. BARRA DO USUÁRIO ══════════ -->
+<section class="bloco larg">
+  <p class="rotulo rotulo--linha">Decisão 1 · barra do usuário</p>
+  <div class="pilha">
+    <div class="pilha-p">
+      <h2>Como ficam Configurações e Sair</h2>
+      <p class="apoio">
+        Hoje são três elementos soltos no canto: o nome, um botão azul preenchido de Configurações e um
+        de Sair. No visual novo eles viram pílulas de contorno fino. A pergunta é se ficam soltos na
+        barra ou recolhidos num menu.
+      </p>
+    </div>
+
+    <div class="opcao">
+      <div class="opcao-cab">
+        <div>
+          <div class="tit">Estilo A — Pílulas na barra</div>
+          <div class="sub">Tudo à vista, um clique para cada ação. É o mais parecido com o que vocês têm hoje.</div>
+        </div>
+        <span class="selo selo--atual">Mais perto do atual</span>
+      </div>
+      <div class="palco palco--barra">
+        <header class="topo">
+          <a class="marca" href="#"><em>/</em>sme</a>
+          <div class="usuario">
+            <span class="quem">
+              <span class="avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" stroke-linecap="round"/></svg>
+              </span>
+              Diogo Perez
+            </span>
+            <button class="btn-p" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-2.87 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 2.6 15a1.7 1.7 0 0 0-1.6-1H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 7 4.6h.08A1.7 1.7 0 0 0 8.1 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.55" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Configurações
+            </button>
+            <button class="btn-p btn-p--sair" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8"/><path d="M17 15l4-3-4-3"/><path d="M21 12H10"/></svg>
+              Sair
+            </button>
+          </div>
+        </header>
+      </div>
+    </div>
+
+    <div class="opcao">
+      <div class="opcao-cab">
+        <div>
+          <div class="tit">Estilo B — Menu da conta</div>
+          <div class="sub">Nome e foto viram um botão só; Configurações e Sair ficam dentro. Clique no nome para abrir.</div>
+        </div>
+        <span class="selo">Barra mais limpa</span>
+      </div>
+      <div class="palco palco--barra palco--menu">
+        <header class="topo">
+          <a class="marca" href="#"><em>/</em>sme</a>
+          <div class="usuario">
+            <div class="menu-conta">
+              <button class="menu-gatilho" type="button" id="gatilho" aria-expanded="false" aria-haspopup="true" aria-controls="lista-conta">
+                <span class="avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" stroke-linecap="round"/></svg>
+                </span>
+                Diogo Perez
+                <svg class="seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="menu-lista" id="lista-conta" data-aberto="false" role="menu">
+                <div class="cabecalho">
+                  <div class="n">Diogo Perez</div>
+                  <div class="e">diogo.perez@educacao.pmrp.sp.gov.br</div>
+                </div>
+                <a href="#" role="menuitem">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87M4.6 9a1.7 1.7 0 0 0-.34-1.87" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/></svg>
+                  Configurações
+                </a>
+                <a href="#" role="menuitem">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16v-4"/><path d="M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                  Ajuda
+                </a>
+                <button class="sair" type="button" role="menuitem">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8"/><path d="M17 15l4-3-4-3"/><path d="M21 12H10"/></svg>
+                  Sair
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      </div>
+    </div>
+
+    <div class="contra">
+      <div class="col">
+        <h3>A favor das pílulas</h3>
+        <div class="item"><span class="m mais">+</span><span>Configurações fica a um clique. Quem administra usa muito.</span></div>
+        <div class="item"><span class="m mais">+</span><span>Nada escondido: servidor com pouca familiaridade não precisa descobrir onde está.</span></div>
+        <div class="item"><span class="m menos">−</span><span>No celular, três elementos quebram a linha e empurram o cabeçalho para baixo.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Cada botão novo no futuro piora a barra.</span></div>
+      </div>
+      <div class="col">
+        <h3>A favor do menu</h3>
+        <div class="item"><span class="m mais">+</span><span>Cabeçalho estável no celular, sem importar quantos itens existam.</span></div>
+        <div class="item"><span class="m mais">+</span><span>Cabe o e-mail da pessoa, e sobra espaço para Ajuda, Meu perfil, Trocar de conta.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Configurações passa a exigir dois cliques.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Padrão que exige teclado e leitor de tela testados — mais código para manter.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 2. VITRINE ══════════ -->
+<section class="bloco larg">
+  <p class="rotulo rotulo--linha">Decisão 2 · vitrine dos sistemas</p>
+  <div class="pilha">
+    <div class="pilha-p">
+      <h2>Grade ou carrossel</h2>
+      <p class="apoio">
+        O vídeo que você mandou é o carrossel de cases da Pomelo: um item central em foco, os vizinhos
+        reduzidos e desfocados, setas circulares e um painel de texto embaixo. Dá para implantar — está
+        funcionando aqui embaixo, com os sistemas de vocês. A questão é se ele serve para este uso.
+      </p>
+    </div>
+
+    <div class="opcao">
+      <div class="opcao-cab">
+        <div>
+          <div class="tit">Estilo A — Grade</div>
+          <div class="sub">Todos os sistemas visíveis de uma vez. É o que está publicado na prévia do portal.</div>
+        </div>
+        <span class="selo selo--atual">Publicado hoje</span>
+      </div>
+      <div class="palco">
+        <div class="grade" id="grade"></div>
+      </div>
+    </div>
+
+    <div class="opcao">
+      <div class="opcao-cab">
+        <div>
+          <div class="tit">Estilo B — Carrossel</div>
+          <div class="sub">Um sistema por vez, em destaque. Use as setas, os pontinhos ou as teclas ← e →.</div>
+        </div>
+        <span class="selo">Do vídeo que você mandou</span>
+      </div>
+      <div class="palco">
+        <div class="carrossel" id="carrossel">
+          <div class="carrossel-palco">
+            <div class="carrossel-trilho" id="palco">
+              <span class="carrossel-brilho" aria-hidden="true"></span>
+            </div>
+            <button class="seta seta--ant" type="button" id="ant" aria-label="Sistema anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button class="seta seta--prox" type="button" id="prox" aria-label="Próximo sistema">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div class="carrossel-painel">
+            <p class="texto" id="carrossel-texto" aria-live="polite"></p>
+            <a class="btn-acessar" id="carrossel-link" href="#">
+              Acessar
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+            </a>
+            <div class="pontos" id="pontos"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contra">
+      <div class="col">
+        <h3>A favor da grade</h3>
+        <div class="item"><span class="m mais">+</span><span>Quem entra sabe qual sistema quer. Ver todos de uma vez é o caminho mais curto.</span></div>
+        <div class="item"><span class="m mais">+</span><span>Um clique para qualquer sistema, sempre.</span></div>
+        <div class="item"><span class="m mais">+</span><span>Funciona igual no celular e em teclado, sem código extra.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Menos impacto visual. Nenhum sistema ganha destaque.</span></div>
+      </div>
+      <div class="col">
+        <h3>A favor do carrossel</h3>
+        <div class="item"><span class="m mais">+</span><span>Bonito e memorável. Bom para apresentar a plataforma a quem chega de fora.</span></div>
+        <div class="item"><span class="m mais">+</span><span>Cabe muito conteúdo por item sem poluir a tela.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Para chegar no oitavo sistema pode levar sete cliques.</span></div>
+        <div class="item"><span class="m menos">−</span><span>Conteúdo fora da tela é conteúdo que muita gente não encontra.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ RECOMENDAÇÃO ══════════ -->
+<section class="bloco larg">
+  <p class="rotulo rotulo--linha">O que eu faria</p>
+  <div class="decisao">
+    <h3>Menu da conta, e grade no portal — com o carrossel guardado para a home pública.</h3>
+    <p class="apoio" style="max-width:none">
+      <strong>Barra do usuário:</strong> menu. O ganho no celular é grande e o custo é um clique a mais
+      numa ação que a maioria dos servidores nunca usa — Configurações só aparece para super admin.
+    </p>
+    <p class="apoio" style="max-width:none">
+      <strong>Vitrine:</strong> grade. O portal é ferramenta de trabalho: a pessoa entra sabendo aonde
+      vai, e o carrossel transforma um clique em vários. O carrossel da Pomelo funciona lá porque a
+      página <em>quer</em> que você percorra os cases devagar — não é o caso de quem precisa abrir o GOM
+      às sete da manhã.
+    </p>
+    <p class="apoio" style="max-width:none">
+      Isso não joga o carrossel fora. Ele é ótimo em duas telas que vocês têm: a <strong>home pública</strong>
+      da SME apresentando os sistemas para quem ainda não é usuário, e o <strong>acervo do Repositório
+      e da Revista</strong>, onde percorrer conteúdo devagar é exatamente o comportamento desejado.
+      Se você quiser no portal mesmo assim, é decisão sua — o código já está pronto e funcionando aqui.
+    </p>
+  </div>
+</section>
+
+<div class="larg rodape">
+  Página de decisão · nenhuma alteração aplicada no portal em uso
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var sistemas = [
+    { nome:'MAPA',                   grupo:'Monitoramento',      url:'/mapa-sme/',   desc:'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.' },
+    { nome:'GOM',                    grupo:'Obras e Manutenção', url:'/gom-sme/',    desc:'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.' },
+    { nome:'SATE',                   grupo:'Transporte Escolar', url:'/sate-sme/',   desc:'Sistema de Agendamento do Transporte Escolar e abertura de chamados.' },
+    { nome:'Roçadas',                grupo:'Serviços',           url:'/rocada/',     desc:'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.' },
+    { nome:'Repositório Pedagógico', grupo:'Pedagógico',         url:'/repositorio/',desc:'Repositório Pedagógico Municipal com materiais e recursos para a rede.' },
+    { nome:'Portfólio MAG',          grupo:'Revista',            url:'/revista/',    desc:'Portfólio e revista digital com produções e registros da rede municipal.' },
+    { nome:'Validação de Presença',  grupo:'Eventos',            url:'/presenca/',   desc:'Inscrição, emissão de QR Code e validação de presença em eventos e formações.' },
+    { nome:'Demandas SME',           grupo:'Gestão de Demandas', url:'/lunar/pages/caixa-entrada.html', desc:'Workflow de demandas institucionais: tramitação, prazos e histórico de cada processo.' }
+  ];
+
+  var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+  function esc(t){ var d=document.createElement('div'); d.textContent=String(t==null?'':t); return d.innerHTML; }
+
+  /* ---- controles de tema e acento ---- */
+  function controles(id, attr){
+    var box = document.getElementById(id);
+    box.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-v]');
+      if (!b) return;
+      document.documentElement.setAttribute(attr, b.dataset.v);
+      box.querySelectorAll('button').forEach(function (o) {
+        o.setAttribute('aria-pressed', String(o === b));
+      });
+    });
+  }
+  controles('ctl-tema', 'data-tema');
+  controles('ctl-acento', 'data-acento');
+
+  /* ---- menu da conta ---- */
+  var gatilho = document.getElementById('gatilho');
+  var lista = document.getElementById('lista-conta');
+  function fecharMenu(){
+    lista.dataset.aberto = 'false';
+    gatilho.setAttribute('aria-expanded', 'false');
+  }
+  gatilho.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    var abrindo = lista.dataset.aberto !== 'true';
+    lista.dataset.aberto = String(abrindo);
+    gatilho.setAttribute('aria-expanded', String(abrindo));
+    if (abrindo) { var p = lista.querySelector('a,button'); if (p) p.focus(); }
+  });
+  document.addEventListener('click', function (ev) {
+    if (!lista.contains(ev.target) && ev.target !== gatilho) fecharMenu();
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && lista.dataset.aberto === 'true') { fecharMenu(); gatilho.focus(); }
+  });
+
+  /* ---- grade ---- */
+  var grade = document.getElementById('grade');
+  sistemas.forEach(function (s) {
+    var a = document.createElement('a');
+    a.className = 'cartao';
+    a.href = s.url;
+    a.innerHTML =
+      '<span class="grupo">' + esc(s.grupo) + '</span>' +
+      '<span class="nome">' + esc(s.nome) + '</span>' +
+      '<span class="desc">' + esc(s.desc) + '</span>' +
+      '<span class="ir">Acessar ' + SETA + '</span>';
+    grade.appendChild(a);
+  });
+
+  /* ---- carrossel ---- */
+  var palco = document.getElementById('palco');
+  var pontos = document.getElementById('pontos');
+  var texto = document.getElementById('carrossel-texto');
+  var link = document.getElementById('carrossel-link');
+  var atual = 0;
+  var slides = [];
+
+  sistemas.forEach(function (s, i) {
+    var d = document.createElement('a');
+    d.className = 'slide';
+    d.href = s.url;
+    d.innerHTML =
+      '<span class="placa"><i>/</i>sme</span>' +
+      '<span class="selo-cat">' + esc(s.grupo) + '</span>' +
+      '<span class="rotulo-sis">' + esc(s.nome) + '</span>';
+    palco.appendChild(d);
+    slides.push(d);
+
+    var p = document.createElement('button');
+    p.type = 'button';
+    p.setAttribute('aria-label', 'Ver ' + s.nome);
+    p.addEventListener('click', function () { irPara(i); });
+    pontos.appendChild(p);
+  });
+
+  function irPara(i) {
+    var n = sistemas.length;
+    atual = ((i % n) + n) % n;
+    slides.forEach(function (el, k) {
+      var d = k - atual;
+      if (d > n / 2) d -= n;
+      if (d < -n / 2) d += n;
+      el.dataset.pos = Math.abs(d) <= 2 ? String(d) : 'fora';
+      el.tabIndex = d === 0 ? 0 : -1;
+      el.setAttribute('aria-hidden', String(d !== 0));
+    });
+    pontos.querySelectorAll('button').forEach(function (b, k) {
+      b.setAttribute('aria-current', String(k === atual));
+    });
+    texto.textContent = sistemas[atual].desc;
+    link.href = sistemas[atual].url;
+    link.setAttribute('aria-label', 'Acessar ' + sistemas[atual].nome);
+  }
+
+  document.getElementById('ant').addEventListener('click', function () { irPara(atual - 1); parar(); });
+  document.getElementById('prox').addEventListener('click', function () { irPara(atual + 1); parar(); });
+
+  var carrossel = document.getElementById('carrossel');
+  carrossel.addEventListener('keydown', function (ev) {
+    if (ev.key === 'ArrowLeft')  { irPara(atual - 1); parar(); }
+    if (ev.key === 'ArrowRight') { irPara(atual + 1); parar(); }
+  });
+
+  /* avanço sozinho, que para no primeiro toque e respeita quem pediu menos
+     movimento — carrossel que anda sem parar atrapalha quem lê devagar */
+  var timer = null;
+  var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function parar(){ if (timer) { clearInterval(timer); timer = null; } }
+  function comecar(){
+    if (reduz || timer) return;
+    timer = setInterval(function () { irPara(atual + 1); }, 5200);
+  }
+  carrossel.addEventListener('mouseenter', parar);
+  carrossel.addEventListener('focusin', parar);
+
+  irPara(0);
+  comecar();
+})();
+</script>
+
+</body>
+</html>
