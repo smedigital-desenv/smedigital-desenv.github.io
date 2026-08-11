@@ -1,15 +1,593 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="escuro" data-acento="ciano">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SME Digital — Portal de Sistemas</title>
-  <!-- O portal virou a raiz do domínio. Esta página só redireciona para lá. -->
-  <meta http-equiv="refresh" content="0; url=./" />
-  <link rel="canonical" href="/" />
-  <script>location.replace('./');</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Prévia do novo visual — SME Digital</title>
+<meta name="description" content="Prévia da nova identidade visual do Portal de Sistemas da SME Ribeirão Preto. Página de validação, não é o portal oficial." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   Prévia visual — arquivo único e autocontido de propósito.
+   Não depende de central/estilo.css nem do Bootstrap, para que
+   possa ser publicado e removido sem tocar em mais nada.
+   O CSS abaixo é o recorte do sme-ui.css que esta tela usa.
+   ============================================================ */
+
+:root,
+:root[data-tema="escuro"]{
+  --fundo:#04070D;
+  --halo:14,78,140;
+  --halo-forca:.62;
+  --superficie:rgba(255,255,255,.045);
+  --borda:rgba(255,255,255,.10);
+  --borda-forte:rgba(255,255,255,.18);
+  --texto:#E6EEF4;
+  --texto-2:#94A0AB;
+  --texto-3:#7E8A96;
+}
+:root[data-tema="claro"]{
+  /* Sobre fundo claro o ciano vivo não serve como cor de TEXTO: #45D6F2
+     sobre branco dá ~1.9:1 e reprova no AA da WCAG/eMAG. O acento continua
+     o mesmo em preenchimento e borda; só o texto usa a versão escurecida. */
+  --acento-texto:#0A6C87;
+  --atencao-texto:#8A6212;
+  --fundo:#F4F7FA;
+  --halo-forca:.07;
+  --superficie:#FFFFFF;
+  --borda:#DFE5EB;
+  --borda-forte:#C4CDD6;
+  --texto:#0E1620;
+  --texto-2:#4A5763;
+  --texto-3:#5F6B77;
+}
+:root{
+  --acento:#45D6F2;
+  --acento-rgb:69,214,242;
+  --acento-tinta:#04212B;
+  --acento-texto:var(--acento);
+  --atencao-texto:var(--atencao);
+  --ok:#3FD69A;
+  --atencao:#E8B54A;
+  --critico:#F0776B;
+  --serifada:"Newsreader","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --transicao:.25s cubic-bezier(.2,.7,.3,1);
+  --largura:1180px;
+}
+:root[data-acento="neon"]{ --acento:#00E5FF; --acento-rgb:0,229,255; --acento-tinta:#00232B; }
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+body{
+  margin:0; min-height:100vh;
+  display:flex; flex-direction:column;
+  background:var(--fundo);
+  color:var(--texto);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(52% 46% at 50% 0%, rgba(var(--halo),var(--halo-forca)) 0%, rgba(var(--halo),0) 66%),
+    radial-gradient(74% 40% at 50% 100%, rgba(var(--halo),calc(var(--halo-forca) * .7)) 0%, rgba(var(--halo),0) 70%);
+}
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+.larg{ width:100%; max-width:var(--largura); margin:0 auto; padding:0 24px; position:relative; z-index:4; }
+
+/* ── faixa de prévia ── */
+.aviso{
+  position:sticky; top:0; z-index:60;
+  display:flex; align-items:center; justify-content:center;
+  gap:8px 14px; flex-wrap:wrap; text-align:center;
+  padding:8px 16px;
+  background:var(--atencao); color:#2A1D00;
+  font-size:12.5px; font-weight:600; line-height:1.4;
+}
+.aviso b{ font-weight:700; }
+.aviso span{ font-weight:400; opacity:.9; }
+.aviso a{ color:#2A1D00; font-weight:700; text-underline-offset:3px; }
+
+/* ── barra de comparação ── */
+.ctl{
+  position:sticky; top:33px; z-index:59;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:9px 24px;
+  background:var(--fundo);
+  border-bottom:1px solid var(--borda);
+}
+.ctl-g{ display:flex; align-items:center; gap:7px; }
+.ctl-g > span{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.ctl-op{ display:flex; border:1px solid var(--borda); border-radius:999px; padding:2px; gap:2px; }
+.ctl-op button{
+  border:0; background:transparent; cursor:pointer; font-family:var(--sans);
+  font-size:12px; font-weight:500; color:var(--texto-2);
+  padding:6px 13px; border-radius:999px; transition:background .2s, color .2s;
+}
+.ctl-op button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta); font-weight:600; }
+.ctl .esp{ flex:1; }
+.ctl .versao{ font-family:var(--mono); font-size:10px; color:var(--texto-3); letter-spacing:.06em; }
+
+/* ── cabeçalho ── */
+.topo{
+  position:relative; z-index:5;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap;
+  padding:14px 24px; border-bottom:1px solid var(--borda);
+}
+.marca{ display:flex; align-items:baseline; gap:1px; font-size:18px; font-weight:600; letter-spacing:-.01em; text-decoration:none; }
+.marca em{ font-style:normal; color:var(--acento-texto); font-weight:400; }
+.topo-centro{ font-family:var(--serifada); font-size:14px; color:var(--texto-2); }
+.topo-centro b{ color:var(--acento-texto); font-weight:400; font-style:italic; }
+.usuario{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.usuario .quem{
+  display:flex; align-items:center; gap:8px;
+  font-size:12.5px; color:var(--texto-2);
+}
+.usuario .quem::before{
+  content:""; width:7px; height:7px; border-radius:50%; flex:none;
+  background:var(--ok); box-shadow:0 0 8px 1px rgba(63,214,154,.6);
+}
+.btn-t{
+  border:1px solid var(--borda-forte); background:transparent; color:var(--texto-2);
+  font-family:var(--sans); font-size:12.5px; padding:6px 14px;
+  border-radius:999px; cursor:pointer; text-decoration:none;
+  transition:color var(--transicao), border-color var(--transicao);
+}
+.btn-t:hover{ color:var(--acento-texto); border-color:var(--acento); }
+
+/* ── herói ── */
+.heroi{
+  position:relative; z-index:4; text-align:center;
+  padding:64px 24px 56px;
+  display:flex; flex-direction:column; align-items:center;
+}
+.desde{
+  font-family:var(--mono); font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--texto-3); margin-bottom:22px;
+}
+.heroi h1{
+  font-family:var(--serifada); font-weight:400;
+  font-size:clamp(32px,5.2vw,56px); line-height:1.04; letter-spacing:-.02em;
+  margin:0; max-width:20ch; text-wrap:balance;
+}
+.enfase{
+  text-decoration:underline; text-decoration-thickness:1.5px;
+  text-underline-offset:6px;
+  text-decoration-color:color-mix(in srgb, var(--texto) 55%, transparent);
+}
+.heroi p{ margin:22px 0 0; max-width:52ch; color:var(--texto-2); font-size:15px; }
+
+/* ── seções ── */
+.secao{ position:relative; z-index:4; padding:0 0 40px; }
+.secao-cab{ display:flex; align-items:center; gap:10px; margin:0 0 18px; }
+.rotulo{
+  display:flex; align-items:center; gap:10px; flex:1;
+  font-family:var(--mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--texto-3); margin:0;
+}
+.rotulo::before{ content:""; width:18px; height:1px; flex:none; background:var(--acento); }
+.rotulo::after{ content:""; flex:1; height:1px; background:var(--borda); }
+
+/* ── cartões ── */
+.grade{ display:grid; gap:12px; perspective:1400px; }
+.grade--destaque{ grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+.grade--lista{ grid-template-columns:repeat(auto-fill,minmax(252px,1fr)); }
+
+.cartao{
+  position:relative; display:flex; flex-direction:column; gap:8px;
+  padding:20px; min-height:158px;
+  border:1px solid var(--borda); border-radius:9px;
+  background:var(--superficie);
+  color:inherit; text-decoration:none; text-align:left;
+  transition:border-color var(--transicao), background var(--transicao),
+             box-shadow var(--transicao), transform var(--transicao);
+}
+/* A inclinação 3D só vale nos cartões estreitos. Num cartão largo, a mesma
+   rotação vira vários pixels de deslocamento entre uma ponta e outra e a
+   borda aparece torta. */
+.grade--lista .cartao{ transform:rotateY(2.5deg) rotateZ(-.35deg); }
+.grade--lista .cartao:nth-child(even){ transform:rotateY(-2.5deg) rotateZ(.35deg); }
+.grade--destaque{ perspective:none; }
+.cartao:hover,
+.grade--lista .cartao:hover{
+  border-color:rgba(var(--acento-rgb),.55);
+  background:linear-gradient(160deg, rgba(var(--acento-rgb),.15), rgba(var(--acento-rgb),.04));
+  box-shadow:0 0 34px -10px rgba(var(--acento-rgb),.55);
+  transform:rotateY(0) rotateZ(0) translateY(-2px);
+}
+.cartao .faisca{
+  position:absolute; top:12px; right:12px; width:6px; height:6px; border-radius:50%;
+  background:var(--acento); box-shadow:0 0 8px 1px rgba(var(--acento-rgb),.85);
+  opacity:0; transition:opacity var(--transicao);
+}
+.cartao:hover .faisca{ opacity:1; }
+.cartao .grupo{
+  font-family:var(--mono); font-size:9px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.cartao .nome{
+  font-family:var(--serifada); font-size:26px; line-height:1.1;
+  letter-spacing:-.012em; color:var(--texto);
+}
+.grade--lista .cartao{ min-height:146px; padding:18px; }
+.grade--lista .cartao .nome{ font-size:21px; }
+.cartao .desc{ font-size:13px; line-height:1.46; color:var(--texto-2); }
+.cartao .ir{
+  margin-top:auto; display:inline-flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:600; color:var(--acento-texto);
+}
+.cartao:hover .ir svg{ transform:translateX(4px); }
+.cartao .ir svg{ width:15px; height:15px; transition:transform var(--transicao); }
+
+/* em desenvolvimento */
+.cartao[aria-disabled="true"]{ opacity:.55; pointer-events:none; transform:none; }
+.breve{
+  margin-top:auto; display:inline-flex; align-items:center; gap:7px;
+  font-size:11.5px; font-weight:600; line-height:1.4;
+  padding:3px 10px 3px 8px; border-radius:999px;
+  border:1px solid currentColor; color:var(--atencao-texto);
+}
+.breve::before{ content:""; width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+/* ── estados de mensagem ── */
+.mensagem{
+  border:1px solid var(--borda); border-radius:9px;
+  background:var(--superficie);
+  padding:32px 28px; text-align:center; color:var(--texto-2);
+  max-width:640px; margin:0 auto;
+}
+.mensagem strong{ color:var(--texto); }
+.mensagem .titulo{
+  font-family:var(--serifada); font-size:24px; font-weight:400;
+  color:var(--texto); margin:0 0 10px; letter-spacing:-.015em;
+}
+.mensagem .acoes{ margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.btn-p{
+  display:inline-flex; align-items:center; gap:8px;
+  border:0; border-radius:999px; padding:10px 22px;
+  background:var(--acento); color:var(--acento-tinta);
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  cursor:pointer; text-decoration:none;
+  box-shadow:0 0 26px -6px rgba(var(--acento-rgb),.55);
+  transition:background var(--transicao), transform var(--transicao);
+}
+.btn-p:hover{ background:var(--texto); transform:translateY(-1px); }
+
+.carregando{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:64px 24px; color:var(--texto-3);
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+}
+.carregando::before{
+  content:""; width:9px; height:9px; border-radius:50%;
+  background:var(--acento); animation:pulsa 1.1s ease-in-out infinite;
+}
+@keyframes pulsa{ 0%,100%{ opacity:.25; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.15); } }
+
+/* ── rodapé ── */
+.rodape{
+  margin-top:auto; position:relative; z-index:4;
+  border-top:1px solid var(--borda);
+  padding:22px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap;
+  font-size:12.5px; color:var(--texto-3);
+}
+.rodape .contador{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase;
+}
+.rodape .contador::before{
+  content:""; width:6px; height:6px; border-radius:50%; flex:none;
+  background:var(--acento); box-shadow:0 0 9px 1px rgba(var(--acento-rgb),.75);
+}
+
+/* ── cometa ── */
+.cometa{
+  position:absolute; top:210px; left:-16%;
+  width:190px; height:2px; border-radius:2px; z-index:1; pointer-events:none;
+  background:linear-gradient(90deg, rgba(var(--acento-rgb),0), rgba(214,244,255,.9), rgba(var(--acento-rgb),0));
+  filter:blur(.6px);
+  box-shadow:0 0 16px 3px rgba(var(--acento-rgb),.55);
+  animation:cometa 13s linear infinite;
+}
+@keyframes cometa{
+  0%{ transform:translate3d(0,0,0) rotate(7deg); opacity:0; }
+  8%{ opacity:.95; }
+  60%{ opacity:.7; }
+  100%{ transform:translate3d(120vw,70px,0) rotate(7deg); opacity:0; }
+}
+:root[data-tema="claro"] .cometa{ display:none; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  .cometa{ opacity:.3; }
+}
+
+@media (max-width:720px){
+  .ctl{ top:53px; padding:9px 16px; gap:12px; }
+  .topo{ padding:12px 16px; }
+  .topo-centro{ display:none; }
+  .larg{ padding:0 16px; }
+  .heroi{ padding:44px 16px 40px; }
+  .grade--destaque,.grade--lista{ grid-template-columns:1fr; }
+  .grade--lista .cartao,.grade--lista .cartao:nth-child(even){ transform:none; }
+  .cartao:hover{ transform:translateY(-2px); }
+}
+</style>
 </head>
+
 <body>
-  <p>Redirecionando para o <a href="./">Portal de Sistemas</a>…</p>
+
+<div class="aviso">
+  <b>PRÉVIA DO NOVO VISUAL</b>
+  <span>Esta página serve só para validação. O portal em uso continua em</span>
+  <a href="/">smedigital.com.br</a>
+</div>
+
+<div class="ctl">
+  <div class="ctl-g">
+    <span>Tema</span>
+    <div class="ctl-op" id="ctl-tema">
+      <button type="button" data-v="escuro" aria-pressed="true">Escuro</button>
+      <button type="button" data-v="claro" aria-pressed="false">Claro</button>
+    </div>
+  </div>
+  <div class="ctl-g">
+    <span>Ciano</span>
+    <div class="ctl-op" id="ctl-acento">
+      <button type="button" data-v="ciano" aria-pressed="true">#45D6F2</button>
+      <button type="button" data-v="neon" aria-pressed="false">#00E5FF</button>
+    </div>
+  </div>
+  <div class="esp"></div>
+  <span class="versao">prévia · sme-ui</span>
+</div>
+
+<header class="topo">
+  <a class="marca" href="/"><em>/</em>sme</a>
+  <div class="topo-centro">portal de <b>sistemas</b></div>
+  <div class="usuario" id="usuario"></div>
+</header>
+
+<span class="cometa" aria-hidden="true"></span>
+
+<div class="heroi">
+  <div class="desde">Secretaria Municipal da Educação · Ribeirão Preto</div>
+  <h1>Tudo o que a rede <span class="enfase">usa</span>, em um <span class="enfase">só lugar</span>.</h1>
+  <p>Os sistemas da secretaria reunidos num acesso único. Você vê apenas o que o seu perfil libera.</p>
+</div>
+
+<main class="larg" id="conteudo">
+  <div class="carregando" id="carregando">Verificando seu acesso</div>
+</main>
+
+<footer class="rodape larg">
+  <span>Secretaria Municipal de Educação — Ribeirão Preto, SP</span>
+  <span class="contador" id="contador"></span>
+</footer>
+
+<script src="central/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* Catálogo — cópia fiel do que está no index.html em produção.
+     Se um sistema for adicionado lá, adicione aqui também enquanto
+     esta prévia existir. */
+  var sistemas = [
+    { slug:'mapa',        nome:'MAPA',                   grupo:'Monitoramento',      categoria:'Monitoramento', desc:'Monitoramento de aprendizagem e acompanhamento dos projetos alfabetizadores da rede.', url:'/mapa-sme/',                        destaque:true,  status:'active' },
+    { slug:'gom',         nome:'GOM',                    grupo:'Obras e Manutenção', categoria:'Serviços',      desc:'Sistema de chamados da Gerência de Obras e Manutenção das unidades escolares.',        url:'/gom-sme/',                         destaque:true,  status:'active' },
+    { slug:'sate',        nome:'SATE',                   grupo:'Transporte Escolar', categoria:'Serviços',      desc:'Sistema de Agendamento do Transporte Escolar e abertura de chamados.',                 url:'/sate-sme/',                        destaque:false, status:'active' },
+    { slug:'rocada',      nome:'Roçadas',                grupo:'Serviços',           categoria:'Serviços',      desc:'Gestão e acompanhamento das roçadas e serviços de manutenção de áreas.',               url:'/rocada/',                          destaque:false, status:'active' },
+    { slug:'repositorio', nome:'Repositório Pedagógico', grupo:'Pedagógico',         categoria:'Pedagógico',    desc:'Repositório Pedagógico Municipal com materiais e recursos para a rede.',               url:'/repositorio/',                     destaque:false, status:'development' },
+    { slug:'revista',     nome:'Portfólio MAG',          grupo:'Revista',            categoria:'Pedagógico',    desc:'Portfólio e revista digital com produções e registros da rede municipal.',             url:'/revista/',                         destaque:false, status:'development' },
+    { slug:'presenca',    nome:'Validação de Presença',  grupo:'Eventos',            categoria:'Eventos',       desc:'Inscrição, emissão de QR Code e validação de presença em eventos e formações.',        url:'/presenca/',                        destaque:false, status:'active' },
+    { slug:'lunar',       nome:'Demandas SME',           grupo:'Gestão de Demandas', categoria:'Gestão',        desc:'Workflow de demandas institucionais da secretaria: tramitação, prazos e histórico de cada processo.', url:'/lunar/pages/caixa-entrada.html', destaque:false, status:'active' }
+  ];
+
+  var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+
+  var elConteudo = document.getElementById('conteudo');
+  var elContador = document.getElementById('contador');
+  var elUsuario  = document.getElementById('usuario');
+
+  /* ---- utilidades ---- */
+  function esc(t){ var d = document.createElement('div'); d.textContent = String(t == null ? '' : t); return d.innerHTML; }
+
+  function controles(id, attr){
+    var box = document.getElementById(id);
+    box.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-v]');
+      if (!b) return;
+      document.documentElement.setAttribute(attr, b.dataset.v);
+      box.querySelectorAll('button').forEach(function (o) {
+        o.setAttribute('aria-pressed', String(o === b));
+      });
+    });
+  }
+  controles('ctl-tema', 'data-tema');
+  controles('ctl-acento', 'data-acento');
+
+  /* ---- montagem dos cartões ---- */
+  function cartao(s, destaque) {
+    var a = document.createElement('a');
+    a.className = 'cartao';
+    if (s.status === 'active') { a.href = s.url; }
+    else { a.setAttribute('aria-disabled', 'true'); }
+    a.setAttribute('aria-label', 'Acessar ' + s.nome);
+    a.innerHTML =
+      '<span class="faisca"></span>' +
+      '<span class="grupo">' + esc(s.grupo) + '</span>' +
+      '<span class="nome">' + esc(s.nome) + '</span>' +
+      '<span class="desc">' + esc(s.desc) + '</span>' +
+      (s.status === 'active'
+        ? '<span class="ir">Acessar ' + SETA + '</span>'
+        : '<span class="breve">Em desenvolvimento</span>');
+    return a;
+  }
+
+  function secao(rotulo, itens, modo) {
+    var sec = document.createElement('section');
+    sec.className = 'secao';
+    var cab = document.createElement('div');
+    cab.className = 'secao-cab';
+    cab.innerHTML = '<p class="rotulo">' + esc(rotulo) + '</p>';
+    sec.appendChild(cab);
+    var grade = document.createElement('div');
+    grade.className = 'grade grade--' + modo;
+    itens.forEach(function (s) { grade.appendChild(cartao(s, modo === 'destaque')); });
+    sec.appendChild(grade);
+    return sec;
+  }
+
+  function render(visiveis, nota) {
+    elConteudo.innerHTML = '';
+    if (nota) elConteudo.appendChild(nota);
+
+    if (!visiveis.length) {
+      elConteudo.appendChild(mensagem(
+        'Nenhum sistema liberado ainda',
+        'O seu acesso está ativo, mas nenhum sistema foi liberado para o seu perfil. Procure a administração da secretaria.'
+      ));
+      return;
+    }
+
+    var destaques = visiveis.filter(function (s) { return s.destaque; });
+    if (destaques.length) elConteudo.appendChild(secao('Sistemas em destaque', destaques, 'destaque'));
+
+    /* Uma grade só, ordenada por categoria, em vez de uma seção por categoria.
+       Com o catálogo atual, "Eventos" e "Gestão" têm um sistema cada e abriam
+       uma faixa quase vazia na tela. A categoria não se perde: continua no
+       rótulo de cada cartão. */
+    var ordem = ['Monitoramento', 'Serviços', 'Pedagógico', 'Eventos', 'Gestão'];
+    var restantes = visiveis.filter(function (s) { return !s.destaque; }).sort(function (a, b) {
+      var ia = ordem.indexOf(a.categoria), ib = ordem.indexOf(b.categoria);
+      if (ia === -1) ia = 99;
+      if (ib === -1) ib = 99;
+      return ia - ib || a.nome.localeCompare(b.nome, 'pt-BR');
+    });
+    if (restantes.length) {
+      elConteudo.appendChild(secao(
+        destaques.length ? 'Demais sistemas' : 'Sistemas', restantes, 'lista'));
+    }
+
+    var ativos = visiveis.filter(function (s) { return s.status === 'active'; }).length;
+    elContador.textContent = 'SEUS SISTEMAS ' + ativos + '/' + visiveis.length;
+  }
+
+  function mensagem(titulo, texto, acoesHtml) {
+    var d = document.createElement('div');
+    d.className = 'mensagem';
+    d.innerHTML = '<p class="titulo">' + esc(titulo) + '</p><p>' + texto + '</p>' +
+      (acoesHtml ? '<div class="acoes">' + acoesHtml + '</div>' : '');
+    return d;
+  }
+
+  function faixaDemo(motivo) {
+    var d = document.createElement('div');
+    d.className = 'mensagem';
+    d.style.cssText = 'margin-bottom:32px;max-width:none;text-align:left';
+    d.innerHTML =
+      '<p class="titulo" style="font-size:20px">Modo demonstração</p>' +
+      '<p>' + motivo + ' Por isso a prévia está mostrando <strong>o catálogo completo</strong>, ' +
+      'para que o visual possa ser avaliado mesmo assim. No portal de verdade, cada pessoa vê ' +
+      'apenas os sistemas liberados para o seu perfil.</p>' +
+      '<div class="acoes" style="justify-content:flex-start">' +
+      '<a class="btn-p" href="central/login.html">Entrar para ver o seu acesso real</a></div>';
+    return d;
+  }
+
+  function montarUsuario(perms, session) {
+    var nome = (perms && perms.perfil && (perms.perfil.nome || perms.perfil.email)) ||
+               (session && session.user && session.user.email) || '';
+    if (!nome) {
+      elUsuario.innerHTML = '<a class="btn-t" href="central/login.html">Entrar</a>';
+      return;
+    }
+    elUsuario.innerHTML = '<span class="quem">' + esc(nome) + '</span>' +
+      '<button class="btn-t" type="button" id="sair">Sair</button>';
+    document.getElementById('sair').addEventListener('click', function () {
+      var ir = function () { location.replace('central/login.html'); };
+      try { window.ACESSO_SB.auth.signOut().then(ir, ir); } catch (e) { ir(); }
+    });
+  }
+
+  /* ---- carga ----
+     Diferença proposital em relação ao index.html: sem sessão, esta página
+     NÃO redireciona para o login. Ela cai em modo demonstração, para que a
+     prévia possa ser aberta e compartilhada só para avaliar o visual. */
+  (function iniciar() {
+    var CFG = window.ACESSO_CFG || {};
+
+    if (!CFG.url || !window.supabase) {
+      montarUsuario(null, null);
+      render(sistemas, faixaDemo('O acesso central não respondeu nesta página.'));
+      return;
+    }
+
+    var SB = window.ACESSO_SB || window.supabase.createClient(CFG.url, CFG.anonKey);
+    window.ACESSO_SB = SB;
+
+    SB.auth.getSession().then(function (r) {
+      var session = r && r.data ? r.data.session : null;
+
+      if (!session) {
+        montarUsuario(null, null);
+        render(sistemas, faixaDemo('Você não está autenticado.'));
+        return;
+      }
+
+      return SB.rpc('minhas_permissoes').then(function (rp) {
+        if (rp.error) {
+          montarUsuario(null, session);
+          render(sistemas, faixaDemo('Não foi possível verificar suas permissões.'));
+          return;
+        }
+        var perms = rp.data;
+        montarUsuario(perms, session);
+
+        if (!perms || !perms.autorizado) {
+          elConteudo.innerHTML = '';
+          elConteudo.appendChild(mensagem(
+            'Conta ainda não autorizada',
+            'A conta <strong>' + esc(session.user && session.user.email) + '</strong> ainda não foi ' +
+            'autorizada pela secretaria. Isso é o comportamento real do portal — a prévia apenas o reproduz.',
+            '<a class="btn-p" href="central/login.html">Trocar de conta</a>'
+          ));
+          return;
+        }
+
+        var visiveis;
+        if (perms.perfil && perms.perfil.is_super_admin) {
+          visiveis = sistemas.slice();
+        } else {
+          var liberados = {};
+          (perms.sistemas || []).forEach(function (s) { liberados[s.slug] = true; });
+          visiveis = sistemas.filter(function (s) { return liberados[s.slug]; });
+        }
+        render(visiveis, null);
+      });
+    }).catch(function () {
+      montarUsuario(null, null);
+      render(sistemas, faixaDemo('Houve uma falha ao consultar o acesso central.'));
+    });
+  })();
+})();
+</script>
+
 </body>
 </html>
