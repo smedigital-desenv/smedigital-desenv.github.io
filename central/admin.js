@@ -861,7 +861,20 @@
       tb.appendChild(tr); syncRow(tr);
     });
     tbl.appendChild(tb);
-    var head = el('div', { class: 'mb-2' }, '<b style="color:' + c + '">Telas do papel: ' + esc(pa.nome) + '</b> <span class="muted">(' + esc(pa.slug) + ')</span>');
+    // Quantas pessoas serao afetadas. Marcar uma caixa aqui mexe em todo mundo
+    // que tem este papel — quem edita precisa ver o tamanho disso antes.
+    var quantos = 0;
+    var rq = await SB.from('perfil_papeis').select('perfil_id', { count: 'exact', head: true }).eq('papel_id', pa.id);
+    if (!rq.error && typeof rq.count === 'number') quantos = rq.count;
+
+    var head = el('div', { class: 'mb-2' },
+      '<b style="color:' + c + '">Telas do papel: ' + esc(pa.nome) + '</b> '
+      + '<span class="muted">(' + esc(pa.slug) + ')</span><br>'
+      + '<span class="muted" style="font-size:.85rem">'
+      + '<i class="bi bi-people-fill"></i> Vale <b>imediatamente</b> para '
+      + (quantos === 1 ? '<b>1 pessoa</b>' : '<b>' + quantos + ' pessoas</b>')
+      + ' com este papel. Para abrir exceção a alguém, use o <i class="bi bi-key"></i> em <b>Usuários</b>.'
+      + '</span>');
     var save = el('button', { class: 'btn btn-roxo mt-2' }, '<i class="bi bi-check-lg"></i> Salvar telas do papel');
     save.addEventListener('click', function () { salvarPapelTelas(pa, tb); });
     box.innerHTML = ''; box.appendChild(head); box.appendChild(tbl);
@@ -893,7 +906,7 @@
         var d = await SB.from('papel_permissoes').delete().eq('papel_id', pa.id).in('tela_id', deletes);
         if (d.error) throw d.error;
       }
-      toast('Telas do papel salvas. (vale para as próximas liberações “como papel”)');
+      toast('Telas do papel salvas — já valendo para todos que têm este papel.');
     } catch (e) { erro(e); }
   }
 
