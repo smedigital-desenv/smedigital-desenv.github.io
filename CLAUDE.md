@@ -30,14 +30,26 @@ Uma quebra aqui derruba tudo de uma vez. Teste no `/teste` antes.
 
 ## Modelo de permissão
 
-O acesso de uma pessoa a um sistema é concedido por **qualquer** um destes
-caminhos, avaliados pela função `permissoes_json(email)`:
+Quem decide o que uma pessoa vê em cada tela é a função `permissoes_json(email)`.
+Ela avalia uma **cadeia de precedência** — o primeiro caso que se aplica decide,
+e os de baixo nem são consultados:
 
-- ser super admin;
-- ser perfil de consulta (`is_viewer`);
-- ter vínculo de escola, quando o sistema tem `acesso_escola_total`;
-- ter papel no sistema (`perfil_papeis`);
-- ter tela liberada individualmente (`perfil_tela`).
+| Ordem | Origem | Decide |
+|---|---|---|
+| 1º | super admin | vê tudo, sempre |
+| 2º | `perfil_tela` — exceção individual | **concede ou NEGA** |
+| 3º | `papel_permissoes` — papel da pessoa | concede ou nega |
+| 4º | `is_viewer` / vínculo de escola com `acesso_escola_total` | concede |
+| — | nada disso | não vê |
+
+⚠️ **A ordem importa e não é a intuitiva.** A exceção individual **vence o
+papel**. Uma linha em `perfil_tela` com `pode_ver = false` tira a tela de alguém
+mesmo que o papel dela conceda — é assim que se faz o recorte de uma pessoa só,
+sem inventar papel novo para cada exceção.
+
+O modelo anterior somava tudo com **OR** (`bool_or`): bastava um caminho
+conceder para a pessoa ver, e `perfil_tela` só conseguia adicionar, nunca tirar.
+Se você encontrar `bool_or` de volta nessa função, alguém desfez isto.
 
 O painel de administração é a interface disso. Mudanças de permissão acontecem
 **aqui**, não nos sistemas.
