@@ -37,6 +37,7 @@
         <button class="mg-nav-btn nav-item" data-sec="catalogo"><i class="bi bi-grid-3x3-gap-fill"></i> Catálogo</button>
         <button class="mg-nav-btn nav-item" data-sec="landing"><i class="bi bi-window-desktop"></i> Telas de acesso</button>
         <button class="mg-nav-btn nav-item" data-sec="simular"><i class="bi bi-incognito"></i> Ver como</button>
+        <button class="mg-nav-btn nav-item" data-sec="historico"><i class="bi bi-clock-history"></i> Histórico</button>
       </nav>
       <div class="mg-user">
         <i class="bi bi-person-circle"></i>
@@ -181,6 +182,38 @@
             <div class="col-md-3 d-flex align-items-end"><button id="sm-ver" class="btn btn-azul w-100"><i class="bi bi-search"></i> Consultar</button></div>
           </div>
           <div id="sm-result" class="mt-3"></div>
+        </div>
+      </section>
+
+      <!-- ================= HISTÓRICO (trilha de auditoria) ================= -->
+      <section id="sec-historico" class="hidden">
+        <div class="page-head">
+          <div>
+            <h1>Histórico de alterações</h1>
+            <div class="desc">Quem mudou o quê no controle de acesso. Registro automático, gravado pelo banco — não é editável por ninguém, nem por este painel.</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="d-flex gap-2 flex-wrap">
+            <input id="hi-busca" class="form-control" style="flex:1;min-width:220px" placeholder="Filtrar por quem alterou ou sobre quem…" />
+            <select id="hi-tabela" class="form-select" style="max-width:250px" title="Filtrar por tipo de alteração">
+              <option value="">Todos os tipos</option>
+              <option value="perfil_tela">Exceção individual</option>
+              <option value="papel_permissoes">Permissão de papel</option>
+              <option value="perfil_papeis">Papel do usuário</option>
+              <option value="perfil_escola">Vínculo de escola</option>
+              <option value="perfis">Cadastro do usuário</option>
+            </select>
+            <select id="hi-limite" class="form-select" style="max-width:150px" title="Quantas linhas">
+              <option value="100">100 últimas</option>
+              <option value="500">500 últimas</option>
+              <option value="2000">2000 últimas</option>
+            </select>
+            <button id="hi-reload" class="btn btn-light" title="Recarregar"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+        </div>
+        <div class="panel">
+          <div id="hi-tabela-area"><div class="loading">Carregando…</div></div>
         </div>
       </section>
     </main>

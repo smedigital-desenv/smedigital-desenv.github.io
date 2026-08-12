@@ -22,6 +22,7 @@ para a raiz do domínio).
 | `central/acesso-sme.js` | módulo que os sistemas carregam; expõe `window.AcessoSME` |
 | `central/login.html` | tela de login única da rede |
 | `central/admin.html` / `admin.js` | painel de administração de acessos |
+| `permissoes_log` (tabela) | trilha de auditoria — quem alterou o quê no acesso |
 
 ⚠️ **Alterar `acesso-sme.js` afeta TODOS os sistemas da rede ao mesmo tempo.**
 Não há versionamento por sistema: todos carregam o mesmo arquivo do mesmo lugar.
@@ -40,6 +41,24 @@ caminhos, avaliados pela função `permissoes_json(email)`:
 
 O painel de administração é a interface disso. Mudanças de permissão acontecem
 **aqui**, não nos sistemas.
+
+## Registro de alterações (auditoria)
+
+A tabela `permissoes_log` guarda quem alterou o quê no controle de acesso —
+`perfil_tela`, `papel_permissoes`, `perfil_papeis`, `perfil_escola` e as
+mudanças sensíveis em `perfis` (super admin, ativo, tipo, visualizador). Cada
+linha traz o estado de antes e o de depois, em `jsonb`.
+
+- **Quem escreve é um trigger** (`registrar_mudanca_acesso`, `SECURITY DEFINER`).
+  `insert`/`update`/`delete` estão revogados para `authenticated`, `anon` e
+  `public`: nem o painel consegue mexer no registro.
+- **Quem lê é só super admin**, pela policy que chama `sou_super_admin()`.
+- A aba **Histórico** do painel (`admin.html` / `admin.js`) é a leitura disso.
+  Se a tabela ainda não existir no banco, a aba explica o que falta em vez de
+  estourar erro.
+
+Alteração em `perfis` que não toca acesso (troca de nome, por exemplo) **não é
+registrada** de propósito — log cheio de ruído é log que ninguém lê.
 
 ## Integrando um sistema novo
 

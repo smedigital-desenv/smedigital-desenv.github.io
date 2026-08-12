@@ -70,6 +70,7 @@
     initCatalogo();
     initLanding();
     initSimular();
+    initHistorico();
   });
 
   // ---- navegação entre seções ---------------------------------------------
@@ -79,7 +80,8 @@
         document.querySelectorAll('.nav-item').forEach(function (i) { i.classList.remove('active'); });
         item.classList.add('active');
         var sec = item.getAttribute('data-sec');
-        ['acessos', 'usuarios', 'escolas', 'catalogo', 'landing', 'simular'].forEach(function (s) {
+        if (sec === 'historico') carregarHistorico();
+        ['acessos', 'usuarios', 'escolas', 'catalogo', 'landing', 'simular', 'historico'].forEach(function (s) {
           $('sec-' + s).classList.toggle('hidden', s !== sec);
         });
       });
@@ -1183,5 +1185,137 @@
       esc(email) + '\')"><i class="bi bi-incognito"></i> Abrir portal simulando este usuário</a>';
     h += btn + '</div>';
     out.innerHTML = h;
+  }
+
+  /* ==========================================================================
+     SEÇÃO 7 — HISTÓRICO (permissoes_log)
+
+     A tabela é escrita por trigger no banco e é somente leitura para todo
+     mundo, inclusive para este painel. Se ela ainda não existir, a seção
+     explica o que falta em vez de estourar um erro sem sentido.
+     ========================================================================== */
+  var TABELA_LABEL = {
+    perfil_tela:      'Exceção individual',
+    papel_permissoes: 'Permissão de papel',
+    perfil_papeis:    'Papel do usuário',
+    perfil_escola:    'Vínculo de escola',
+    perfis:           'Cadastro do usuário'
+  };
+  var ACAO_LABEL = { INSERT: 'criou', UPDATE: 'alterou', DELETE: 'removeu' };
+  var ACAO_COR   = { INSERT: '#047857', UPDATE: '#0369a1', DELETE: '#b91c1c' };
+
+  var cacheHistorico = [];
+  var mapaTelas = null, mapaPapeis = null, mapaEscolas = null;
+
+  function initHistorico() {
+    $('hi-reload').addEventListener('click', carregarHistorico);
+    $('hi-limite').addEventListener('change', carregarHistorico);
+    $('hi-tabela').addEventListener('change', renderHistorico);
+    $('hi-busca').addEventListener('input', renderHistorico);
+  }
+
+  // Nomes legíveis para os ids que aparecem dentro do jsonb do registro.
+  async function carregarDicionarios() {
+    if (mapaTelas) return;
+    mapaTelas = {}; mapaPapeis = {}; mapaEscolas = {};
+    var r = await Promise.all([
+      SB.from('telas').select('id,nome,slug'),
+      SB.from('papeis').select('id,nome,slug'),
+      SB.from('escolas').select('id,nome')
+    ]);
+    (r[0].data || []).forEach(function (t) { mapaTelas[t.id] = t.nome || t.slug; });
+    (r[1].data || []).forEach(function (p) { mapaPapeis[p.id] = p.nome || p.slug; });
+    (r[2].data || []).forEach(function (e) { mapaEscolas[e.id] = e.nome; });
+  }
+
+  async function carregarHistorico() {
+    var area = $('hi-tabela-area');
+    area.innerHTML = '<div class="loading">Carregando…</div>';
+    await carregarDicionarios();
+    var lim = parseInt($('hi-limite').value, 10) || 100;
+    var r = await SB.from('permissoes_log')
+      .select('id,quando,quem_email,acao,tabela,alvo,antes,depois')
+      .order('quando', { ascending: false })
+      .limit(lim);
+    if (r.error) {
+      // 42P01 = tabela inexistente; PGRST205 = PostgREST não achou no schema.
+      var faltando = /permissoes_log/.test(r.error.message || '') ||
+                     r.error.code === '42P01' || r.error.code === 'PGRST205';
+      area.innerHTML = faltando
+        ? '<div class="empty"><i class="bi bi-clock-history"></i> O registro de alterações ainda não foi criado no banco.' +
+          '<br><span class="muted">Falta rodar o script de auditoria no Supabase do central. Até lá, nada é gravado — e o que aconteceu antes disso não tem como ser recuperado.</span></div>'
+        : '<div class="empty">Não foi possível ler o histórico.</div>';
+      if (!faltando) erro(r.error);
+      cacheHistorico = [];
+      return;
+    }
+    cacheHistorico = r.data || [];
+    renderHistorico();
+  }
+
+  // Traduz uma linha do jsonb em texto curto: só os campos que importam.
+  function descreverLinha(tabela, obj) {
+    if (!obj) return '';
+    var p = [];
+    function add(txt) { if (txt) p.push(txt); }
+    if (obj.tela_id != null)   add('tela: ' + (mapaTelas[obj.tela_id] || '#' + obj.tela_id));
+    if (obj.papel_id != null)  add('papel: ' + (mapaPapeis[obj.papel_id] || '#' + obj.papel_id));
+    if (obj.escola_id != null) add('escola: ' + (mapaEscolas[obj.escola_id] || '#' + obj.escola_id));
+    if (obj.vinculo)           add('vínculo: ' + obj.vinculo);
+    ['pode_ver', 'pode_editar', 'pode_exportar'].forEach(function (k) {
+      if (obj[k] != null) add(k.replace('pode_', '') + '=' + (obj[k] ? 'sim' : 'não'));
+    });
+    if (tabela === 'perfis') {
+      ['tipo', 'ativo', 'is_super_admin', 'is_viewer'].forEach(function (k) {
+        if (obj[k] != null) add(k + '=' + (typeof obj[k] === 'boolean' ? (obj[k] ? 'sim' : 'não') : obj[k]));
+      });
+    }
+    return p.join(' · ');
+  }
+
+  // No UPDATE só interessa o que mudou — o resto é ruído.
+  function descreverMudanca(r) {
+    if (r.acao === 'INSERT') return descreverLinha(r.tabela, r.depois);
+    if (r.acao === 'DELETE') return descreverLinha(r.tabela, r.antes);
+    var a = r.antes || {}, d = r.depois || {}, out = [];
+    Object.keys(d).forEach(function (k) {
+      if (k === 'id' || k === 'criado_em' || k === 'atualizado_em') return;
+      if (JSON.stringify(a[k]) === JSON.stringify(d[k])) return;
+      function v(x) { return x == null ? '—' : (typeof x === 'boolean' ? (x ? 'sim' : 'não') : String(x)); }
+      out.push(k + ': ' + v(a[k]) + ' → ' + v(d[k]));
+    });
+    return out.join(' · ') || '(sem diferença registrada)';
+  }
+
+  function renderHistorico() {
+    var area = $('hi-tabela-area');
+    var q = ($('hi-busca').value || '').trim().toLowerCase();
+    var tb = $('hi-tabela').value;
+    var lista = cacheHistorico.filter(function (r) {
+      if (tb && r.tabela !== tb) return false;
+      if (!q) return true;
+      return (String(r.quem_email || '') + ' ' + String(r.alvo || '')).toLowerCase().indexOf(q) >= 0;
+    });
+    if (!lista.length) {
+      area.innerHTML = '<div class="empty">Nenhuma alteração registrada' + (q || tb ? ' com esse filtro' : ' ainda') + '.</div>';
+      return;
+    }
+    var h = '<div class="table-responsive"><table class="table table-sm align-middle">' +
+      '<thead><tr><th style="white-space:nowrap">Quando</th><th>Quem</th><th>O quê</th><th>Sobre</th><th>Detalhe</th></tr></thead><tbody>';
+    lista.forEach(function (r) {
+      var dt = new Date(r.quando);
+      h += '<tr>' +
+        '<td class="muted" style="white-space:nowrap;font-size:.82rem">' + esc(dt.toLocaleString('pt-BR')) + '</td>' +
+        '<td style="font-size:.85rem">' + esc(r.quem_email || '—') + '</td>' +
+        '<td style="font-size:.85rem"><b style="color:' + (ACAO_COR[r.acao] || '#475569') + '">' +
+          esc(ACAO_LABEL[r.acao] || r.acao) + '</b> ' + esc(TABELA_LABEL[r.tabela] || r.tabela) + '</td>' +
+        '<td style="font-size:.85rem">' + esc(r.alvo || '—') + '</td>' +
+        '<td class="code">' + esc(descreverMudanca(r)) + '</td>' +
+        '</tr>';
+    });
+    h += '</tbody></table></div>' +
+      '<div class="muted mt-2" style="font-size:.8rem">' + lista.length + ' de ' + cacheHistorico.length +
+      ' registros carregados. O registro é gravado pelo próprio banco e não pode ser apagado por este painel.</div>';
+    area.innerHTML = h;
   }
 })();
