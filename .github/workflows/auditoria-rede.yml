@@ -1,0 +1,66 @@
+name: Auditoria da rede (dado e credencial publicados)
+
+# Varre TODOS os repositórios da organização e abre uma issue onde encontrar
+# dado pessoal, credencial ou falta das regras da rede. A issue é atualizada,
+# não duplicada, e fecha sozinha quando a pendência some.
+#
+# ┌─ PRÉ-REQUISITO ────────────────────────────────────────────────────────┐
+# │ O GITHUB_TOKEN de um workflow só alcança o PRÓPRIO repositório. Para   │
+# │ ler os outros e abrir issue neles é preciso um token da organização,   │
+# │ guardado como secret `AUDITORIA_TOKEN`:                                │
+# │                                                                        │
+# │   Fine-grained PAT → Resource owner: smedigital-desenv                 │
+# │                    → All repositories                                  │
+# │                    → Repository permissions:                           │
+# │                         Contents  ....... Read-only                    │
+# │                         Issues ......... Read and write                │
+# │                         Metadata ....... Read-only (vem junto)         │
+# │                                                                        │
+# │   Settings → Secrets and variables → Actions → New repository secret   │
+# │   Nome: AUDITORIA_TOKEN                                                │
+# │                                                                        │
+# │ Não dê `Administration` nem `Workflows` a esse token. Ele só precisa   │
+# │ ler e reclamar.                                                        │
+# └────────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    # Segunda-feira, 06:00 em São Paulo (09:00 UTC). Cron do GitHub é sempre UTC.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Só relatar, sem abrir nem fechar issue"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auditoria-rede
+  cancel-in-progress: false
+
+jobs:
+  varrer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Baixar o script
+        uses: actions/checkout@v4
+
+      - name: Conferir se o token existe
+        env:
+          TOKEN: ${{ secrets.AUDITORIA_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Falta o secret AUDITORIA_TOKEN. Veja as instruções no topo deste workflow."
+            exit 1
+          fi
+
+      - name: Varrer a organização
+        env:
+          AUDITORIA_TOKEN: ${{ secrets.AUDITORIA_TOKEN }}
+          ORG: smedigital-desenv
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: python3 .github/scripts/auditoria_rede.py

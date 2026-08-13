@@ -1,0 +1,348 @@
+#!/usr/bin/env python3
+"""
+Auditoria da rede SME — varre os repositórios da organização procurando o que
+não deveria estar publicado, e abre uma issue no repositório onde encontrar.
+
+O que procura, em ordem de gravidade:
+
+  1. Arquivo de dado rastreado (.sql, .csv, .xlsx, .dump…) — e, dentro dele,
+     padrão de e-mail ou CPF. Foi assim que ~3,5 mil e-mails de participantes
+     ficaram públicos por meses sem ninguém notar.
+  2. Credencial: chave `service_role` do Supabase, chave privada, token.
+     A chave `anon` NÃO conta — ela é pública por natureza e vai para o
+     navegador de qualquer visitante. O script decodifica o JWT e olha o papel
+     antes de acusar, senão acusaria toda a rede todo dia e ninguém leria mais.
+  3. Ausência de CLAUDE.md, ou .gitignore sem as regras de dado.
+
+⚠️ NUNCA imprime o conteúdo encontrado — só caminho e contagem. Uma auditoria
+que cola a amostra numa issue pública republica o vazamento que veio denunciar.
+
+⚠️ Olha o QUE ESTÁ RASTREADO NO HEAD, não o histórico. Arquivo apagado num
+commit anterior continua público e este script não o vê. Para isso a
+verificação é outra (`git log --diff-filter=A`), cara demais para rodar semanal
+sobre a organização inteira.
+"""
+
+import base64
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.error
+import urllib.request
+
+API = "https://api.github.com"
+ORG = os.environ.get("ORG", "smedigital-desenv")
+TOKEN = os.environ.get("AUDITORIA_TOKEN") or os.environ.get("GITHUB_TOKEN")
+DRY_RUN = os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
+
+TITULO_ISSUE = "🔒 Auditoria da rede — pendências neste repositório"
+LABEL = "auditoria-rede"
+
+# Extensões que carregam dado real quase sempre sem quem commitou perceber.
+EXT_DADO = re.compile(r"\.(sql|csv|tsv|dump|xls|xlsx|mdb|accdb)$", re.I)
+EXT_CHAVE = re.compile(r"\.(pem|key|p12|pfx)$", re.I)
+
+RE_EMAIL = re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+RE_CPF = re.compile(rb"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b")
+RE_JWT = re.compile(rb"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}")
+RE_PRIV = re.compile(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+
+# Arquivos grandes demais para inspecionar linha a linha; a extensão já basta.
+LIMITE_LEITURA = 8 * 1024 * 1024
+
+
+# ─────────────────────────────── GitHub API ────────────────────────────────
+def api(caminho, metodo="GET", corpo=None):
+    url = caminho if caminho.startswith("http") else API + caminho
+    dados = json.dumps(corpo).encode() if corpo is not None else None
+    req = urllib.request.Request(url, data=dados, method=metodo)
+    req.add_header("Authorization", f"Bearer {TOKEN}")
+    req.add_header("Accept", "application/vnd.github+json")
+    req.add_header("X-GitHub-Api-Version", "2022-11-28")
+    if dados:
+        req.add_header("Content-Type", "application/json")
+    with urllib.request.urlopen(req) as r:
+        texto = r.read().decode()
+        link = r.headers.get("Link", "")
+    return (json.loads(texto) if texto else None), link
+
+
+def paginar(caminho):
+    itens, prox = [], caminho
+    while prox:
+        pagina, link = api(prox)
+        itens.extend(pagina or [])
+        prox = None
+        for parte in link.split(","):
+            if 'rel="next"' in parte:
+                prox = parte.split(";")[0].strip().strip("<>")
+    return itens
+
+
+# ────────────────────────────────── Exame ──────────────────────────────────
+def papel_do_jwt(token_bytes):
+    """Devolve o papel declarado no JWT, ou None se não der para ler.
+
+    A chave `anon` e a `service_role` são ambas JWT e visualmente idênticas.
+    A diferença mora no payload, e é a diferença entre 'pode versionar' e
+    'incidente'."""
+    try:
+        payload = token_bytes.split(b".")[1]
+        payload += b"=" * (-len(payload) % 4)
+        return json.loads(base64.urlsafe_b64decode(payload)).get("role")
+    except Exception:
+        return None
+
+
+def examinar_arquivo(raiz, caminho):
+    """Devolve lista de achados para um arquivo. Só metadado, nunca conteúdo."""
+    achados = []
+    completo = os.path.join(raiz, caminho)
+    try:
+        tamanho = os.path.getsize(completo)
+    except OSError:
+        return achados
+
+    e_dado = bool(EXT_DADO.search(caminho))
+    if EXT_CHAVE.search(caminho):
+        achados.append(("credencial", caminho, "arquivo de chave rastreado"))
+
+    if tamanho > LIMITE_LEITURA:
+        if e_dado:
+            achados.append(("dado", caminho, f"{tamanho // 1024} kB, não inspecionado"))
+        return achados
+
+    try:
+        with open(completo, "rb") as f:
+            conteudo = f.read()
+    except OSError:
+        return achados
+
+    if RE_PRIV.search(conteudo):
+        achados.append(("credencial", caminho, "chave privada embutida"))
+
+    for token in set(RE_JWT.findall(conteudo)):
+        papel = papel_do_jwt(token)
+        if papel and papel != "anon":
+            achados.append(("credencial", caminho, f"JWT com papel `{papel}`"))
+
+    if e_dado:
+        emails = len(set(RE_EMAIL.findall(conteudo)))
+        cpfs = len(set(RE_CPF.findall(conteudo)))
+        if emails or cpfs:
+            partes = []
+            if emails:
+                partes.append(f"{emails} e-mail distinto" if emails == 1
+                              else f"{emails} e-mails distintos")
+            if cpfs:
+                partes.append("1 CPF" if cpfs == 1 else f"{cpfs} CPFs")
+            achados.append(("pessoal", caminho, ", ".join(partes)))
+        else:
+            achados.append(("dado", caminho, "sem padrão pessoal detectado"))
+
+    return achados
+
+
+def examinar_repo(nome_completo, destino):
+    url = f"https://x-access-token:{TOKEN}@github.com/{nome_completo}"
+    r = subprocess.run(
+        ["git", "clone", "--depth", "1", "--quiet", url, destino],
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        return None, f"não foi possível clonar ({r.stderr.strip()[:120]})"
+
+    rastreados = subprocess.run(
+        ["git", "-C", destino, "ls-files"], capture_output=True, text=True
+    ).stdout.splitlines()
+    if not rastreados:
+        return {"pessoal": [], "dado": [], "credencial": [], "estrutura": []}, None
+
+    achados = {"pessoal": [], "dado": [], "credencial": [], "estrutura": []}
+    for caminho in rastreados:
+        if EXT_DADO.search(caminho) or EXT_CHAVE.search(caminho) or caminho.endswith(
+            (".js", ".ts", ".html", ".json", ".yml", ".yaml", ".env", ".md")
+        ):
+            for tipo, arq, detalhe in examinar_arquivo(destino, caminho):
+                achados[tipo].append((arq, detalhe))
+
+    if "CLAUDE.md" not in rastreados:
+        achados["estrutura"].append(
+            ("CLAUDE.md", "ausente — as sessões do Claude Code entram sem as regras da rede")
+        )
+    gitignore = os.path.join(destino, ".gitignore")
+    if not os.path.exists(gitignore):
+        achados["estrutura"].append((".gitignore", "ausente"))
+    else:
+        with open(gitignore, encoding="utf-8", errors="replace") as f:
+            texto = f.read()
+        faltando = [e for e in ("*.sql", "*.csv", "*.xlsx") if e not in texto]
+        if faltando:
+            achados["estrutura"].append(
+                (".gitignore", "sem as regras: " + ", ".join(f"`{e}`" for e in faltando))
+            )
+
+    return achados, None
+
+
+# ─────────────────────────────── Relatório ─────────────────────────────────
+def montar_corpo(achados):
+    linhas = [
+        "> Aberta automaticamente pela auditoria semanal da rede "
+        "(`.github/workflows/auditoria-rede.yml`, no repositório do portal).",
+        "> A issue é **atualizada**, não duplicada, e fecha sozinha quando não sobra pendência.",
+        "",
+        "⚠️ **Este repositório é público.** Nada abaixo cita conteúdo — só caminho e contagem.",
+        "",
+    ]
+
+    if achados["pessoal"]:
+        linhas += [
+            "## 🔴 Dado pessoal publicado",
+            "",
+            "Estes arquivos estão rastreados e contêm padrão de dado pessoal. "
+            "Estão públicos **agora**.",
+            "",
+            "| Arquivo | O que foi detectado |",
+            "|---|---|",
+        ]
+        linhas += [f"| `{a}` | {d} |" for a, d in achados["pessoal"]]
+        linhas += [
+            "",
+            "⚠️ **`git rm --cached` não resolve.** Tira do próximo commit e deixa tudo "
+            "nos commits anteriores. Resolver exige reescrita de histórico "
+            "(`git filter-repo`), força-push em todas as branches e chamado no suporte "
+            "do GitHub para purgar as referências que sobrevivem em `refs/pull/*`.",
+            "",
+        ]
+
+    if achados["credencial"]:
+        linhas += [
+            "## 🔴 Possível credencial",
+            "",
+            "A chave `anon` do Supabase é pública por natureza e **não** aparece aqui — "
+            "o papel do JWT é lido antes de acusar. O que está listado é outra coisa.",
+            "",
+            "| Arquivo | O quê |",
+            "|---|---|",
+        ]
+        linhas += [f"| `{a}` | {d} |" for a, d in achados["credencial"]]
+        linhas += ["", "**Rode a rotação da credencial antes de mexer no histórico.** "
+                       "Enquanto ela for válida, apagar do Git não adianta nada.", ""]
+
+    if achados["dado"]:
+        linhas += [
+            "## 🟠 Arquivo de dado rastreado",
+            "",
+            "Nenhum padrão pessoal detectado, mas o formato é o que costuma carregar "
+            "dado real junto. Confira antes de considerar falso positivo.",
+            "",
+            "| Arquivo | |",
+            "|---|---|",
+        ]
+        linhas += [f"| `{a}` | {d} |" for a, d in achados["dado"]]
+        linhas += [""]
+
+    if achados["estrutura"]:
+        linhas += [
+            "## 🟡 Estrutura",
+            "",
+            "| Item | |",
+            "|---|---|",
+        ]
+        linhas += [f"| `{a}` | {d} |" for a, d in achados["estrutura"]]
+        linhas += [
+            "",
+            "Para corrigir, copie do "
+            "[`template-sistema-sme`](https://github.com/smedigital-desenv/template-sistema-sme).",
+            "",
+        ]
+
+    return "\n".join(linhas)
+
+
+def sincronizar_issue(repo, corpo, tem_pendencia):
+    abertas = paginar(f"/repos/{repo}/issues?state=open&labels={LABEL}&per_page=50")
+    existente = next((i for i in abertas if i.get("title") == TITULO_ISSUE), None)
+
+    if not tem_pendencia:
+        if existente:
+            if DRY_RUN:
+                print(f"    [dry-run] fecharia a issue #{existente['number']}")
+            else:
+                api(f"/repos/{repo}/issues/{existente['number']}", "PATCH",
+                    {"state": "closed", "state_reason": "completed"})
+                api(f"/repos/{repo}/issues/{existente['number']}/comments", "POST",
+                    {"body": "Nenhuma pendência na varredura desta semana. Fechando."})
+                print(f"    issue #{existente['number']} fechada — repositório limpo")
+        return
+
+    if DRY_RUN:
+        print(f"    [dry-run] abriria/atualizaria issue em {repo}")
+        return
+
+    if existente:
+        api(f"/repos/{repo}/issues/{existente['number']}", "PATCH", {"body": corpo})
+        print(f"    issue #{existente['number']} atualizada")
+    else:
+        try:
+            api(f"/repos/{repo}/labels", "POST",
+                {"name": LABEL, "color": "B60205",
+                 "description": "Aberta pela auditoria semanal da rede"})
+        except urllib.error.HTTPError:
+            pass  # já existe
+        nova, _ = api(f"/repos/{repo}/issues", "POST",
+                      {"title": TITULO_ISSUE, "body": corpo, "labels": [LABEL]})
+        print(f"    issue #{nova['number']} aberta")
+
+
+# ──────────────────────────────────  main  ─────────────────────────────────
+def main():
+    if not TOKEN:
+        sys.exit("Falta AUDITORIA_TOKEN. Veja o cabeçalho do workflow.")
+
+    repos = paginar(f"/orgs/{ORG}/repos?per_page=100&type=all")
+    repos = [r for r in repos if not r.get("archived")]
+    print(f"{len(repos)} repositórios a examinar em {ORG}\n")
+
+    resumo, falhas = [], []
+    for r in sorted(repos, key=lambda x: x["full_name"]):
+        nome = r["full_name"]
+        print(f"→ {nome}")
+        destino = tempfile.mkdtemp(prefix="aud-")
+        try:
+            achados, erro = examinar_repo(nome, destino)
+            if erro:
+                print(f"    {erro}")
+                falhas.append((nome, erro))
+                continue
+            total = sum(len(v) for v in achados.values())
+            grave = len(achados["pessoal"]) + len(achados["credencial"])
+            print(f"    {total} pendência(s), {grave} grave(s)")
+            sincronizar_issue(nome, montar_corpo(achados), total > 0)
+            if total:
+                resumo.append((nome, total, grave))
+        finally:
+            shutil.rmtree(destino, ignore_errors=True)
+
+    print("\n" + "=" * 60)
+    if not resumo and not falhas:
+        print("Nenhuma pendência na rede.")
+    for nome, total, grave in sorted(resumo, key=lambda x: -x[2]):
+        marca = "🔴" if grave else "🟡"
+        print(f"{marca} {nome}: {total} pendência(s), {grave} grave(s)")
+    for nome, erro in falhas:
+        print(f"⚠️  {nome}: {erro}")
+
+    # Falha o job quando há achado grave, para o e-mail do GitHub chegar mesmo
+    # a quem não acompanha issue.
+    if any(g for _, _, g in resumo):
+        sys.exit("Há dado pessoal ou credencial publicada. Veja as issues abertas.")
+
+
+if __name__ == "__main__":
+    main()
