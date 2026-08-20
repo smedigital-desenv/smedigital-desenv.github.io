@@ -605,9 +605,23 @@
     toast('Usuário atualizado.');
   }
 
+  var RE_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
   async function salvarUsuario() {
     var email = ($('nu-email').value || '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Informe um e-mail válido.', true); return; }
+
+    // O preenchimento automático do navegador troca os dois campos quando
+    // acha que sabe melhor. Em vez de só recusar, aponta o que houve e
+    // desfaz a troca — sem salvar, para a pessoa conferir antes.
+    if (!RE_EMAIL.test(email) && RE_EMAIL.test(($('nu-nome').value || '').trim())) {
+      var trocado = $('nu-nome').value.trim();
+      $('nu-nome').value = $('nu-email').value.trim();
+      $('nu-email').value = trocado;
+      $('nu-email').focus();
+      toast('Os campos estavam trocados — desfiz. Confira e salve.', true);
+      return;
+    }
+    if (!RE_EMAIL.test(email)) { toast('Informe um e-mail válido.', true); return; }
     var dados = {
       email: email,
       nome: ($('nu-nome').value || '').trim() || null,

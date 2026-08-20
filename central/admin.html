@@ -178,7 +178,10 @@
         </div>
         <div class="panel">
           <div class="row g-2">
-            <div class="col-md-9"><label class="lbl">E-mail do usuário</label><input id="sm-email" class="form-control" placeholder="usuario@educacao.pmrp.sp.gov.br" /></div>
+            <div class="col-md-9"><label class="lbl" for="sm-email">E-mail do usuário</label>
+              <input id="sm-email" name="email" type="email" autocomplete="off" inputmode="email"
+                     spellcheck="false" autocapitalize="off" class="form-control"
+                     placeholder="usuario@educacao.pmrp.sp.gov.br" /></div>
             <div class="col-md-3 d-flex align-items-end"><button id="sm-ver" class="btn btn-azul w-100"><i class="bi bi-search"></i> Consultar</button></div>
           </div>
           <div id="sm-result" class="mt-3"></div>
@@ -223,8 +226,16 @@
   <div class="modal fade" id="modalUser" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title" id="modalUserTitle">Novo usuário</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-      <label class="lbl">E-mail *</label><input id="nu-email" class="form-control mb-2" placeholder="usuario@educacao.pmrp.sp.gov.br" />
-      <label class="lbl">Nome</label><input id="nu-nome" class="form-control mb-2" />
+      <!-- type/name/autocomplete não são enfeite: sem eles o navegador adivinha
+           o que cada campo é, e adivinha pela ordem — preenchendo o nome no
+           e-mail e o e-mail no nome. -->
+      <label class="lbl" for="nu-email">E-mail *</label>
+      <input id="nu-email" name="email" type="email" autocomplete="email" inputmode="email"
+             spellcheck="false" autocapitalize="off" class="form-control mb-2"
+             placeholder="usuario@educacao.pmrp.sp.gov.br" />
+      <label class="lbl" for="nu-nome">Nome</label>
+      <input id="nu-nome" name="nome" type="text" autocomplete="name"
+             class="form-control mb-2" placeholder="Nome completo" />
       <label class="lbl">Tipo</label>
       <select id="nu-tipo" class="form-select mb-2"><option value="escola">Escola</option><option value="secretaria">Secretaria</option><option value="externo">Externo (empresa/fornecedor)</option></select>
       <div class="form-check"><input id="nu-super" class="form-check-input" type="checkbox" /><label class="form-check-label" for="nu-super">Super administrador</label></div>
@@ -246,9 +257,13 @@
   <div class="modal fade" id="modalEscola" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title">Nova escola</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-      <label class="lbl">Código INEP</label><input id="ne-inep" class="form-control mb-2" />
-      <label class="lbl">Nome *</label><input id="ne-nome" class="form-control mb-2" />
-      <label class="lbl">E-mail institucional</label><input id="ne-email" class="form-control mb-2" />
+      <label class="lbl" for="ne-inep">Código INEP</label>
+      <input id="ne-inep" name="inep" type="text" inputmode="numeric" autocomplete="off" class="form-control mb-2" />
+      <label class="lbl" for="ne-nome">Nome *</label>
+      <input id="ne-nome" name="escola" type="text" autocomplete="off" class="form-control mb-2" />
+      <label class="lbl" for="ne-email">E-mail institucional</label>
+      <input id="ne-email" name="email" type="email" autocomplete="off" inputmode="email"
+             spellcheck="false" autocapitalize="off" class="form-control mb-2" />
     </div>
     <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button id="ne-salvar" class="btn btn-azul">Salvar</button></div>
   </div></div></div>
