@@ -36,6 +36,7 @@
   var SISTEMA_SLUG = window.ACESSO_SISTEMA || 'central';
   var CACHE_KEY = 'ACESSO_PERMS_v1';
   var SIMULA_KEY = 'ACESSO_SIMULA';   // e-mail que o super admin está simulando
+  var USO_KEY = 'ACESSO_USO_v1';      // sistemas já registrados nesta sessão
   var LOGIN_PAGE = window.ACESSO_LOGIN || 'login.html';
 
   function telaAtual() {
@@ -121,6 +122,39 @@
         console.error('[acesso-sme] não foi possível listar os sistemas:', e);
         return null;                     // segue com o que a RPC devolveu
       });
+  }
+
+  // ── Registro de uso ────────────────────────────────────────────────────────
+  // Marca no central que esta pessoa entrou NESTE sistema. É o que alimenta o
+  // relatório de uso do painel (admin.html › Uso) — sem isto não há como
+  // responder quem usa e quem tem acesso liberado e não usa.
+  //
+  // ⚠️ É "dispare e esqueça", de propósito: nada da tela espera por ele, e
+  // falha nenhuma dele pode barrar quem já passou por todas as checagens de
+  // permissão. Registro de uso não é controle de acesso.
+  //
+  // ⚠️ Uma vez por sessão do navegador, por sistema. O contador conta SESSÃO,
+  // não página aberta — gravar a cada carregamento inflaria o número em quem
+  // navega muito e custaria uma escrita por tela.
+  //
+  // ⚠️ Simulação NÃO conta. O super admin está olhando pelos olhos de outra
+  // pessoa; gravar ali inventaria acesso que ela nunca fez, e o relatório
+  // passaria a dizer que alguém usa o sistema porque foi auditado.
+  function registrarUso(SB, api) {
+    if (api.simulando) return;
+    try {
+      var vistos = JSON.parse(sessionStorage.getItem(USO_KEY) || '{}');
+      if (vistos[SISTEMA_SLUG]) return;
+      vistos[SISTEMA_SLUG] = 1;
+      sessionStorage.setItem(USO_KEY, JSON.stringify(vistos));
+    } catch (e) { /* sem sessionStorage: registra assim mesmo e segue */ }
+    try {
+      SB.rpc('registrar_acesso', { p_sistema: SISTEMA_SLUG }).then(function (r) {
+        // PGRST202 = a função ainda não existe no banco (script não rodado).
+        // Não é avaria da tela: só não há relatório até rodarem o script.
+        if (r && r.error) console.debug('[acesso-sme] uso não registrado:', r.error.message);
+      }, function (e) { console.debug('[acesso-sme] uso não registrado:', e && e.message); });
+    } catch (e) { console.debug('[acesso-sme] uso não registrado:', e && e.message); }
   }
 
   function montar() {
@@ -253,6 +287,11 @@
           + 'Sistemas liberados: ' + (api._todos.map(function (s) { return s.nome; }).join(', ') || 'nenhum') + '.');
         return;
       }
+
+      // A partir daqui o acesso ao sistema está confirmado. O registro vem
+      // ANTES do gate de tela de propósito: quem entrou no sistema e esbarrou
+      // numa tela sem permissão acessou o sistema — foi só na tela errada.
+      registrarUso(SB, api);
 
       // tela específica sem permissão de ver -> bloqueia
       var tela = telaAtual();

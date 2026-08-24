@@ -17,6 +17,7 @@ partir do sistema do MAPA (`smedigital-desenv/mapa-sme`).
 | `acesso-sme.js` | Biblioteca de auth/autorização da rede (`window.AcessoSME`). Versão neutra do `auth.js` do MAPA. |
 | `login.html` | Tela de login (Google). Depois de entrar, redireciona ao **portal** (`/index.html`). |
 | `admin.html` + `admin.js` | **Painel de Administração** — exclusivo para super administradores. |
+| `RELATORIO-ACESSO.md` | Registro de uso (quem acessa e quem não acessa): script SQL e como a aba **Uso** do painel lê isso. |
 
 ## Como o acesso funciona
 
@@ -61,6 +62,9 @@ Exclusivo para super admins. Seções:
 - **Escolas e vínculos** — cadastra unidades e vincula usuários (`perfil_escola`).
 - **Catálogo** — cadastra sistemas e suas telas (registro do passo 3 do plano).
 - **Ver como** — simula o acesso de qualquer usuário via `permissoes_de()`.
+- **Uso** — quem está acessando cada sistema e quem tem acesso liberado e não
+  usa. Depende do script de [`RELATORIO-ACESSO.md`](RELATORIO-ACESSO.md); sem
+  ele a aba explica o que falta em vez de mostrar zero.
 
 ## Plugar um sistema no controle central (próximos passos)
 
