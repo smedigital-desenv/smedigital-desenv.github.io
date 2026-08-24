@@ -94,6 +94,31 @@ papel nenhum — é preciso marcá-la no papel. Isso é deliberado: errar para o
 lado de esconder é visível e reclamável; errar para o lado de mostrar é
 invisível e grave.
 
+A exceção a isso é a coluna `papeis.auto_novas_telas`. Quando ela é `true`, o
+gatilho `trg_tela_nova_para_papeis` marca automaticamente toda tela nova
+daquele sistema naquele papel, com `pode_ver` e **sem** `editar`/`exportar`.
+Nasce `false` em todo papel: ligar é decisão por papel, nunca da rede inteira.
+
+⚠️ **Olhe o alcance antes de ligar.** O papel `escola` do MAPA tem ~284
+pessoas: com a chave ligada, uma tela cadastrada às 10h aparece para todas elas
+às 10h01, ainda em construção. Ligue primeiro num papel administrativo, teste
+com uma tela descartável, e só depois considere os papéis grandes.
+
+Rede de segurança — telas recentes e quantas pessoas cada uma alcançou:
+
+```sql
+select t.id, s.slug, t.slug, count(distinct pp.perfil_id) as pessoas
+  from telas t
+  join sistemas s on s.id = t.sistema_id
+  left join papel_permissoes ppm on ppm.tela_id = t.id and ppm.pode_ver
+  left join perfil_papeis pp on pp.papel_id = ppm.papel_id
+ group by t.id, s.slug, t.slug order by t.id desc limit 20;
+```
+
+**`is_viewer` não é papel.** É uma coluna em `perfis`, avaliada direto pela
+`permissoes_json`. Os papéis chamados "Visualizador" no catálogo têm zero
+pessoas em todos os sistemas — são casca. Marcar um deles não concede nada.
+
 ## Registro de alterações (auditoria)
 
 A tabela `permissoes_log` guarda quem alterou o quê no controle de acesso —
