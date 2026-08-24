@@ -281,16 +281,22 @@
       });
     }
 
-    // Papel deste usuário NESTE sistema (perfil_papeis). É o que define o perfil
-    // (escola/secretaria/empresa/admin) e as telas padrão. Trocar aqui muda o
-    // "tipo de perfil" do usuário no sistema — grava na hora.
-    var papelBox = el('div', { class: 'mb-3', style: 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.7rem .9rem' });
+    // Papel deste usuário NESTE sistema (perfil_papeis). É ele que define as
+    // telas padrão — e é ele que CONTINUA valendo quando uma tela nova entra no
+    // papel depois. Por isso a matriz abaixo não copia o papel para
+    // perfil_tela: copiar congelaria o estado de hoje, e a pessoa deixaria de
+    // receber o que o papel ganhasse amanhã.
+    var papelAtual = '';
     if (papeis.length) {
-      var papelAtual = '';
       var rap = await SB.from('perfil_papeis').select('papel_id').eq('perfil_id', perfilId)
         .in('papel_id', papeis.map(function (p) { return p.id; }));
       if (!rap.error && rap.data && rap.data.length) papelAtual = rap.data[0].papel_id;
+    }
+    var heranca = permsByPapel[papelAtual] || {};
+    var papelObj = papeis.filter(function (p) { return String(p.id) === String(papelAtual); })[0];
 
+    var papelBox = el('div', { class: 'mb-3', style: 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.7rem .9rem' });
+    if (papeis.length) {
       papelBox.appendChild(el('div', { class: 'muted', style: 'font-size:.85rem;margin-bottom:.4rem' },
         '<i class="bi bi-person-badge"></i> Papel deste usuário no sistema (define o perfil e as telas padrão):'));
       var selP = el('select', { class: 'form-select form-select-sm', style: 'max-width:300px' });
@@ -301,47 +307,72 @@
       papelBox.appendChild(selP);
     }
 
-    // Barra de atalhos por papel (aditivo: marca as telas do papel; "Limpar" zera).
-    var toolbar = el('div', { class: 'mb-3 d-flex flex-wrap align-items-center gap-1' });
-    if (papeis.length) {
-      toolbar.appendChild(el('span', { class: 'muted', style: 'font-size:.85rem;margin-right:.3rem' }, '<i class="bi bi-magic"></i> Liberar como papel:'));
-      papeis.forEach(function (pa) {
-        var c = corPapel(pa.slug);
-        var b = el('button', { class: 'btn btn-sm', type: 'button', style: 'border:1px solid ' + c + ';color:' + c + ';background:' + c + '14;font-weight:700' }, esc(pa.nome));
-        b.addEventListener('click', function () { aplicaPapel(pa.id, permsByPapel); toast('Telas do papel “' + pa.nome + '” marcadas. Revise e salve.'); });
-        toolbar.appendChild(b);
-      });
-      var bl = el('button', { class: 'btn btn-sm btn-light', type: 'button' }, '<i class="bi bi-eraser"></i> Limpar');
-      bl.addEventListener('click', limparTudo);
-      toolbar.appendChild(bl);
-    }
+    // Explica de onde vem o acesso — sem isto a matriz parece vazia para quem
+    // recebe tudo pelo papel, que foi exatamente o que confundiu na rede.
+    var aviso = el('div', { class: 'mb-3', style: 'border-radius:10px;padding:.6rem .8rem;font-size:.85rem;' +
+      (papelObj ? 'background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a'
+                : 'background:#fffbeb;border:1px solid #fcd34d;color:#92400e') },
+      papelObj
+        ? '<i class="bi bi-info-circle"></i> As marcações <b>cinzas</b> vêm do papel <b>' + esc(papelObj.nome) +
+          '</b> e se ajustam sozinhas: se uma tela nova entrar nesse papel, esta pessoa passa a vê-la sem ninguém mexer aqui. ' +
+          'Crie <b>exceção</b> só para abrir ou fechar uma tela desta pessoa em particular — a exceção vence o papel, inclusive para negar.'
+        : '<i class="bi bi-exclamation-triangle"></i> Esta pessoa <b>não tem papel neste sistema</b>, então não herda tela nenhuma. ' +
+          'Escolha um papel acima: é o caminho que se ajusta sozinho. Exceção individual serve para caso isolado, não para dar acesso padrão.');
+
+    var toolbar = el('div', { class: 'mb-3 d-flex flex-wrap align-items-center gap-2' });
+    var bl = el('button', { class: 'btn btn-sm btn-light', type: 'button' },
+      '<i class="bi bi-arrow-counterclockwise"></i> Remover todas as exceções');
+    bl.setAttribute('title', 'Volta todas as telas a seguir o papel');
+    bl.addEventListener('click', seguirPapelEmTudo);
+    toolbar.appendChild(bl);
 
     var tbl = el('table');
     tbl.innerHTML =
-      '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th><th class="chk-col">Exportar</th></tr></thead>';
+      '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th>' +
+      '<th class="chk-col">Exportar</th><th style="min-width:210px">Origem</th></tr></thead>';
     var tb = el('tbody');
     telas.forEach(function (t) {
-      var a = atual[t.id] || {};
+      var a = atual[t.id] || null;
+      var her = heranca[t.id] || null;
       var tr = el('tr');
+      tr.dataset.modo = a ? 'excecao' : 'heranca';
+      tr.dataset.her = JSON.stringify(her
+        ? { v: !!her.pode_ver, e: !!her.pode_editar, x: !!her.pode_exportar }
+        : { v: false, e: false, x: false });
+
       var badges = (telaBadges[t.id] || []).slice()
         .sort(function (a, b) { return ordemPapel(a.slug) - ordemPapel(b.slug); })
         .map(function (pp) { var c = corPapel(pp.slug); return '<span class="pill" style="background:' + c + '1a;color:' + c + ';border:1px solid ' + c + '55;font-weight:700">' + esc(labelPapel(pp)) + '</span>'; }).join(' ');
       tr.appendChild(el('td', null, '<b>' + esc(t.nome) + '</b><br><span class="muted">' + esc(t.slug) + '</span>'
         + (badges ? '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">' + badges + '</div>' : '')));
+
       ['ver', 'editar', 'exportar'].forEach(function (acao) {
         var td = el('td', { class: 'chk-col' });
         var chk = el('input', { type: 'checkbox', class: 'form-check-input', 'data-tela': t.id, 'data-acao': acao });
-        if (a['pode_' + acao]) chk.checked = true;
+        if (a && a['pode_' + acao]) chk.checked = true;
         chk.addEventListener('change', function () { onChkChange(tr); });
         td.appendChild(chk); tr.appendChild(td);
       });
+
+      var tdOrigem = el('td');
+      tdOrigem.appendChild(el('span', { 'data-origem': '1' }));
+      var bt = el('button', { class: 'btn btn-sm btn-light ms-2', type: 'button', 'data-acao-modo': '1' });
+      bt.addEventListener('click', function () {
+        tr.dataset.modo = tr.dataset.modo === 'excecao' ? 'heranca' : 'excecao';
+        pintarLinha(tr);
+        $('ac-salvar').disabled = false;
+      });
+      tdOrigem.appendChild(bt);
+      tr.appendChild(tdOrigem);
+
       tb.appendChild(tr);
-      syncRow(tr);
+      pintarLinha(tr);
     });
     tbl.appendChild(tb);
     box.innerHTML = '';
     if (papeis.length) box.appendChild(papelBox);
-    if (papeis.length) box.appendChild(toolbar);
+    box.appendChild(aviso);
+    box.appendChild(toolbar);
     box.appendChild(tbl);
     $('ac-salvar').disabled = false;
   }
@@ -417,28 +448,52 @@
     tbl.appendChild(tb); body.appendChild(tbl);
   }
 
-  // Marca (aditivo) as telas do papel escolhido, conforme papel_permissoes.
-  function aplicaPapel(papelId, permsByPapel) {
-    var mapa = permsByPapel[papelId] || {};
-    document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
-      var vch = tr.querySelector('[data-acao="ver"]');
-      var telaId = Number(vch.getAttribute('data-tela'));
-      var perm = mapa[telaId];
-      if (!perm) return; // papel não inclui esta tela -> não mexe (aditivo)
-      if (perm.pode_ver) vch.checked = true;
-      if (perm.pode_editar) tr.querySelector('[data-acao="editar"]').checked = true;
-      if (perm.pode_exportar) tr.querySelector('[data-acao="exportar"]').checked = true;
-      syncRow(tr);
-    });
+  /* Cada linha da matriz vive em um de dois modos:
+
+       heranca  — não existe linha em `perfil_tela`. Vale o papel, e vai
+                  continuar valendo: tela nova no papel chega sozinha.
+       excecao  — existe linha em `perfil_tela`. Ela DECIDE — concede ou nega —
+                  e para de acompanhar o papel.
+
+     Copiar o papel para exceções seria o jeito fácil de "marcar tudo", e é
+     justamente o que quebra o ajuste automático. Por isso não existe mais o
+     atalho que fazia isso. */
+  function pintarLinha(tr) {
+    var herdando = tr.dataset.modo !== 'excecao';
+    var her = { v: false, e: false, x: false };
+    try { her = JSON.parse(tr.dataset.her || 'null') || her; } catch (e) { /* mantém o padrão */ }
+
+    var ver = tr.querySelector('[data-acao="ver"]');
+    var ed  = tr.querySelector('[data-acao="editar"]');
+    var ex  = tr.querySelector('[data-acao="exportar"]');
+    if (herdando) { ver.checked = her.v; ed.checked = her.e; ex.checked = her.x; }
+    ver.disabled = herdando;
+    tr.style.background = herdando ? '' : '#fffbeb';
+
+    var pill = tr.querySelector('[data-origem]');
+    if (pill) {
+      pill.innerHTML = herdando
+        ? (her.v
+            ? '<span class="pill" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1">segue o papel</span>'
+            : '<span class="pill" style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0">o papel não concede</span>')
+        : '<span class="pill" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:700">exceção — ' +
+          (ver.checked ? 'libera' : 'NEGA') + '</span>';
+    }
+    var bt = tr.querySelector('[data-acao-modo]');
+    if (bt) bt.innerHTML = herdando
+      ? '<i class="bi bi-pencil"></i> Criar exceção'
+      : '<i class="bi bi-arrow-counterclockwise"></i> Seguir o papel';
+
+    syncRow(tr);
   }
 
-  function limparTudo() {
+  function seguirPapelEmTudo() {
     document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
-      tr.querySelector('[data-acao="ver"]').checked = false;
-      tr.querySelector('[data-acao="editar"]').checked = false;
-      tr.querySelector('[data-acao="exportar"]').checked = false;
-      syncRow(tr);
+      tr.dataset.modo = 'heranca';
+      pintarLinha(tr);
     });
+    toast('Todas as telas voltaram a seguir o papel. Salve para gravar.');
+    $('ac-salvar').disabled = false;
   }
 
   // editar/exportar dependem de "ver"
@@ -448,7 +503,7 @@
       tr.querySelector('[data-acao="editar"]').checked = false;
       tr.querySelector('[data-acao="exportar"]').checked = false;
     }
-    syncRow(tr);
+    if (tr.dataset && tr.dataset.modo) pintarLinha(tr); else syncRow(tr);
   }
   function syncRow(tr) {
     var ed = tr.querySelector('[data-acao="editar"]');
@@ -456,6 +511,11 @@
     // Papel só-leitura: editar/exportar sempre desmarcados e desabilitados.
     if (tr.dataset && tr.dataset.soLeitura === '1') {
       ed.checked = false; ex.checked = false; ed.disabled = true; ex.disabled = true;
+      return;
+    }
+    // Linha herdada: mostra o que o papel dá, mas ninguém edita aqui.
+    if (tr.dataset && tr.dataset.modo === 'heranca') {
+      ed.disabled = true; ex.disabled = true;
       return;
     }
     var ver = tr.querySelector('[data-acao="ver"]').checked;
@@ -470,17 +530,21 @@
 
     var upserts = [], deletes = [];
     document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
-      var telaId = Number(tr.querySelector('[data-acao="ver"]').getAttribute('data-tela'));
-      var ver = tr.querySelector('[data-acao="ver"]').checked;
-      if (ver) {
+      var ver = tr.querySelector('[data-acao="ver"]');
+      if (!ver) return;
+      var telaId = Number(ver.getAttribute('data-tela'));
+      if (tr.dataset.modo === 'excecao') {
+        // `pode_ver: false` é uma NEGAÇÃO explícita e precisa virar linha: sob a
+        // cadeia de precedência ela vence o papel. Apagar aqui devolveria a
+        // pessoa ao papel, que é o oposto do que se pediu.
         upserts.push({
           perfil_id: perfilId, tela_id: telaId,
-          pode_ver: true,
-          pode_editar: tr.querySelector('[data-acao="editar"]').checked,
-          pode_exportar: tr.querySelector('[data-acao="exportar"]').checked
+          pode_ver: ver.checked,
+          pode_editar: ver.checked && tr.querySelector('[data-acao="editar"]').checked,
+          pode_exportar: ver.checked && tr.querySelector('[data-acao="exportar"]').checked
         });
       } else {
-        deletes.push(telaId);
+        deletes.push(telaId);   // sem exceção: volta a seguir o papel
       }
     });
 
@@ -493,7 +557,11 @@
         var d = await SB.from('perfil_tela').delete().eq('perfil_id', perfilId).in('tela_id', deletes);
         if (d.error) throw d.error;
       }
-      toast('Liberações salvas. (o usuário vê na próxima entrada)');
+      var n = upserts.length;
+      toast(n ? (n === 1 ? '1 exceção gravada. O resto segue o papel.'
+                         : n + ' exceções gravadas. O resto segue o papel.')
+              : 'Sem exceções: tudo segue o papel.');
+      renderMatriz();
     } catch (e) { erro(e); }
     btn.disabled = false;
   }

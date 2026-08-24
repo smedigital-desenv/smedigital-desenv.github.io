@@ -54,6 +54,46 @@ Se você encontrar `bool_or` de volta nessa função, alguém desfez isto.
 O painel de administração é a interface disso. Mudanças de permissão acontecem
 **aqui**, não nos sistemas.
 
+### Papel é o padrão; exceção é o desvio
+
+O acesso normal de uma pessoa **vem do papel**, e por isso se ajusta sozinho:
+marcar uma tela nova em `papel_permissoes` alcança na hora todo mundo que tem
+aquele papel, sem tocar em ninguém individualmente.
+
+Uma linha em `perfil_tela` faz o oposto — ela **congela**. A partir dela aquela
+pessoa para de acompanhar o papel naquela tela, para sempre, até alguém apagar
+a linha. Por isso a aba Acessos mostra cada tela em um de dois modos:
+
+| Modo | Significa |
+|---|---|
+| **segue o papel** (cinza, sem linha em `perfil_tela`) | acompanha o papel, hoje e no futuro |
+| **exceção** (amarelo, com linha) | decide sozinha — libera ou **nega** — e ignora o papel |
+
+⚠️ **Nunca copie o papel para `perfil_tela` em massa.** É o jeito fácil de
+"deixar tudo marcado" e é exatamente o que quebra o ajuste automático: a pessoa
+fica com o retrato de hoje e não recebe a tela de amanhã. O painel tinha um
+atalho que fazia isso ("Liberar como papel") e ele foi removido.
+
+Exceção que apenas repete o que o papel já concede não excetua nada — só
+congela. Verificação:
+
+```sql
+select s.slug, t.slug, count(*)
+  from perfil_tela pt
+  join telas t on t.id = pt.tela_id
+  join sistemas s on s.id = t.sistema_id
+  join perfil_papeis pp on pp.perfil_id = pt.perfil_id
+  join papeis pa on pa.id = pp.papel_id and pa.sistema_id = s.id
+  join papel_permissoes ppm on ppm.papel_id = pa.id and ppm.tela_id = t.id
+ where coalesce(pt.pode_ver,false) = coalesce(ppm.pode_ver,false)
+ group by 1,2;
+```
+
+**Tela nova nasce fechada.** Cadastrar uma tela no catálogo não a concede a
+papel nenhum — é preciso marcá-la no papel. Isso é deliberado: errar para o
+lado de esconder é visível e reclamável; errar para o lado de mostrar é
+invisível e grave.
+
 ## Registro de alterações (auditoria)
 
 A tabela `permissoes_log` guarda quem alterou o quê no controle de acesso —
