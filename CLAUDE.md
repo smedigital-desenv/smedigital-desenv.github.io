@@ -23,6 +23,7 @@ para a raiz do domínio).
 | `central/login.html` | tela de login única da rede |
 | `central/admin.html` / `admin.js` | painel de administração de acessos |
 | `permissoes_log` (tabela) | trilha de auditoria — quem alterou o quê no acesso |
+| `acesso_uso` (tabela) | registro de uso — quem entrou em cada sistema, e quando |
 
 ⚠️ **Alterar `acesso-sme.js` afeta TODOS os sistemas da rede ao mesmo tempo.**
 Não há versionamento por sistema: todos carregam o mesmo arquivo do mesmo lugar.
@@ -136,6 +137,51 @@ linha traz o estado de antes e o de depois, em `jsonb`.
 
 Alteração em `perfis` que não toca acesso (troca de nome, por exemplo) **não é
 registrada** de propósito — log cheio de ruído é log que ninguém lê.
+
+## Registro de uso (quem acessa e quem não acessa)
+
+A tabela `acesso_uso` guarda **uma linha por pessoa × sistema**, com primeiro
+acesso, último acesso e um contador. É o que alimenta a aba **Uso** do painel.
+O script SQL e o desenho completo estão em
+[`central/RELATORIO-ACESSO.md`](central/RELATORIO-ACESSO.md).
+
+- **Quem escreve é a RPC `registrar_acesso(slug)`** (`SECURITY DEFINER`),
+  disparada pelo `acesso-sme.js` depois de confirmado o acesso ao sistema. A
+  identidade vem de `auth.uid()`/e-mail do token — o cliente manda o slug, não
+  quem ele é. `insert`/`update`/`delete` na tabela estão revogados para
+  `authenticated`, `anon` e `public`.
+- **Quem lê é só super admin**, pela policy que chama `sou_super_admin()`.
+
+⚠️ **O registro é dispare-e-esqueça, e tem que continuar sendo.** Nada da tela
+espera por ele e qualquer falha morre num `console.debug`. Registro de uso não é
+controle de acesso: ele não pode barrar quem já passou pelas checagens de
+permissão. Se você transformá-lo em `await`, uma indisponibilidade do central
+vira login travado em **todos** os sistemas da rede de uma vez.
+
+⚠️ **Uma vez por sessão do navegador, por sistema** (chave `ACESSO_USO_v1` no
+`sessionStorage`). O contador conta sessão, não página aberta — gravar a cada
+carregamento inflaria o número de quem navega muito e custaria uma escrita por
+tela.
+
+⚠️ **Simulação ("Ver como") NÃO registra.** O super admin está olhando pelos
+olhos de outra pessoa; gravar ali inventaria acesso que ela nunca fez, e o
+relatório passaria a dizer que alguém usa o sistema porque foi auditado.
+
+⚠️ **O relatório lista `perfis`, não `acesso_uso`.** A pergunta que ninguém
+conseguia responder antes é a do lado vazio — quem tem acesso liberado e não
+usa. Uma lista montada a partir dos registros de acesso só mostra quem já
+acessa. Se alguém "simplificar" isso para ler direto da tabela de uso, metade
+do relatório desaparece sem erro nenhum.
+
+⚠️ **Quem decide o denominador é `perfilAlcancaSistema()`, no `admin.js`** —
+super admin, papel ou exceção. É a MESMA função que a aba Usuários usa para
+filtrar por sistema, e isso é de propósito: duplicá-la faria as duas telas
+discordarem sobre quem deveria estar acessando, que é justamente a conta do
+relatório.
+
+⚠️ **Nada disso é retroativo.** Quem usava a rede antes de o script rodar
+aparece como "nunca acessou" até entrar de novo. O rodapé da aba diz desde
+quando há registro — não remova, senão o relatório mente com cara de dado.
 
 ## Integrando um sistema novo
 

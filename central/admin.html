@@ -37,6 +37,7 @@
         <button class="mg-nav-btn nav-item" data-sec="catalogo"><i class="bi bi-grid-3x3-gap-fill"></i> Catálogo</button>
         <button class="mg-nav-btn nav-item" data-sec="landing"><i class="bi bi-window-desktop"></i> Telas de acesso</button>
         <button class="mg-nav-btn nav-item" data-sec="simular"><i class="bi bi-incognito"></i> Ver como</button>
+        <button class="mg-nav-btn nav-item" data-sec="uso"><i class="bi bi-activity"></i> Uso</button>
         <button class="mg-nav-btn nav-item" data-sec="historico"><i class="bi bi-clock-history"></i> Histórico</button>
       </nav>
       <div class="mg-user">
@@ -185,6 +186,79 @@
             <div class="col-md-3 d-flex align-items-end"><button id="sm-ver" class="btn btn-azul w-100"><i class="bi bi-search"></i> Consultar</button></div>
           </div>
           <div id="sm-result" class="mt-3"></div>
+        </div>
+      </section>
+
+
+      <!-- ================= USO (quem acessa e quem não acessa) ================= -->
+      <section id="sec-uso" class="hidden">
+        <style>
+          .uso-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.9rem; margin-bottom:1.2rem; }
+          .uso-card { background:#fff; border-radius:16px; padding:1rem 1.1rem; box-shadow:0 6px 20px rgba(2,32,71,.07); border-left:5px solid #cbd5e1; }
+          .uso-card .n { font-size:1.7rem; font-weight:900; color:var(--primary); line-height:1.1; }
+          .uso-card .r { font-size:.78rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.04em; }
+          .uso-card .s { font-size:.76rem; color:#94a3b8; margin-top:.2rem; }
+          .uso-card.ok    { border-left-color:#15803d; }
+          .uso-card.alerta{ border-left-color:#b45309; }
+          .uso-card.frio  { border-left-color:#b91c1c; }
+          .barra { background:#e2e8f0; border-radius:999px; height:8px; overflow:hidden; min-width:90px; }
+          .barra > i { display:block; height:100%; background:var(--primary-2, #0a59c4); }
+        </style>
+        <div class="page-head">
+          <div>
+            <h1>Relatório de uso</h1>
+            <div class="desc">Quem está entrando nos sistemas e quem tem acesso liberado mas não usa. O registro é gravado pelo banco a cada sessão — uma vez por pessoa, por sistema, por sessão do navegador.</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="d-flex gap-2 flex-wrap align-items-end">
+            <div style="flex:1;min-width:220px">
+              <label class="lbl" for="uso-busca">Buscar</label>
+              <input id="uso-busca" class="form-control" placeholder="Nome ou e-mail…" />
+            </div>
+            <div style="min-width:200px">
+              <label class="lbl" for="uso-sistema">Sistema</label>
+              <select id="uso-sistema" class="form-select"><option value="">Todos os sistemas</option></select>
+            </div>
+            <div style="min-width:170px">
+              <label class="lbl" for="uso-periodo">Período</label>
+              <select id="uso-periodo" class="form-select">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="180">Últimos 180 dias</option>
+                <option value="0">Desde o início do registro</option>
+              </select>
+            </div>
+            <div style="min-width:200px">
+              <label class="lbl" for="uso-status">Situação</label>
+              <select id="uso-status" class="form-select">
+                <option value="">Todas</option>
+                <option value="ativo">Acessou no período</option>
+                <option value="parado">Sem acesso recente</option>
+                <option value="nunca">Nunca acessou</option>
+                <option value="sem">Não acessou no período (parados + nunca)</option>
+              </select>
+            </div>
+            <button id="uso-csv" class="btn btn-light" title="Baixar a lista em CSV"><i class="bi bi-download"></i> CSV</button>
+            <button id="uso-reload" class="btn btn-light" title="Recarregar"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div class="form-check mt-2">
+            <input id="uso-inativos" class="form-check-input" type="checkbox" />
+            <label class="form-check-label muted" for="uso-inativos">Incluir usuários desativados</label>
+          </div>
+        </div>
+
+        <div id="uso-cards"></div>
+
+        <div class="panel" id="uso-painel-sistemas">
+          <h2><i class="bi bi-grid-3x3-gap-fill"></i> Adoção por sistema</h2>
+          <div id="uso-sistemas"><div class="loading">Carregando…</div></div>
+        </div>
+
+        <div class="panel">
+          <h2><i class="bi bi-people"></i> Pessoas <span id="uso-ctx" class="muted"></span></h2>
+          <div id="uso-tabela-area"><div class="loading">Carregando…</div></div>
         </div>
       </section>
 

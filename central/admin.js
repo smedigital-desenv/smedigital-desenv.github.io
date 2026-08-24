@@ -70,6 +70,7 @@
     initCatalogo();
     initLanding();
     initSimular();
+    initUso();
     initHistorico();
   });
 
@@ -81,7 +82,8 @@
         item.classList.add('active');
         var sec = item.getAttribute('data-sec');
         if (sec === 'historico') carregarHistorico();
-        ['acessos', 'usuarios', 'escolas', 'catalogo', 'landing', 'simular', 'historico'].forEach(function (s) {
+        if (sec === 'uso') carregarUso();
+        ['acessos', 'usuarios', 'escolas', 'catalogo', 'landing', 'simular', 'uso', 'historico'].forEach(function (s) {
           $('sec-' + s).classList.toggle('hidden', s !== sec);
         });
       });
@@ -120,6 +122,15 @@
     var rt = await SB.from('perfil_tela').select('perfil_id, telas(sistema_id)');
     if (rt.error) { console.warn('[admin] perfil_tela:', rt.error.message); }
     else (rt.data || []).forEach(function (x) { add(x.perfil_id, x.telas && x.telas.sistema_id); });
+  }
+
+  // Regra única de "esta pessoa alcança este sistema?" — a aba Usuários e o
+  // relatório de uso leem daqui. Duplicá-la faria as duas telas discordarem
+  // sobre quem deveria estar acessando, que é justamente a conta do relatório.
+  function perfilAlcancaSistema(p, sisId) {
+    if (p.is_super_admin) return true;                    // super admin acessa todos
+    var set = cacheAcessoPerfil[p.id];
+    return !!(set && set.has(Number(sisId)));
   }
 
   function sistemasDoPerfil(p) {
@@ -601,11 +612,7 @@
     var sisId = ($('us-sistema') && $('us-sistema').value) || '';
     var lista = cachePerfis.filter(function (p) {
       if (q && !((p.nome || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q))) return false;
-      if (sisId) {
-        if (p.is_super_admin) return true;                  // super admin acessa todos
-        var set = cacheAcessoPerfil[p.id];
-        if (!set || !set.has(Number(sisId))) return false;
-      }
+      if (sisId && !perfilAlcancaSistema(p, sisId)) return false;
       return true;
     });
     var box = $('us-tabela');
@@ -1400,4 +1407,302 @@
       ' registros carregados. O registro é gravado pelo próprio banco e não pode ser apagado por este painel.</div>';
     area.innerHTML = h;
   }
+  /* ==========================================================================
+     SEÇÃO 8 — USO (quem acessa e quem não acessa)
+
+     Lê `acesso_uso`, gravada pela RPC `registrar_acesso()` que o
+     `acesso-sme.js` dispara uma vez por sessão do navegador, em qualquer
+     sistema da rede. A tabela é somente leitura (e só para super admin);
+     escrever nela é privilégio da função `SECURITY DEFINER`.
+
+     ⚠️ O relatório tem DOIS lados, e o segundo é o que interessa: quem tem
+     acesso liberado e NÃO usa. Por isso a lista não sai de `acesso_uso` — sai
+     de `perfis`, com o uso costurado por fora. Listar só quem tem registro
+     mostraria apenas quem já acessa, que é a pergunta fácil.
+
+     ⚠️ O registro NÃO é retroativo. Quem usou o sistema antes de a função
+     existir aparece como "nunca acessou" até entrar de novo. O rodapé diz
+     desde quando há registro, senão o relatório mente com cara de dado.
+     ========================================================================== */
+  var cacheUso = null;        // linhas cruas de acesso_uso
+  var usoPorPerfil = {};      // perfil_id -> { sistema_id: linha }
+  var usoIndisponivel = null; // mensagem, quando a tabela ainda não existe
+
+  function initUso() {
+    var sel = $('uso-sistema');
+    cacheSistemas.filter(function (s) { return s.ativo !== false; }).forEach(function (s) {
+      sel.appendChild(el('option', { value: s.id }, esc(s.nome)));
+    });
+    ['uso-sistema', 'uso-periodo', 'uso-status'].forEach(function (id) {
+      $(id).addEventListener('change', renderUso);
+    });
+    $('uso-inativos').addEventListener('change', renderUso);
+    $('uso-busca').addEventListener('input', renderUso);
+    $('uso-reload').addEventListener('click', function () { cacheUso = null; carregarUso(); });
+    $('uso-csv').addEventListener('click', baixarUsoCsv);
+  }
+
+  // ⚠️ Paginado: o PostgREST corta em 1.000 linhas e NÃO avisa. Com uma linha
+  // por pessoa × sistema, a rede passa desse teto sem ninguém perceber — e o
+  // sintoma seria gente ativa aparecendo como "nunca acessou". A ordenação é
+  // obrigatória, senão as páginas se repetem e perdem linhas.
+  async function buscarUsoPaginado() {
+    var out = [], passo = 1000, de = 0;
+    for (;;) {
+      var r = await SB.from('acesso_uso')
+        .select('perfil_id,sistema_id,primeiro_acesso,ultimo_acesso,acessos')
+        .order('perfil_id', { ascending: true }).order('sistema_id', { ascending: true })
+        .range(de, de + passo - 1);
+      if (r.error) return { error: r.error };
+      var d = r.data || [];
+      out = out.concat(d);
+      if (d.length < passo) break;
+      de += passo;
+    }
+    return { data: out };
+  }
+
+  async function carregarUso() {
+    if (cacheUso) return renderUso();
+    $('uso-tabela-area').innerHTML = '<div class="loading">Carregando…</div>';
+    var r = await buscarUsoPaginado();
+    if (r.error) {
+      // 42P01 = tabela inexistente; PGRST205 = PostgREST não a achou no schema.
+      var faltando = /acesso_uso/.test(r.error.message || '') ||
+                     r.error.code === '42P01' || r.error.code === 'PGRST205';
+      usoIndisponivel = faltando
+        ? '<div class="empty"><i class="bi bi-activity"></i> O registro de uso ainda não foi criado no banco.' +
+          '<br><span class="muted">Falta rodar o script de <b>RELATORIO-ACESSO.md</b> no Supabase do central. Até lá nada é gravado — e o uso anterior a isso não tem como ser recuperado.</span></div>'
+        : '<div class="empty">Não foi possível ler o registro de uso.</div>';
+      if (!faltando) erro(r.error);
+      cacheUso = [];
+      usoPorPerfil = {};
+      return renderUso();
+    }
+    usoIndisponivel = null;
+    cacheUso = r.data || [];
+    usoPorPerfil = {};
+    cacheUso.forEach(function (u) {
+      (usoPorPerfil[u.perfil_id] = usoPorPerfil[u.perfil_id] || {})[Number(u.sistema_id)] = u;
+    });
+    renderUso();
+  }
+
+  function corteUso() {
+    var dias = parseInt($('uso-periodo').value, 10) || 0;
+    return dias ? Date.now() - dias * 86400000 : null;
+  }
+
+  // Uma linha do relatório por pessoa, já com o recorte de sistema aplicado:
+  // com um sistema escolhido, só o uso DAQUELE sistema conta.
+  function linhasUso() {
+    var sisId = $('uso-sistema').value;
+    var corte = corteUso();
+    var incluirInativos = $('uso-inativos').checked;
+    var sistemasAtivos = cacheSistemas.filter(function (s) { return s.ativo !== false; });
+
+    return cachePerfis.filter(function (p) {
+      if (!incluirInativos && p.ativo === false) return false;
+      if (sisId) return perfilAlcancaSistema(p, sisId);
+      // Sem recorte: quem não alcança sistema NENHUM não é caso de uso — é
+      // cadastro sem permissão, e o lugar disso é a aba Usuários.
+      return sistemasAtivos.some(function (s) { return perfilAlcancaSistema(p, s.id); });
+    }).map(function (p) {
+      var regs = usoPorPerfil[p.id] || {};
+      var alcanca = sisId ? [Number(sisId)]
+        : sistemasAtivos.filter(function (s) { return perfilAlcancaSistema(p, s.id); })
+                        .map(function (s) { return Number(s.id); });
+      var ultimo = null, acessos = 0, usados = [];
+      alcanca.forEach(function (id) {
+        var u = regs[id]; if (!u) return;
+        var t = Date.parse(u.ultimo_acesso);
+        if (!isNaN(t) && (ultimo === null || t > ultimo)) ultimo = t;
+        acessos += Number(u.acessos || 0);
+        usados.push(id);
+      });
+      var status = ultimo === null ? 'nunca' : (corte === null || ultimo >= corte ? 'ativo' : 'parado');
+      return {
+        perfil: p, ultimo: ultimo, acessos: acessos, status: status,
+        alcanca: alcanca, usados: usados
+      };
+    });
+  }
+
+  function rotuloStatus(st) {
+    if (st === 'ativo')  return '<span class="pill on">acessou</span>';
+    if (st === 'parado') return '<span class="pill" style="background:#fef3c7;color:#b45309">sem acesso recente</span>';
+    return '<span class="pill off">nunca acessou</span>';
+  }
+  function quando(ms) {
+    if (ms === null) return '<span class="muted">—</span>';
+    var d = new Date(ms);
+    var dias = Math.floor((Date.now() - ms) / 86400000);
+    var rel = dias <= 0 ? 'hoje' : (dias === 1 ? 'ontem' : 'há ' + dias + ' dias');
+    return esc(d.toLocaleDateString('pt-BR')) + ' <span class="muted">(' + rel + ')</span>';
+  }
+  function pct(n, d) { return d ? Math.round(n * 100 / d) : 0; }
+
+  // Filtro de busca/situação + ordenação. Tela e CSV leem daqui: baixar o
+  // relatório tem que dar exatamente a lista que está na tela, na mesma ordem.
+  function usoFiltrado(linhas) {
+    var q = ($('uso-busca').value || '').trim().toLowerCase();
+    var st = $('uso-status').value;
+    return linhas.filter(function (l) {
+      if (st === 'sem') { if (l.status === 'ativo') return false; }
+      else if (st && l.status !== st) return false;
+      if (!q) return true;
+      return ((l.perfil.nome || '') + ' ' + (l.perfil.email || '')).toLowerCase().indexOf(q) >= 0;
+    // Quem menos usa primeiro: nunca acessou, depois o acesso mais antigo. O
+    // topo da lista é a ação a tomar, não a informação já conhecida.
+    }).sort(function (a, b) {
+      if ((a.ultimo === null) !== (b.ultimo === null)) return a.ultimo === null ? -1 : 1;
+      if (a.ultimo !== b.ultimo) return (a.ultimo || 0) - (b.ultimo || 0);
+      return (a.perfil.nome || '').localeCompare(b.perfil.nome || '');
+    });
+  }
+
+  function renderUso() {
+    if (!cacheUso) return;
+    var linhas = linhasUso();
+    var total = linhas.length;
+    var ativos = linhas.filter(function (l) { return l.status === 'ativo'; }).length;
+    var parados = linhas.filter(function (l) { return l.status === 'parado'; }).length;
+    var nunca = linhas.filter(function (l) { return l.status === 'nunca'; }).length;
+    var periodo = ($('uso-periodo').selectedOptions[0] || {}).text || '';
+
+    // Sem a tabela no banco, "nunca acessaram: 4" seria uma afirmação falsa
+    // com cara de medição. Some com os cartões e deixe a explicação falar.
+    if (usoIndisponivel) {
+      $('uso-cards').innerHTML = '';
+      $('uso-ctx').textContent = '';
+      $('uso-tabela-area').innerHTML = usoIndisponivel;
+      renderUsoPorSistema();
+      return;
+    }
+
+    $('uso-cards').innerHTML =
+      '<div class="uso-cards">' +
+      '<div class="uso-card"><div class="r">Com acesso liberado</div><div class="n">' + total + '</div>' +
+        '<div class="s">pessoas que o cadastro alcança</div></div>' +
+      '<div class="uso-card ok"><div class="r">Acessaram</div><div class="n">' + ativos +
+        ' <span style="font-size:.9rem;color:#64748b">(' + pct(ativos, total) + '%)</span></div>' +
+        '<div class="s">' + esc(periodo.toLowerCase()) + '</div></div>' +
+      '<div class="uso-card alerta"><div class="r">Sem acesso recente</div><div class="n">' + parados + '</div>' +
+        '<div class="s">já usaram, mas não no período</div></div>' +
+      '<div class="uso-card frio"><div class="r">Nunca acessaram</div><div class="n">' + nunca + '</div>' +
+        '<div class="s">nenhum registro desde o início</div></div>' +
+      '</div>';
+
+    renderUsoPorSistema();
+
+    var lista = usoFiltrado(linhas);
+
+    $('uso-ctx').textContent = lista.length === total ? '' : '(' + lista.length + ' de ' + total + ')';
+
+    var area = $('uso-tabela-area');
+    if (!lista.length) { area.innerHTML = '<div class="empty">Ninguém nesse recorte.</div>'; return; }
+
+    var h = '<div class="table-responsive"><table class="table table-sm align-middle">' +
+      '<thead><tr><th>Pessoa</th><th>Tipo</th><th>Sistemas</th><th style="white-space:nowrap">Último acesso</th>' +
+      '<th class="text-center">Sessões</th><th>Situação</th></tr></thead><tbody>';
+    lista.forEach(function (l) {
+      var p = l.perfil;
+      h += '<tr>' +
+        '<td><b>' + esc(p.nome || '—') + '</b><div class="muted">' + esc(p.email || '') + '</div></td>' +
+        '<td>' + (p.is_super_admin ? '<span class="pill super">super</span>' :
+                  '<span class="pill tipo">' + esc(p.tipo || '—') + '</span>') +
+              (p.ativo === false ? ' <span class="pill off">desativado</span>' : '') + '</td>' +
+        '<td style="font-size:.8rem">' + esc(l.usados.length + '/' + l.alcanca.length) +
+          ' <span class="muted">usados</span></td>' +
+        '<td style="white-space:nowrap;font-size:.84rem">' + quando(l.ultimo) + '</td>' +
+        '<td class="text-center">' + (l.acessos || '<span class="muted">0</span>') + '</td>' +
+        '<td>' + rotuloStatus(l.status) + '</td>' +
+        '</tr>';
+    });
+    h += '</tbody></table></div>';
+
+    var primeiro = cacheUso.reduce(function (m, u) {
+      var t = Date.parse(u.primeiro_acesso);
+      return isNaN(t) ? m : (m === null || t < m ? t : m);
+    }, null);
+    h += '<div class="muted mt-2" style="font-size:.8rem">' +
+      (primeiro === null
+        ? 'Ainda não há nenhum acesso registrado.'
+        : 'Há registro desde ' + esc(new Date(primeiro).toLocaleDateString('pt-BR')) +
+          '. Uso anterior a essa data não foi gravado e aparece como “nunca acessou”.') +
+      ' Cada sessão do navegador conta uma vez por sistema — não é contagem de páginas abertas.</div>';
+    area.innerHTML = h;
+  }
+
+  // Adoção por sistema: o denominador é quem o cadastro alcança (papel ou
+  // exceção), não o total de pessoas da rede — comparar contra a rede inteira
+  // faria um sistema de nicho parecer abandonado.
+  function renderUsoPorSistema() {
+    var box = $('uso-sistemas');
+    var painel = $('uso-painel-sistemas');
+    var sisId = $('uso-sistema').value;
+    var corte = corteUso();
+    var incluirInativos = $('uso-inativos').checked;
+    var sistemas = cacheSistemas.filter(function (s) {
+      return s.ativo !== false && (!sisId || String(s.id) === String(sisId));
+    });
+    painel.classList.toggle('hidden', !sistemas.length);
+    if (!sistemas.length) return;
+    if (usoIndisponivel) { box.innerHTML = '<div class="empty">Sem registro de uso.</div>'; return; }
+
+    var pessoas = cachePerfis.filter(function (p) { return incluirInativos || p.ativo !== false; });
+    var h = '<div class="table-responsive"><table class="table table-sm align-middle">' +
+      '<thead><tr><th>Sistema</th><th class="text-center">Liberados</th><th class="text-center">Acessaram</th>' +
+      '<th class="text-center">Nunca</th><th style="min-width:140px">Adoção</th></tr></thead><tbody>';
+    sistemas.map(function (s) {
+      var alc = 0, ac = 0, nu = 0;
+      pessoas.forEach(function (p) {
+        if (!perfilAlcancaSistema(p, s.id)) return;
+        alc++;
+        var u = (usoPorPerfil[p.id] || {})[Number(s.id)];
+        if (!u) { nu++; return; }
+        var t = Date.parse(u.ultimo_acesso);
+        if (!isNaN(t) && (corte === null || t >= corte)) ac++;
+      });
+      return { s: s, alc: alc, ac: ac, nu: nu, p: pct(ac, alc) };
+    }).sort(function (a, b) { return a.p - b.p; }).forEach(function (r) {
+      h += '<tr>' +
+        '<td><b>' + esc(r.s.nome) + '</b> <span class="muted">' + esc(r.s.slug) + '</span></td>' +
+        '<td class="text-center">' + r.alc + '</td>' +
+        '<td class="text-center" style="color:#15803d;font-weight:800">' + r.ac + '</td>' +
+        '<td class="text-center" style="color:#b91c1c;font-weight:800">' + r.nu + '</td>' +
+        '<td><div class="d-flex align-items-center gap-2"><div class="barra" style="flex:1">' +
+          '<i style="width:' + r.p + '%"></i></div><span class="muted">' + r.p + '%</span></div></td>' +
+        '</tr>';
+    });
+    h += '</tbody></table></div>';
+    box.innerHTML = h;
+  }
+
+  // CSV com ';' e BOM: é o que o Excel em pt-BR abre sem pedir importação.
+  // ⚠️ O arquivo leva nome e e-mail de servidor — é dado pessoal. Ele nasce no
+  // navegador de quem baixou e não deve ser versionado em repositório nenhum.
+  function baixarUsoCsv() {
+    var linhas = usoFiltrado(linhasUso());
+    var ROTULO = { ativo: 'acessou no periodo', parado: 'sem acesso recente', nunca: 'nunca acessou' };
+    function c(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+    var out = ['Nome;E-mail;Tipo;Ativo;Sistemas liberados;Sistemas usados;Ultimo acesso;Sessoes;Situacao'];
+    linhas.forEach(function (l) {
+      out.push([
+        c(l.perfil.nome), c(l.perfil.email), c(l.perfil.is_super_admin ? 'super admin' : (l.perfil.tipo || '')),
+        c(l.perfil.ativo === false ? 'nao' : 'sim'),
+        c(l.alcanca.length), c(l.usados.length),
+        c(l.ultimo === null ? '' : new Date(l.ultimo).toLocaleString('pt-BR')),
+        c(l.acessos), c(ROTULO[l.status])
+      ].join(';'));
+    });
+    var blob = new Blob(['﻿' + out.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'uso-sistemas-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    toast(linhas.length + ' linhas exportadas');
+  }
+
 })();
