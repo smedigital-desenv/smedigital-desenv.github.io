@@ -85,24 +85,51 @@ LIMITE_LEITURA = 8 * 1024 * 1024
 # própria, com o motivo ao lado. O que muda é que deixa de contar como
 # pendência. Detector que continua gritando depois de revisado é detector que
 # as pessoas desligam — e aí o próximo achado de verdade passa junto.
-ARQ_REVISADOS = ".auditoria-ignore"
+ARQ_REVISADOS = ".guarda-permitidos"
 
 
 def ler_revisados(raiz):
+    """Lê `.guarda-permitidos` — o MESMO arquivo que a guarda e o workflow leem.
+
+    Dois formatos, os dois válidos, porque os dois já existiam na rede:
+
+        caminho.xls # motivo numa linha só
+        # motivo em bloco, acima
+        caminho.xls
+
+    Linha terminada em `/` cobre a pasta inteira.
+    """
     caminho = os.path.join(raiz, ARQ_REVISADOS)
     if not os.path.exists(caminho):
         return {}
-    revisados = {}
+    revisados, bloco = {}, []
     with open(caminho, encoding="utf-8", errors="replace") as f:
         for linha in f:
             linha = linha.strip()
-            if not linha or linha.startswith("#") or "#" not in linha:
+            if not linha:
+                bloco = []
                 continue
-            alvo, motivo = linha.split("#", 1)
-            alvo, motivo = alvo.strip(), motivo.strip()
-            if alvo and motivo:
-                revisados[alvo] = motivo
+            if linha.startswith("#"):
+                bloco.append(linha.lstrip("#").strip())
+                continue
+            if "#" in linha:
+                alvo, motivo = linha.split("#", 1)
+                alvo, motivo = alvo.strip(), motivo.strip()
+            else:
+                alvo, motivo = linha, " ".join(bloco).strip()
+            bloco = []
+            if alvo:
+                revisados[alvo] = motivo or "sem justificativa escrita"
     return revisados
+
+
+def esta_revisado(caminho, revisados):
+    if caminho in revisados:
+        return revisados[caminho]
+    for alvo, motivo in revisados.items():
+        if alvo.endswith("/") and caminho.startswith(alvo):
+            return motivo
+    return None
 
 
 # ─────────────────────────────── GitHub API ────────────────────────────────
@@ -219,10 +246,19 @@ def examinar_repo(nome_completo, destino):
             (".js", ".ts", ".html", ".json", ".yml", ".yaml", ".env", ".md")
         ):
             for tipo, arq, detalhe in examinar_arquivo(destino, caminho):
-                if arq in revisados:
-                    achados["revisado"].append((arq, f"{detalhe} — {revisados[arq]}"))
+                motivo = esta_revisado(arq, revisados)
+                if motivo:
+                    achados["revisado"].append((arq, f"{detalhe} — {motivo}"))
                 else:
                     achados[tipo].append((arq, detalhe))
+
+    for esperado, oquee in (
+        (".claude/hooks/verificar-vazamento.sh", "a guarda anti-vazamento não está versionada aqui"),
+        (".github/workflows/guarda-dados.yml", "sem a porta que roda no GitHub: quem clonar sem os hooks passa direto"),
+        (".githooks/pre-commit", "sem a porta do git: quem commita fora do Claude Code não encontra guarda"),
+    ):
+        if esperado not in rastreados:
+            achados["estrutura"].append((esperado, oquee))
 
     if "CLAUDE.md" not in rastreados:
         achados["estrutura"].append(
