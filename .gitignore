@@ -18,3 +18,7 @@
 *.xlsm
 *.mdb
 *.accdb
+
+# Bytecode do Python — artefato de execucao, nao codigo.
+__pycache__/
+*.pyc
