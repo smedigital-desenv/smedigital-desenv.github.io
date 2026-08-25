@@ -64,13 +64,45 @@ EXT_DADO = re.compile(
 )
 EXT_CHAVE = re.compile(r"\.(pem|key|p12|pfx)$", re.I)
 
-RE_EMAIL = re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+# ⚠️ O `%` fica FORA da parte local de propósito: com ele, o coringa do SQL
+# (`email like '%@educacao.pmrp.sp.gov.br'`) contava como endereço de gente, e
+# uma checagem de domínio virava "dado pessoal publicado". Mesma regra da
+# guarda anti-vazamento.
+RE_EMAIL = re.compile(rb"[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 RE_CPF = re.compile(rb"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b")
 RE_JWT = re.compile(rb"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}")
 RE_PRIV = re.compile(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 
 # Arquivos grandes demais para inspecionar linha a linha; a extensão já basta.
 LIMITE_LEITURA = 8 * 1024 * 1024
+
+# Fila revisada. Um `.auditoria-ignore` na raiz do repositório tira da CONTA os
+# caminhos que uma pessoa já olhou e considerou legítimos — uma linha por
+# caminho, com o motivo depois de `#`. O motivo é obrigatório: sem ele a linha
+# não vale.
+#
+# ⚠️ Isto NÃO some com o achado: ele continua aparecendo na issue, numa seção
+# própria, com o motivo ao lado. O que muda é que deixa de contar como
+# pendência. Detector que continua gritando depois de revisado é detector que
+# as pessoas desligam — e aí o próximo achado de verdade passa junto.
+ARQ_REVISADOS = ".auditoria-ignore"
+
+
+def ler_revisados(raiz):
+    caminho = os.path.join(raiz, ARQ_REVISADOS)
+    if not os.path.exists(caminho):
+        return {}
+    revisados = {}
+    with open(caminho, encoding="utf-8", errors="replace") as f:
+        for linha in f:
+            linha = linha.strip()
+            if not linha or linha.startswith("#") or "#" not in linha:
+                continue
+            alvo, motivo = linha.split("#", 1)
+            alvo, motivo = alvo.strip(), motivo.strip()
+            if alvo and motivo:
+                revisados[alvo] = motivo
+    return revisados
 
 
 # ─────────────────────────────── GitHub API ────────────────────────────────
@@ -180,13 +212,17 @@ def examinar_repo(nome_completo, destino):
     if not rastreados:
         return {"pessoal": [], "dado": [], "credencial": [], "estrutura": []}, None
 
-    achados = {"pessoal": [], "dado": [], "credencial": [], "estrutura": []}
+    achados = {"pessoal": [], "dado": [], "credencial": [], "estrutura": [], "revisado": []}
+    revisados = ler_revisados(destino)
     for caminho in rastreados:
         if EXT_DADO.search(caminho) or EXT_CHAVE.search(caminho) or caminho.endswith(
             (".js", ".ts", ".html", ".json", ".yml", ".yaml", ".env", ".md")
         ):
             for tipo, arq, detalhe in examinar_arquivo(destino, caminho):
-                achados[tipo].append((arq, detalhe))
+                if arq in revisados:
+                    achados["revisado"].append((arq, f"{detalhe} — {revisados[arq]}"))
+                else:
+                    achados[tipo].append((arq, detalhe))
 
     if "CLAUDE.md" not in rastreados:
         achados["estrutura"].append(
@@ -263,6 +299,20 @@ def montar_corpo(achados):
             "|---|---|",
         ]
         linhas += [f"| `{a}` | {d} |" for a, d in achados["dado"]]
+        linhas += [""]
+
+    if achados["revisado"]:
+        linhas += [
+            "## ⚪ Já revisado — não conta como pendência",
+            "",
+            f"Listado em `{ARQ_REVISADOS}`. Continua aparecendo aqui de propósito: "
+            "revisado não é invisível. Se algum destes deixou de ser legítimo, tire a "
+            "linha de lá.",
+            "",
+            "| Arquivo | Detectado — motivo de estar liberado |",
+            "|---|---|",
+        ]
+        linhas += [f"| `{a}` | {d} |" for a, d in achados["revisado"]]
         linhas += [""]
 
     if achados["estrutura"]:
@@ -343,7 +393,7 @@ def main():
                 print(f"    {erro}")
                 falhas.append((nome, erro))
                 continue
-            total = sum(len(v) for v in achados.values())
+            total = sum(len(v) for k, v in achados.items() if k != "revisado")
             grave = len(achados["pessoal"]) + len(achados["credencial"])
             print(f"    {total} pendência(s), {grave} grave(s)")
             if MODO_LIMITADO:
