@@ -116,8 +116,11 @@ def ler_revisados(raiz):
                 alvo, motivo = linha.split("#", 1)
                 alvo, motivo = alvo.strip(), motivo.strip()
             else:
+                # O bloco de comentário NÃO é consumido pelo primeiro caminho:
+                # uma justificativa costuma cobrir um grupo de arquivos, e só a
+                # linha em branco fecha o grupo. Sem isso, o segundo caminho do
+                # grupo aparecia como "sem justificativa escrita".
                 alvo, motivo = linha, " ".join(bloco).strip()
-            bloco = []
             if alvo:
                 revisados[alvo] = motivo or "sem justificativa escrita"
     return revisados
