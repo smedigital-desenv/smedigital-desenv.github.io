@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Guarda anti-vazamento da rede SME — porta do git.
+# Vale para QUEM COMMITA FORA DO CLAUDE CODE: terminal, VS Code, GitHub Desktop.
+# Instalado por `git config core.hooksPath .githooks` (o SessionStart faz isso
+# sozinho; à mão, uma vez por clone).
+bash "$(git rev-parse --show-toplevel)/.claude/hooks/verificar-vazamento.sh" < /dev/null || exit $?
+
+# Extra deste repositório: a cópia publicada em guarda/ é a que as máquinas
+# baixam pelo instalador. Se ela divergir da versionada em .claude/hooks/,
+# metade da rede fica com uma guarda e metade com outra.
+R="$(git rev-parse --show-toplevel)"
+if [ -f "$R/guarda/verificar-vazamento.sh" ]; then
+  if ! cmp -s "$R/.claude/hooks/verificar-vazamento.sh" "$R/guarda/verificar-vazamento.sh"; then
+    echo "BLOQUEADO: guarda/verificar-vazamento.sh difere de .claude/hooks/verificar-vazamento.sh." >&2
+    echo "A cópia publicada e a versionada precisam ser o MESMO arquivo. Copie uma sobre a outra." >&2
+    exit 2
+  fi
+fi
+exit 0
