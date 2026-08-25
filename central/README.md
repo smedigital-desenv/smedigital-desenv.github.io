@@ -43,8 +43,9 @@ partir do sistema do MAPA (`smedigital-desenv/mapa-sme`).
 4. **SQL Editor:** cole `sql/install.sql` inteiro e clique em **Run**.
 5. **Credenciais:** copie *Project URL* e *anon public key* (Settings → API) para
    `config.js` (`window.ACESSO_CFG.url` e `.anonKey`).
-6. **Super admin:** o seed já libera `desenv.sme@gmail.com` e
-   `usuario@exemplo.com`. Ajuste em `sql/install.sql` se precisar.
+6. **Super admin:** o seed libera `desenvsme@educacao.pmrp.sp.gov.br`.
+   Ajuste em `sql/install.sql` se precisar — ele não é versionado, então essa
+   linha é a única especificação escrita de quem administra a rede.
 7. Acesse `/central/admin.html` com uma conta super admin.
 
 > A anon key é pública por natureza (a segurança real é a RLS). Para apontar a

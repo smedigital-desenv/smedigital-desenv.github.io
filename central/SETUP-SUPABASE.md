@@ -6,8 +6,10 @@ A URL + anon key já estão em `config.js`. A anon key é pública (a segurança
 ## Checklist no painel do Supabase
 
 1. **Banco** — SQL Editor → cole e rode `central/sql/install.sql` (tabelas,
-   funções, RLS, seed). Super admins do seed: `desenv.sme@gmail.com` e
-   `usuario@exemplo.com`.
+   funções, RLS, seed). Super admin do seed: `desenvsme@educacao.pmrp.sp.gov.br`.
+   ⚠️ O seed vive em `central/sql/install.sql`, que **não é versionado** (regra da
+   rede). Ao trocar o administrador aqui, troque lá também — senão uma
+   reinstalação futura ressuscita o endereço antigo.
 2. **Google** — Authentication → Providers → Google → Enable. Informe Client ID
    e Secret (pode reaproveitar os do MAPA). Copie a *Callback URL* mostrada e
    adicione-a em **Authorized redirect URIs** do OAuth Client no Google Cloud.
@@ -21,7 +23,7 @@ A URL + anon key já estão em `config.js`. A anon key é pública (a segurança
   `http://localhost:5500/central/login.html`.
 - **Produção:** `https://smedigital.com.br/central/login.html` (após publicar na `main`).
 
-Entre com uma conta super admin (ex.: `desenv.sme@gmail.com`). Se aparecer
+Entre com uma conta super admin (ex.: `desenvsme@educacao.pmrp.sp.gov.br`). Se aparecer
 "sem acesso", confira se o e-mail está em `perfis` e `ativo`, e se o domínio
 bate (super admin é exceção à regra de domínio).
 
