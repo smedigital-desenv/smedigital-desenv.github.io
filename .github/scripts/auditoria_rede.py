@@ -39,11 +39,29 @@ ORG = os.environ.get("ORG", "smedigital-desenv")
 TOKEN = os.environ.get("AUDITORIA_TOKEN") or os.environ.get("GITHUB_TOKEN")
 DRY_RUN = os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
 
+# Sem o token da organização sobra o GITHUB_TOKEN do próprio workflow, que
+# alcança os repositórios PÚBLICOS para ler, mas só abre issue AQUI. Nesse
+# modo a varredura continua inteira e o relatório vira uma issue só, neste
+# repositório.
+#
+# ⚠️ Antes, a falta do secret abortava o job na primeira linha. O resultado é
+# que a auditoria NUNCA rodou: as duas execuções agendadas de 2026-08 morreram
+# em "Falta o secret", e foi por isso que 17 scripts com 3.152 e-mails ficaram
+# meses publicados sem ninguém ser avisado. Alarme que não toca é pior que
+# alarme nenhum, porque dá a sensação de que alguém está olhando.
+MODO_LIMITADO = not os.environ.get("AUDITORIA_TOKEN")
+PROPRIO_REPO = os.environ.get("GITHUB_REPOSITORY") or f"{ORG}/smedigital-desenv.github.io"
+
 TITULO_ISSUE = "🔒 Auditoria da rede — pendências neste repositório"
 LABEL = "auditoria-rede"
 
 # Extensões que carregam dado real quase sempre sem quem commitou perceber.
-EXT_DADO = re.compile(r"\.(sql|csv|tsv|dump|xls|xlsx|mdb|accdb)$", re.I)
+# Mesma lista de `EXT_PROIBIDA`, na guarda anti-vazamento. As duas precisam
+# concordar: a guarda impede o próximo arquivo, esta auditoria acha os que já
+# estão publicados. Se divergirem, existe formato que entra e nunca é achado.
+EXT_DADO = re.compile(
+    r"\.(sql|csv|tsv|dump|sqlite|sqlite3|parquet|xls|xlsx|xlsm|mdb|accdb)$", re.I
+)
 EXT_CHAVE = re.compile(r"\.(pem|key|p12|pfx)$", re.I)
 
 RE_EMAIL = re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -303,13 +321,18 @@ def sincronizar_issue(repo, corpo, tem_pendencia):
 # ──────────────────────────────────  main  ─────────────────────────────────
 def main():
     if not TOKEN:
-        sys.exit("Falta AUDITORIA_TOKEN. Veja o cabeçalho do workflow.")
+        sys.exit("Sem token nenhum: nem AUDITORIA_TOKEN nem GITHUB_TOKEN.")
+    if MODO_LIMITADO:
+        print("AVISO: sem AUDITORIA_TOKEN. A varredura roda igual, nos repositórios")
+        print("       públicos, mas o relatório sai numa issue única em")
+        print(f"       {PROPRIO_REPO}, em vez de uma por repositório.")
+        print("       Para voltar ao normal, crie o secret (cabeçalho do workflow).\n")
 
     repos = paginar(f"/orgs/{ORG}/repos?per_page=100&type=all")
     repos = [r for r in repos if not r.get("archived")]
     print(f"{len(repos)} repositórios a examinar em {ORG}\n")
 
-    resumo, falhas = [], []
+    resumo, falhas, consolidado = [], [], []
     for r in sorted(repos, key=lambda x: x["full_name"]):
         nome = r["full_name"]
         print(f"→ {nome}")
@@ -323,11 +346,24 @@ def main():
             total = sum(len(v) for v in achados.values())
             grave = len(achados["pessoal"]) + len(achados["credencial"])
             print(f"    {total} pendência(s), {grave} grave(s)")
-            sincronizar_issue(nome, montar_corpo(achados), total > 0)
+            if MODO_LIMITADO:
+                if total:
+                    consolidado.append((nome, grave, montar_corpo(achados)))
+            else:
+                sincronizar_issue(nome, montar_corpo(achados), total > 0)
             if total:
                 resumo.append((nome, total, grave))
         finally:
             shutil.rmtree(destino, ignore_errors=True)
+
+    if MODO_LIMITADO:
+        corpo = ["> Varredura da rede sem o secret `AUDITORIA_TOKEN`: o relatório de",
+                 "> **todos** os repositórios sai aqui, numa issue só, porque o token do",
+                 "> próprio workflow não abre issue nos outros.",
+                 ""]
+        for nome, grave, texto in sorted(consolidado, key=lambda x: -x[1]):
+            corpo += [f"# {'🔴' if grave else '🟡'} `{nome}`", "", texto, "", "---", ""]
+        sincronizar_issue(PROPRIO_REPO, "\n".join(corpo), bool(consolidado))
 
     print("\n" + "=" * 60)
     if not resumo and not falhas:

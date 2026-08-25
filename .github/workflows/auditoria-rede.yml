@@ -36,6 +36,9 @@ on:
 
 permissions:
   contents: read
+  # Sem o secret da organização, o relatório da rede inteira sai numa issue
+  # aqui — e para isso o GITHUB_TOKEN precisa poder escrever issue.
+  issues: write
 
 concurrency:
   group: auditoria-rede
@@ -49,18 +52,22 @@ jobs:
       - name: Baixar o script
         uses: actions/checkout@v4
 
-      - name: Conferir se o token existe
+      - name: Conferir se o token da organização existe
         env:
           TOKEN: ${{ secrets.AUDITORIA_TOKEN }}
         run: |
+          # ⚠️ Isto era `exit 1`, e por isso a auditoria NUNCA rodou: morria
+          # aqui toda segunda-feira. Falta de token agora reduz o alcance do
+          # relatório, não desliga a varredura.
           if [ -z "$TOKEN" ]; then
-            echo "::error::Falta o secret AUDITORIA_TOKEN. Veja as instruções no topo deste workflow."
-            exit 1
+            echo "::warning::Sem AUDITORIA_TOKEN: a varredura roda nos repositórios públicos e o relatório sai numa issue única neste repositório. Veja as instruções no topo deste workflow para voltar ao normal."
           fi
 
       - name: Varrer a organização
         env:
           AUDITORIA_TOKEN: ${{ secrets.AUDITORIA_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           ORG: smedigital-desenv
           DRY_RUN: ${{ inputs.dry_run }}
         run: python3 .github/scripts/auditoria_rede.py
