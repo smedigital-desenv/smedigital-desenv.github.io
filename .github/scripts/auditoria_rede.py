@@ -300,14 +300,55 @@ def sincronizar_issue(repo, corpo, tem_pendencia):
         print(f"    issue #{nova['number']} aberta")
 
 
+def listar_repositorios():
+    """Os repositórios a examinar — públicos E PRIVADOS.
+
+    `smedigital-desenv` é conta PESSOAL, não organização (confirmado pela API:
+    "type":"User"). `/orgs/{login}/repos` responde 404 nela, e era onde a
+    varredura morria — nas duas execuções anteriores isso nem aparecia, porque
+    elas paravam antes, na conferência do token.
+
+    ⚠️ A reserva NÃO pode ser `/users/{login}/repos`: esse existe para conta
+    pessoal e responde 200, mas devolve **só os repositórios públicos**. Depois
+    de privar os 13, ele traria uma lista vazia — e a auditoria concluiria
+    verde dizendo "nada encontrado", que é o pior desfecho possível para uma
+    varredura de vazamento. `/user/repos` é o do dono do token e enxerga os
+    privados.
+    """
+    try:
+        return paginar(f"/orgs/{ORG}/repos?per_page=100&type=all")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+
+    quem, _ = api("/user")
+    login = (quem or {}).get("login")
+    if login != ORG:
+        sys.exit(
+            f"O token pertence a '{login}', mas ORG está como '{ORG}'. "
+            "A varredura cobriria a conta errada — corrija antes de seguir."
+        )
+    return paginar("/user/repos?per_page=100&affiliation=owner")
+
+
 # ──────────────────────────────────  main  ─────────────────────────────────
 def main():
     if not TOKEN:
         sys.exit("Falta AUDITORIA_TOKEN. Veja o cabeçalho do workflow.")
 
-    repos = paginar(f"/orgs/{ORG}/repos?per_page=100&type=all")
+    repos = listar_repositorios()
     repos = [r for r in repos if not r.get("archived")]
-    print(f"{len(repos)} repositórios a examinar em {ORG}\n")
+    if not repos:
+        sys.exit(
+            f"Nenhum repositório devolvido para '{ORG}'. Lista vazia aqui é "
+            "quase sempre escopo de token, não rede limpa — confira o "
+            "AUDITORIA_TOKEN antes de acreditar no resultado."
+        )
+    privados = sum(1 for r in repos if r.get("private"))
+    print(
+        f"{len(repos)} repositórios a examinar em {ORG} "
+        f"({privados} privados, {len(repos) - privados} públicos)\n"
+    )
 
     resumo, falhas = [], []
     for r in sorted(repos, key=lambda x: x["full_name"]):
