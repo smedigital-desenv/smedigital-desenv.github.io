@@ -1,0 +1,19 @@
+# Exceções da guarda anti-vazamento.
+#
+# Um caminho por linha, relativo à raiz do repositório. Só entra aqui arquivo
+# que a guarda barraria pela extensão, mas que foi CONFERIDO e não tem dado
+# pessoal nenhum — tipicamente um modelo em branco que a própria página oferece
+# para download.
+#
+# Antes de acrescentar uma linha, abra o arquivo e procure nome, e-mail, RA,
+# matrícula, CPF, telefone e endereço. Se achar qualquer um, ele NÃO entra aqui:
+# tire do Git. Esta lista existe para modelo vazio, não para dado com dono.
+#
+# Escreva sempre o porquê ao lado. Sem justificativa, a próxima pessoa não tem
+# como julgar se a exceção ainda vale.
+
+# Modelo de planilha de custo de refeições (SpreadsheetML, sem dado pessoal).
+# É o MESMO arquivo de smedigital-desenv/site (md5 02a59059be87bd2e81920d5e04bb8ab9),
+# conferido lá em 2026-08-25: zero e-mails, zero CPF, zero matrícula — só
+# fórmulas e rótulos de cálculo.
+custo-refeicoes-editavel.xls
