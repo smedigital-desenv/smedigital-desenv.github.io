@@ -4,3 +4,9 @@
 *.sql
 *.csv
 *.dump
+
+# Bytecode do Python — artefato de build, regerado sozinho a cada execução.
+# Estava versionado: mudava de conteúdo a cada versão do interpretador e
+# sujava o diff sem dizer nada sobre o código.
+__pycache__/
+*.py[cod]
