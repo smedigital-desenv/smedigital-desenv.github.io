@@ -311,9 +311,28 @@
       registrarUso(SB, api);
 
       // tela específica sem permissão de ver -> bloqueia
+      //
+      // ⚠️ Duas causas MUITO diferentes caem aqui, e confundi-las custa caro:
+      //   1. a pessoa não tem a tela — é o caso normal, e a mensagem serve;
+      //   2. a tela NÃO EXISTE no catálogo (slug divergente do nome do
+      //      arquivo, ou tela nunca cadastrada) — e aí ninguém a abre, nem
+      //      quem tem todas as permissões do mundo.
+      //
+      // A mensagem antiga dizia "você não tem permissão" nos dois casos, e no
+      // segundo mandava quem investigava conferir a permissão de uma pessoa
+      // que estava certa. O console registra o slug pedido e os que existem,
+      // que é o que separa as duas em um olhar.
       var tela = telaAtual();
       if (tela && !api.can(tela, 'ver')) {
-        telaSemAcesso('Você não tem permissão para a tela <b>' + tela + '</b> deste sistema.');
+        var disponiveis = Object.keys((api.sistema && api.sistema.telas) || {});
+        console.warn('[AcessoSME] tela bloqueada:', tela,
+          '| telas liberadas neste sistema:', disponiveis.join(', ') || '(nenhuma)',
+          '| se o slug pedido não se parece com nenhum destes, é provável que a',
+          'tela não esteja cadastrada no catálogo, ou que o nome do arquivo',
+          'não bata com o slug (ver window.ACESSO_TELA).');
+        telaSemAcesso('Você não tem permissão para a tela <b>' + tela + '</b> deste sistema.'
+          + '<br><span style="font-size:.85em;color:#64748b">Se isto for inesperado, '
+          + 'a tela pode não estar cadastrada no catálogo do sistema — o console traz o detalhe.</span>');
         return;
       }
 
