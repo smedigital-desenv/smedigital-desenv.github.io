@@ -39,7 +39,24 @@
   var USO_KEY = 'ACESSO_USO_v1';      // sistemas já registrados nesta sessão
   var LOGIN_PAGE = window.ACESSO_LOGIN || 'login.html';
 
+  // Qual tela do catálogo esta página é.
+  //
+  // O padrão é o nome do arquivo, o que funciona enquanto arquivo e slug forem
+  // iguais. Quando não são — `av-oral-matematica.html` para a tela
+  // `avaliacao_oral`, ou hífen onde o catálogo usa sublinhado — a página fica
+  // inacessível para todo mundo que não é super admin, e o erro diz "você não
+  // tem permissão" em vez de "esta tela não existe", que manda quem for
+  // investigar para o lado errado.
+  //
+  // Para esses casos a página declara o slug antes de carregar este módulo:
+  //     <script>window.ACESSO_TELA = 'avaliacao_oral';</script>
+  //
+  // `window.ACESSO_TELA = null` marca a página como pública dentro do sistema
+  // (sem tela própria), como faz o index.
   function telaAtual() {
+    if (Object.prototype.hasOwnProperty.call(window, 'ACESSO_TELA')) {
+      return window.ACESSO_TELA || null;
+    }
     var f = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/i, '');
     return (f === 'index' || f === '') ? null : f;   // index = portal do sistema
   }

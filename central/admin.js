@@ -330,17 +330,21 @@
         : '<i class="bi bi-exclamation-triangle"></i> Esta pessoa <b>não tem papel neste sistema</b>, então não herda tela nenhuma. ' +
           'Escolha um papel acima: é o caminho que se ajusta sozinho. Exceção individual serve para caso isolado, não para dar acesso padrão.');
 
+    // Um botão só, para o usuário inteiro. Antes havia um por linha, e a coluna
+    // extra empurrava a tabela para o lado — ficava mais difícil ler QUAIS
+    // telas a pessoa tem, que é a pergunta que se faz aqui o tempo todo.
     var toolbar = el('div', { class: 'mb-3 d-flex flex-wrap align-items-center gap-2' });
-    var bl = el('button', { class: 'btn btn-sm btn-light', type: 'button' },
-      '<i class="bi bi-arrow-counterclockwise"></i> Remover todas as exceções');
-    bl.setAttribute('title', 'Volta todas as telas a seguir o papel');
-    bl.addEventListener('click', seguirPapelEmTudo);
-    toolbar.appendChild(bl);
+    var btModo = el('button', { class: 'btn btn-sm', type: 'button', id: 'ac-modo' });
+    btModo.addEventListener('click', function () {
+      alternarModoExcecao(!acExcecao);
+    });
+    toolbar.appendChild(btModo);
+    toolbar.appendChild(el('span', { class: 'muted', id: 'ac-modo-txt', style: 'font-size:.85rem' }));
 
     var tbl = el('table');
     tbl.innerHTML =
       '<thead><tr><th>Tela</th><th class="chk-col">Ver</th><th class="chk-col">Editar</th>' +
-      '<th class="chk-col">Exportar</th><th style="min-width:210px">Origem</th></tr></thead>';
+      '<th class="chk-col">Exportar</th></tr></thead>';
     var tb = el('tbody');
     telas.forEach(function (t) {
       var a = atual[t.id] || null;
@@ -365,19 +369,7 @@
         td.appendChild(chk); tr.appendChild(td);
       });
 
-      var tdOrigem = el('td');
-      tdOrigem.appendChild(el('span', { 'data-origem': '1' }));
-      var bt = el('button', { class: 'btn btn-sm btn-light ms-2', type: 'button', 'data-acao-modo': '1' });
-      bt.addEventListener('click', function () {
-        tr.dataset.modo = tr.dataset.modo === 'excecao' ? 'heranca' : 'excecao';
-        pintarLinha(tr);
-        $('ac-salvar').disabled = false;
-      });
-      tdOrigem.appendChild(bt);
-      tr.appendChild(tdOrigem);
-
       tb.appendChild(tr);
-      pintarLinha(tr);
     });
     tbl.appendChild(tb);
     box.innerHTML = '';
@@ -385,6 +377,9 @@
     box.appendChild(aviso);
     box.appendChild(toolbar);
     box.appendChild(tbl);
+
+    // Já existe exceção gravada? Então o usuário está em modo exceção.
+    alternarModoExcecao(Object.keys(atual).length > 0);
     $('ac-salvar').disabled = false;
   }
 
@@ -469,42 +464,48 @@
      Copiar o papel para exceções seria o jeito fácil de "marcar tudo", e é
      justamente o que quebra o ajuste automático. Por isso não existe mais o
      atalho que fazia isso. */
+  var acExcecao = false;   // modo do usuário inteiro, não de uma linha
+
   function pintarLinha(tr) {
     var herdando = tr.dataset.modo !== 'excecao';
     var her = { v: false, e: false, x: false };
     try { her = JSON.parse(tr.dataset.her || 'null') || her; } catch (e) { /* mantém o padrão */ }
 
     var ver = tr.querySelector('[data-acao="ver"]');
-    var ed  = tr.querySelector('[data-acao="editar"]');
-    var ex  = tr.querySelector('[data-acao="exportar"]');
-    if (herdando) { ver.checked = her.v; ed.checked = her.e; ex.checked = her.x; }
+    // Ao voltar a seguir o papel, os checkboxes mostram de novo o que o papel
+    // dá — senão ficariam exibindo o rascunho da exceção que acabou de sair.
+    if (herdando) {
+      ver.checked = her.v;
+      tr.querySelector('[data-acao="editar"]').checked = her.e;
+      tr.querySelector('[data-acao="exportar"]').checked = her.x;
+    }
     ver.disabled = herdando;
     tr.style.background = herdando ? '' : '#fffbeb';
-
-    var pill = tr.querySelector('[data-origem]');
-    if (pill) {
-      pill.innerHTML = herdando
-        ? (her.v
-            ? '<span class="pill" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1">segue o papel</span>'
-            : '<span class="pill" style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0">o papel não concede</span>')
-        : '<span class="pill" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:700">exceção — ' +
-          (ver.checked ? 'libera' : 'NEGA') + '</span>';
-    }
-    var bt = tr.querySelector('[data-acao-modo]');
-    if (bt) bt.innerHTML = herdando
-      ? '<i class="bi bi-pencil"></i> Criar exceção'
-      : '<i class="bi bi-arrow-counterclockwise"></i> Seguir o papel';
-
     syncRow(tr);
   }
 
-  function seguirPapelEmTudo() {
+  // Alterna o usuário inteiro entre "segue o papel" e "exceção".
+  function alternarModoExcecao(ligar) {
+    acExcecao = !!ligar;
     document.querySelectorAll('#ac-tabela tbody tr').forEach(function (tr) {
-      tr.dataset.modo = 'heranca';
+      tr.dataset.modo = acExcecao ? 'excecao' : 'heranca';
       pintarLinha(tr);
     });
-    toast('Todas as telas voltaram a seguir o papel. Salve para gravar.');
-    $('ac-salvar').disabled = false;
+    var bt = $('ac-modo'), txt = $('ac-modo-txt');
+    if (bt) {
+      bt.className = 'btn btn-sm ' + (acExcecao ? 'btn-light' : 'btn-roxo');
+      bt.innerHTML = acExcecao
+        ? '<i class="bi bi-arrow-counterclockwise"></i> Voltar a seguir o papel'
+        : '<i class="bi bi-pencil"></i> Ajustar só este usuário';
+    }
+    if (txt) {
+      txt.innerHTML = acExcecao
+        ? '<b style="color:#92400e">Este usuário deixa de acompanhar o papel.</b> ' +
+          'Desmarque para negar uma tela; tela nova no papel não chega mais até ele.'
+        : 'As marcações vêm do papel e se ajustam sozinhas quando ele muda.';
+    }
+    var salvar = $('ac-salvar');
+    if (salvar) salvar.disabled = false;
   }
 
   // editar/exportar dependem de "ver"
