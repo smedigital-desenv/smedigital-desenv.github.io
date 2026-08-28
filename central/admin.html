@@ -12,6 +12,24 @@
     /* o cabeçalho próprio já mostra o usuário; esconde o chip flutuante do módulo */
     #acesso-user-chip { display:none !important; }
     .code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.82em; }
+
+    /* ── Matriz de acessos: o que vem do papel precisa ser LEGÍVEL ──────────
+       As marcações herdadas ficam travadas, e o `:disabled` do Bootstrap
+       derruba a opacidade para 0,5 — a marcação some, e uma tela de permissão
+       em que não se enxerga o que está marcado é pior que nenhuma.
+       Aqui o travado é opaco: marcado vira verde sólido com o tique branco,
+       desmarcado vira caixa branca de borda nítida. A cor também informa —
+       VERDE = vem do papel, AZUL = exceção desta pessoa. */
+    #ac-tabela .form-check-input { width:1.15rem; height:1.15rem; }
+    #ac-tabela .form-check-input:disabled { opacity:1; cursor:not-allowed; }
+    #ac-tabela .form-check-input:disabled:checked {
+      background-color:#0f766e; border-color:#0f766e;
+    }
+    #ac-tabela .form-check-input:disabled:not(:checked) {
+      background-color:#fff; border-color:#94a3b8;
+    }
+    #ac-tabela td.chk-col { text-align:center; }
+    #ac-tabela tbody tr:hover { background:#f8fafc; }
   </style>
 </head>
 <body>

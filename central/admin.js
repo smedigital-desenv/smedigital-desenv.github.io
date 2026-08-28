@@ -306,6 +306,14 @@
     var heranca = permsByPapel[papelAtual] || {};
     var papelObj = papeis.filter(function (p) { return String(p.id) === String(papelAtual); })[0];
 
+    // Papel escolhido mas nenhuma tela marcada nele: a matriz sairia toda em
+    // branco e pareceria falta de permissão da pessoa, que é o defeito que
+    // esta tela existe para não ter. Quem precisa de conserto é o PAPEL.
+    if (papelObj && !Object.keys(heranca).length) {
+      console.warn('[admin] o papel', papelObj.slug, 'não tem tela marcada neste sistema —',
+        'Catálogo › Papéis é onde se corrige.');
+    }
+
     var papelBox = el('div', { class: 'mb-3', style: 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.7rem .9rem' });
     if (papeis.length) {
       papelBox.appendChild(el('div', { class: 'muted', style: 'font-size:.85rem;margin-bottom:.4rem' },
